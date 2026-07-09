@@ -298,11 +298,11 @@
 </style>
 
 <div class="preview-note">
-  <strong>DESIGN PREVIEW v4 · 2026-07-09</strong> — new: left navigation rail;
-  equipotential curves on the field figure; location line removed; gallery
-  filled with real artifacts (over-filled on purpose — you trim). Demo-film
-  slot still pending your format decision. The field figure is real: this
-  page computed it.
+  <strong>DESIGN PREVIEW v5 · 2026-07-09</strong> — equipotential family
+  densified (intermediate levels; the outer curves show their real
+  distortion). Fig&nbsp;8 source located: fictional smoke-test feedback
+  reports (&ldquo;Aaron Perfect&rdquo;) — render lands next round. Demo build
+  plan in progress. The field figure is real: this page computed it.
 </div>
 
 <div class="layout">
@@ -426,10 +426,11 @@
         different problems.</figcaption>
       </figure>
       <figure class="fig">
-        <div class="frame"><div class="pending">regeneration pending<br>fictional roster only</div></div>
+        <div class="frame"><div class="pending">render pending<br>source found: fictional smoke roster</div></div>
         <figcaption class="figcap"><b>Fig.&nbsp;8</b> — A narrative feedback
-        report (fictional name): mastery map, reasoning notes, the exact
-        problems to retry.</figcaption>
+        report from the mechanics-test smoke run (fictional roster —
+        &ldquo;Aaron Perfect&rdquo;): mastery map by concept, section refs,
+        per-target counts.</figcaption>
       </figure>
       <figure class="fig">
         <div class="frame"><div class="pending">capture pending</div></div>
@@ -692,10 +693,13 @@
     var x1 = chs[0][0], x2 = chs[1][0], yc = chs[0][1];
     var equips = [
       traceEquip(x1 - 26, yc, chs, w, h),
-      traceEquip(x1 - 46, yc, chs, w, h),
-      traceEquip(x1 - 74, yc, chs, w, h),
+      traceEquip(x1 - 38, yc, chs, w, h),
+      traceEquip(x1 - 52, yc, chs, w, h),
+      traceEquip(x1 - 70, yc, chs, w, h),
+      traceEquip(x1 - 92, yc, chs, w, h),
       traceEquip(x2 + 18, yc, chs, w, h),
-      traceEquip(x2 + 32, yc, chs, w, h)
+      traceEquip(x2 + 26, yc, chs, w, h),
+      traceEquip(x2 + 36, yc, chs, w, h)
     ];
 
     function paint(fraction) {
