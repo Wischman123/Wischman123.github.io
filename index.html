@@ -1,0 +1,783 @@
+<meta charset="utf-8">
+<title>Brendan Wischweh — a classroom rebuilt with Claude Code</title>
+<style>
+  /* ---------- tokens: light = worksheet paper, dark = chalkboard ---------- */
+  :root {
+    --bg: #FAF9F5;
+    --bg-raised: #FFFFFF;
+    --ink: #1E2B33;
+    --ink-soft: #56666F;
+    --rule: #DDD7CB;
+    --accent: #A15A26;
+    --accent-text: #8E4E1F;
+    --equip: #5B7B92;
+    --gridline: rgba(30, 43, 51, 0.08);
+    --banner-bg: #F3E7D6;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #212927;
+      --bg-raised: #29322F;
+      --ink: #E9E7DE;
+      --ink-soft: #A2ABA1;
+      --rule: #3D4744;
+      --accent: #D68C4E;
+      --accent-text: #D68C4E;
+      --equip: #8FAEC4;
+      --gridline: rgba(233, 231, 222, 0.07);
+      --banner-bg: #33302A;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #212927;
+    --bg-raised: #29322F;
+    --ink: #E9E7DE;
+    --ink-soft: #A2ABA1;
+    --rule: #3D4744;
+    --accent: #D68C4E;
+    --accent-text: #D68C4E;
+    --equip: #8FAEC4;
+    --gridline: rgba(233, 231, 222, 0.07);
+    --banner-bg: #33302A;
+  }
+  :root[data-theme="light"] {
+    --bg: #FAF9F5;
+    --bg-raised: #FFFFFF;
+    --ink: #1E2B33;
+    --ink-soft: #56666F;
+    --rule: #DDD7CB;
+    --accent: #A15A26;
+    --accent-text: #8E4E1F;
+    --equip: #5B7B92;
+    --gridline: rgba(30, 43, 51, 0.08);
+    --banner-bg: #F3E7D6;
+  }
+
+  /* ---------- base ---------- */
+  html { background: var(--bg); scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: 17px;
+    line-height: 1.65;
+    margin: 0;
+  }
+  a { color: var(--accent-text); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  a:focus-visible, button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  h1, h2 { text-wrap: balance; margin: 0; }
+
+  .wrap { max-width: 1060px; margin: 0 auto; padding: 0 24px; }
+  .prose { max-width: 66ch; }
+
+  /* ---------- preview banner (not part of the design) ---------- */
+  .preview-note {
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.5;
+    letter-spacing: 0.02em;
+    background: var(--banner-bg);
+    border-bottom: 1px solid var(--rule);
+    padding: 10px 24px;
+    color: var(--ink-soft);
+  }
+  .preview-note strong { color: var(--ink); font-weight: 600; }
+
+  /* ---------- left rail ---------- */
+  .layout { display: grid; grid-template-columns: 208px minmax(0, 1fr); }
+  .rail { border-right: 1px solid var(--rule); }
+  .rail-inner {
+    position: sticky;
+    top: 0;
+    padding: 30px 22px;
+    display: flex;
+    flex-direction: column;
+  }
+  .rail .mark {
+    font-family: var(--serif);
+    font-size: 1.02rem;
+    font-weight: 600;
+    color: var(--ink);
+    text-decoration: none;
+    margin-bottom: 22px;
+    line-height: 1.3;
+  }
+  .rail a.nav {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink-soft);
+    text-decoration: none;
+    padding: 7px 0;
+  }
+  .rail a.nav:hover { color: var(--accent-text); }
+  .rail a.nav[aria-current="true"] { color: var(--accent-text); }
+  .rail a.nav[aria-current="true"]::before { content: "— "; }
+  .rail .ext { margin-top: 16px; border-top: 1px solid var(--rule); padding-top: 14px; }
+  @media (max-width: 1099px) {
+    .layout { display: block; }
+    .rail { display: none; }
+  }
+
+  /* ---------- section scaffolding ---------- */
+  .section { padding: 72px 0 0; }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--accent-text);
+    margin: 0 0 14px;
+  }
+  .section h2 {
+    font-size: 1.6rem;
+    font-weight: 600;
+    line-height: 1.25;
+    margin-bottom: 16px;
+  }
+
+  /* ---------- hero ---------- */
+  .hero { padding: 72px 0 0; display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 56px; align-items: center; }
+  .hero h1 {
+    font-size: clamp(2rem, 4.6vw, 3.1rem);
+    font-weight: 600;
+    line-height: 1.14;
+    letter-spacing: -0.01em;
+    margin: 18px 0 20px;
+  }
+  .hero h1 em { font-style: italic; color: var(--accent-text); }
+  .hero .sub { font-size: 1.12rem; color: var(--ink-soft); margin: 0; max-width: 56ch; }
+  .fig { margin: 0; }
+  .fig canvas { width: 100%; aspect-ratio: 10 / 9; display: block; }
+  .figcap {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: var(--ink-soft);
+    margin-top: 10px;
+  }
+  .figcap b { color: var(--ink); font-weight: 600; }
+
+  /* ---------- placeholder frames (graph paper) ---------- */
+  .frame {
+    border: 1.5px dashed var(--rule);
+    background-color: var(--bg-raised);
+    background-image:
+      linear-gradient(var(--gridline) 1px, transparent 1px),
+      linear-gradient(90deg, var(--gridline) 1px, transparent 1px);
+    background-size: 24px 24px;
+    display: grid;
+    place-items: center;
+  }
+  .frame .pending {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    text-align: center;
+    padding: 12px;
+    line-height: 2;
+  }
+  .video-frame { aspect-ratio: 16 / 9; margin-top: 8px; }
+  .play {
+    width: 54px; height: 54px; border-radius: 50%;
+    border: 2px solid var(--ink-soft);
+    display: grid; place-items: center; margin: 0 auto 6px;
+  }
+  .play::after {
+    content: "";
+    border-style: solid;
+    border-width: 9px 0 9px 15px;
+    border-color: transparent transparent transparent var(--ink-soft);
+    margin-left: 4px;
+  }
+
+  /* ---------- what it is ---------- */
+  .three-up { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px; margin-top: 28px; }
+  .three-up h3 {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin: 0 0 10px;
+  }
+  .three-up p { margin: 0; font-size: 0.98rem; color: var(--ink-soft); }
+  .three-up p b { color: var(--ink); font-weight: 600; }
+
+  /* ---------- gallery ---------- */
+  .gallery { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 40px 28px; margin-top: 24px; }
+  .gallery .fig img {
+    width: 100%;
+    display: block;
+    border: 1px solid var(--rule);
+    background: #FFFFFF;
+  }
+  .gallery .frame { aspect-ratio: 4 / 3; }
+  .gallery-note { font-family: var(--mono); font-size: 12.5px; color: var(--ink-soft); margin-top: 24px; }
+
+  /* ---------- numbers ---------- */
+  .readout { margin-top: 26px; border-top: 1px solid var(--rule); }
+  .readout .row {
+    display: grid;
+    grid-template-columns: 170px minmax(0, 1fr) max-content;
+    gap: 8px 28px;
+    align-items: baseline;
+    padding: 13px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .readout .val {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 1.32rem;
+    font-weight: 600;
+    text-align: right;
+    color: var(--ink);
+  }
+  .readout .lab { font-size: 0.98rem; color: var(--ink-soft); }
+  .readout .lab b { color: var(--ink); font-weight: 600; }
+  .readout .date {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+  .chart-fig { margin: 40px 0 0; }
+  .chart-fig svg { width: 100%; height: auto; display: block; }
+  .ch-grid { stroke: var(--rule); stroke-width: 1; }
+  .ch-area { fill: var(--accent); opacity: 0.13; }
+  .ch-line { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; }
+  .ch-dot { fill: var(--accent); }
+  .ch-open { fill: var(--bg); stroke: var(--accent); stroke-width: 1.5; }
+  .ch-lab { fill: var(--ink-soft); font-family: var(--mono); font-size: 10.5px; font-variant-numeric: tabular-nums; }
+  .ch-lab-strong { fill: var(--ink); font-family: var(--mono); font-size: 11px; font-weight: 600; }
+
+  /* ---------- how it's built ---------- */
+  .built { margin: 24px 0 0; padding: 0; list-style: none; max-width: 74ch; }
+  .built li { padding: 9px 0; border-bottom: 1px solid var(--rule); font-size: 0.98rem; color: var(--ink-soft); }
+  .built li:first-child { border-top: 1px solid var(--rule); }
+  .built .kw {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink);
+    margin-right: 12px;
+  }
+  .arch-link { margin-top: 22px; font-size: 1.02rem; }
+
+  /* ---------- footer ---------- */
+  .footer { margin-top: 88px; border-top: 1px solid var(--rule); padding: 28px 0 64px; }
+  .footer .inner { display: flex; flex-wrap: wrap; gap: 10px 40px; justify-content: space-between; align-items: baseline; }
+  .footer .who { font-size: 1.02rem; }
+  .footer .meta { font-family: var(--mono); font-size: 12px; color: var(--ink-soft); }
+
+  /* ---------- responsive ---------- */
+  @media (max-width: 880px) {
+    .hero { grid-template-columns: 1fr; gap: 40px; }
+    .three-up { grid-template-columns: 1fr; gap: 28px; }
+    .gallery { grid-template-columns: 1fr; }
+    .readout .row { grid-template-columns: 1fr; gap: 2px; }
+    .readout .val { text-align: left; }
+    .section { padding-top: 56px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+    html { scroll-behavior: auto; }
+  }
+</style>
+
+<div class="preview-note">
+  <strong>DESIGN PREVIEW v4 · 2026-07-09</strong> — new: left navigation rail;
+  equipotential curves on the field figure; location line removed; gallery
+  filled with real artifacts (over-filled on purpose — you trim). Demo-film
+  slot still pending your format decision. The field figure is real: this
+  page computed it.
+</div>
+
+<div class="layout">
+<aside class="rail" aria-label="Page navigation">
+  <div class="rail-inner">
+    <a class="mark" href="#top">Brendan<br>Wischweh</a>
+    <a class="nav" href="#film">Demo</a>
+    <a class="nav" href="#what">What it is</a>
+    <a class="nav" href="#gallery">Gallery</a>
+    <a class="nav" href="#numbers">The numbers</a>
+    <a class="nav" href="#built">How it&rsquo;s built</a>
+    <a class="nav ext" href="architecture.html">Architecture &#8599;</a>
+    <a class="nav" href="#contact">Contact</a>
+  </div>
+</aside>
+<div class="content">
+
+<header class="wrap hero" id="top">
+  <div>
+    <p class="eyebrow">Brendan Wischweh · Physics &amp; Engineering teacher</p>
+    <h1>A physics teacher&rsquo;s classroom, rebuilt with <em>Claude&nbsp;Code</em>.</h1>
+    <p class="sub">An AI-native curriculum platform in weekly production use —
+    generating assessments with computed diagrams, grading scanned paper locally,
+    and writing every student a narrative report.</p>
+  </div>
+  <figure class="fig">
+    <canvas id="fieldfig" role="img" aria-label="Electric field lines and dashed equipotential curves from a two-charge system, charges plus two and minus one, traced numerically by this page with midline direction arrows"></canvas>
+    <figcaption class="figcap"><b>Fig.&nbsp;1</b> — Electric field lines
+    (arrowed) and equipotential curves (dashed) from a two-charge system
+    (+2&nbsp;/&nbsp;−1), traced numerically by this page as it loaded — line
+    counts per Gauss&rsquo;s law, equipotentials perpendicular to the field,
+    per the platform&rsquo;s own validators. The platform emits diagrams like
+    this into Word as native, editable drawing objects.</figcaption>
+  </figure>
+</header>
+
+<main class="wrap">
+
+  <section class="section" id="film" aria-labelledby="film-h">
+    <p class="eyebrow">The demo</p>
+    <h2 id="film-h">The whole loop, on screen.</h2>
+    <p class="prose">A test generated, gated, graded, and turned into feedback —
+    in the system&rsquo;s weekly production form. Format in progress: film or
+    interactive walkthrough.</p>
+    <div class="frame video-frame">
+      <div class="pending">
+        <div class="play" aria-hidden="true"></div>
+        demo slot — format decision pending<br>(film · scroll walkthrough · interactive)
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="what" aria-labelledby="what-h">
+    <p class="eyebrow">What it is</p>
+    <h2 id="what-h">One platform, three jobs.</h2>
+    <div class="three-up">
+      <div>
+        <h3>Generate</h3>
+        <p><b>Assessments, homework, reviews, and step-by-step solution guides</b>
+        — with computed physics diagrams emitted as editable Word objects. Every
+        class period gets its own parallel version: same concepts, same
+        difficulty, different problems.</p>
+      </div>
+      <div>
+        <h3>Grade</h3>
+        <p><b>Scanned answer sheets, graded by a local pipeline</b> — no model
+        calls in the main path. It handles skewed, wrinkled, real-world scans;
+        the ~1% it isn&rsquo;t sure about is flagged for review, and every
+        answer-key correction is teacher-approved.</p>
+      </div>
+      <div>
+        <h3>Feedback</h3>
+        <p><b>Personalized narrative feedback, the main feature</b>: after
+        every assessment, every student gets a written report — what their
+        reasoning shows, which targets they own, which to revisit, the exact
+        problems to retry. It describes; it never ranks. And a sub-goal,
+        teaching the teacher: the same machinery audits the course itself
+        against my stated values.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="gallery" aria-labelledby="gal-h">
+    <p class="eyebrow">Artifact gallery</p>
+    <h2 id="gal-h">The work, as it ships.</h2>
+    <div class="gallery">
+      <figure class="fig">
+        <img src="assets/k16_spring_loop_page.png" alt="Generated physics problem page: Leibniz's Spring Loop, with a computed spring-launch-into-loop diagram, three energy bar-chart scaffolds, and a historical vignette about Leibniz" loading="lazy">
+        <figcaption class="figcap"><b>Fig.&nbsp;2</b> — A generated problem
+        page, as shipped: computed spring-loop diagram, energy bar-chart
+        scaffolds, historical vignette. Every element from code — no clip
+        art.</figcaption>
+      </figure>
+      <figure class="fig">
+        <img src="assets/k15_eulers_hilltop_page.png" alt="Generated physics problem page: Euler's Hilltop, with a computed ramp-and-hill diagram and energy bar-chart scaffolds" loading="lazy">
+        <figcaption class="figcap"><b>Fig.&nbsp;3</b> — Same engine, different
+        problem: the diagram is computed from the problem&rsquo;s own numbers,
+        not drawn by hand.</figcaption>
+      </figure>
+      <figure class="fig">
+        <img src="assets/d1_before_regeneration.png" alt="An earlier render of the Lovelace's Loop problem page where the hill sits on an incorrect two-level ground" loading="lazy">
+        <figcaption class="figcap"><b>Fig.&nbsp;4</b> — Caught in review: an
+        earlier render with flawed ground geometry (two levels)&hellip;</figcaption>
+      </figure>
+      <figure class="fig">
+        <img src="assets/d1_after_regeneration.png" alt="The corrected Lovelace's Loop page with continuous ground under the circular hill" loading="lazy">
+        <figcaption class="figcap"><b>Fig.&nbsp;5</b> — &hellip;and the page
+        that replaced it, re-derived from the corrected drawing code.
+        Regenerate, don&rsquo;t patch.</figcaption>
+      </figure>
+      <figure class="fig">
+        <img src="assets/loc_tracker_render.png" alt="The platform's own lines-of-code tracker render: stacked daily bars by project rising from 848 thousand to 1.5 million lines, with per-project subcharts" loading="lazy">
+        <figcaption class="figcap"><b>Fig.&nbsp;6</b> — The tracker&rsquo;s own
+        daily render: first-party lines by project. This is the instrument
+        behind Fig.&nbsp;10 below.</figcaption>
+      </figure>
+      <figure class="fig">
+        <div class="frame"><div class="pending">render pending<br>two parallel forms, side by side</div></div>
+        <figcaption class="figcap"><b>Fig.&nbsp;7</b> — Two parallel forms of
+        one quiz (of four generated): same concepts, same difficulty,
+        different problems.</figcaption>
+      </figure>
+      <figure class="fig">
+        <div class="frame"><div class="pending">regeneration pending<br>fictional roster only</div></div>
+        <figcaption class="figcap"><b>Fig.&nbsp;8</b> — A narrative feedback
+        report (fictional name): mastery map, reasoning notes, the exact
+        problems to retry.</figcaption>
+      </figure>
+      <figure class="fig">
+        <div class="frame"><div class="pending">capture pending</div></div>
+        <figcaption class="figcap"><b>Fig.&nbsp;9</b> — The quality gate doing
+        its job: a rejection, and the regenerated version that replaced
+        it.</figcaption>
+      </figure>
+    </div>
+    <p class="gallery-note">Deliberately over-filled — the final page keeps
+    4–6 of these. Every roster and report shown uses fictional names.</p>
+  </section>
+
+  <section class="section" id="numbers" aria-labelledby="num-h">
+    <p class="eyebrow">The numbers, dated</p>
+    <h2 id="num-h">Measured, not estimated.</h2>
+    <div class="readout">
+      <div class="row">
+        <span class="val">1,527,768</span>
+        <span class="lab"><b>first-party lines directed</b> — directed, not hand-typed</span>
+        <span class="date">verified 2026-07-09</span>
+      </div>
+      <div class="row">
+        <span class="val">831</span>
+        <span class="lab"><b>load-bearing functions inventoried</b> across the platform</span>
+        <span class="date">verified 2026-07-09</span>
+      </div>
+      <div class="row">
+        <span class="val">641</span>
+        <span class="lab"><b>property-checked</b> under 581 proved physics laws</span>
+        <span class="date">verified 2026-07-09</span>
+      </div>
+      <div class="row">
+        <span class="val">190</span>
+        <span class="lab"><b>documented infeasible-to-test</b> — leaving 0 silently untested</span>
+        <span class="date">verified 2026-07-09</span>
+      </div>
+      <div class="row">
+        <span class="val">~260</span>
+        <span class="lab"><b>model-hours per week</b> at peak, between classes and after school</span>
+        <span class="date">verified 2026-07-09</span>
+      </div>
+      <div class="row">
+        <span class="val">mid-March</span>
+        <span class="lab"><b>first commit, 2026</b> — weekly production use since</span>
+        <span class="date">&nbsp;</span>
+      </div>
+    </div>
+
+    <figure class="fig chart-fig">
+      <svg viewBox="0 0 640 240" role="img" aria-label="First-party lines of code over time, rising from 469 thousand hand-tallied on May 8 to about 1.53 million on the automated tracker by July 9, 2026">
+        <line class="ch-grid" x1="40" y1="31"  x2="620" y2="31"></line>
+        <line class="ch-grid" x1="40" y1="108" x2="620" y2="108"></line>
+        <line class="ch-grid" x1="40" y1="185" x2="620" y2="185"></line>
+        <line class="ch-grid" x1="40" y1="200" x2="620" y2="200"></line>
+        <text class="ch-lab" x="34" y="34"  text-anchor="end">1.5M</text>
+        <text class="ch-lab" x="34" y="111" text-anchor="end">1.0M</text>
+        <text class="ch-lab" x="34" y="188" text-anchor="end">500K</text>
+        <path class="ch-area" d="M227,132 L274,110 L321,86 L349,77 L377,72 L405,62 L480,51 L536,47 L573,39 L620,27 L620,200 L227,200 Z"></path>
+        <path class="ch-line" d="M40,189 L96,172 L227,132" stroke-dasharray="4 5" opacity="0.7"></path>
+        <path class="ch-line" d="M227,132 L274,110 L321,86 L349,77 L377,72 L405,62 L480,51 L536,47 L573,39 L620,27"></path>
+        <circle class="ch-open" cx="40" cy="189" r="3.5"></circle>
+        <circle class="ch-open" cx="96" cy="172" r="3.5"></circle>
+        <circle class="ch-dot" cx="227" cy="132" r="3"></circle>
+        <circle class="ch-dot" cx="620" cy="27"  r="3.5"></circle>
+        <text class="ch-lab-strong" x="612" y="20" text-anchor="end">1.53M</text>
+        <text class="ch-lab" x="40"  y="218" text-anchor="start">05-08</text>
+        <text class="ch-lab" x="227" y="218" text-anchor="middle">05-28</text>
+        <text class="ch-lab" x="377" y="218" text-anchor="middle">06-13</text>
+        <text class="ch-lab" x="480" y="218" text-anchor="middle">06-24</text>
+        <text class="ch-lab" x="620" y="218" text-anchor="end">07-09</text>
+      </svg>
+      <figcaption class="figcap"><b>Fig.&nbsp;10</b> — First-party lines over
+      time. Open points were hand-tallied in session logs before the automated
+      tracker existed; the solid line is the tracker, from 2026-05-28.
+      <em>The published chart recomputes the full arc — back to the first
+      commits in mid-March — from git history, under today&rsquo;s counting
+      rules.</em></figcaption>
+    </figure>
+  </section>
+
+  <section class="section" id="built" aria-labelledby="built-h">
+    <p class="eyebrow">How it&rsquo;s built</p>
+    <h2 id="built-h">For the technical reader.</h2>
+    <ul class="built">
+      <li><span class="kw">Hexagonal core</span> Domain logic stays pure; dependencies point inward only.</li>
+      <li><span class="kw">Completeness gates</span> The system may draft; it may not ship. Failing artifacts are rejected, not patched.</li>
+      <li><span class="kw">Regenerate, don&rsquo;t patch</span> Fixes land in the shared library; every artifact re-derives; old versions retire.</li>
+      <li><span class="kw">Proved physics</span> 581 relations Lean-proved and enforced as property-test laws, with negative controls.</li>
+      <li><span class="kw">Local-first grading</span> A deterministic pipeline on scanned paper — no model calls in the grading path.</li>
+      <li><span class="kw">Dated claims</span> Every number on this page carries the day it was verified.</li>
+    </ul>
+    <p class="arch-link"><a href="architecture.html">The whole system, drawn
+    as a hexagon — read the architecture page &rarr;</a></p>
+  </section>
+
+</main>
+
+<footer class="footer" id="contact">
+  <div class="wrap inner">
+    <span class="who">Brendan Wischweh &nbsp;·&nbsp; <a href="mailto:bmwischweh@gmail.com">bmwischweh@gmail.com</a></span>
+    <span class="meta">Built with Claude Code — this page included. All student names shown are fictional.</span>
+  </div>
+</footer>
+
+</div><!-- /.content -->
+</div><!-- /.layout -->
+
+<script>
+(function () {
+  var canvas = document.getElementById('fieldfig');
+  if (!canvas || !canvas.getContext) return;
+  var ctx = canvas.getContext('2d');
+  var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var raf = null;
+
+  function tokens() {
+    var s = getComputedStyle(document.documentElement);
+    return {
+      accent: s.getPropertyValue('--accent').trim() || '#A15A26',
+      ink: s.getPropertyValue('--ink').trim() || '#1E2B33',
+      equip: s.getPropertyValue('--equip').trim() || '#5B7B92'
+    };
+  }
+
+  // Two-charge system, +2 / −1, mirroring the platform's conventions
+  // (physics/lib/charges.py + em_field_map.py):
+  //  - line count out of the source ∝ charge: 16 from +2;
+  //  - Gauss's-law terminations: 16 × |−1|/+2 = 8 land on −1, 8 escape;
+  //  - each field line carries a midline direction arrow (arrow_frac = 0.5);
+  //  - equipotential curves dashed, perpendicular to the field, no arrows
+  //    (EP_LINE_COLOR steel blue in the library; --equip token here);
+  //  - charge circles labeled with relative charge.
+  var Q_POS = 2, Q_NEG = -1, N_LINES = 16;
+
+  function fieldRaw(px, py, chs) {
+    var ex = 0, ey = 0;
+    for (var i = 0; i < chs.length; i++) {
+      var dx = px - chs[i][0], dy = py - chs[i][1];
+      var r2 = dx * dx + dy * dy;
+      if (r2 < 1) return null;
+      var r3 = Math.pow(r2, 1.5);
+      ex += chs[i][2] * dx / r3;
+      ey += chs[i][2] * dy / r3;
+    }
+    var m = Math.hypot(ex, ey);
+    if (m === 0) return null;
+    return [ex, ey, m];
+  }
+
+  function potentialAt(px, py, chs) {
+    var v = 0;
+    for (var i = 0; i < chs.length; i++) {
+      var r = Math.hypot(px - chs[i][0], py - chs[i][1]);
+      if (r < 1) r = 1;
+      v += chs[i][2] / r;
+    }
+    return v;
+  }
+
+  // index + unit direction at fractional arc length (midline arrow spot)
+  function arcMeta(pts, frac) {
+    var cum = [0], i;
+    for (i = 1; i < pts.length; i++) {
+      cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+    }
+    var target = frac * cum[cum.length - 1];
+    for (i = 1; i < pts.length - 1 && cum[i] < target; i++) {}
+    var dx = pts[i][0] - pts[i - 1][0], dy = pts[i][1] - pts[i - 1][1];
+    var m = Math.hypot(dx, dy) || 1;
+    return { idx: i, x: pts[i][0], y: pts[i][1], ux: dx / m, uy: dy / m };
+  }
+
+  function traceField(chs, w, h, r0) {
+    var lines = [], step = 2.2, margin = 60;
+    var half = Math.PI / N_LINES;   // half-step seed offset -> mirror symmetry
+    for (var i = 0; i < N_LINES; i++) {
+      var a = half + 2 * Math.PI * i / N_LINES;
+      var px = chs[0][0] + r0 * Math.cos(a), py = chs[0][1] + r0 * Math.sin(a);
+      var pts = [[px, py]];
+      for (var k = 0; k < 3000; k++) {
+        var f = fieldRaw(px, py, chs);
+        if (!f) break;
+        px += (f[0] / f[2]) * step; py += (f[1] / f[2]) * step;
+        pts.push([px, py]);
+        if (Math.hypot(px - chs[1][0], py - chs[1][1]) < r0) break;   // terminated on −1
+        if (px < -margin || px > w + margin || py < -margin || py > h + margin) break;  // escaped
+      }
+      lines.push({ pts: pts, arrow: arcMeta(pts, 0.5) });
+    }
+    return lines;
+  }
+
+  // Trace one equipotential: step perpendicular to E, then Newton-correct
+  // back onto the level set (V decreases along E: s = (V - V0) / |E|).
+  function traceEquip(sx, sy, chs, w, h) {
+    var pts = [[sx, sy]], px = sx, py = sy, step = 2.0, margin = 40;
+    var V0 = potentialAt(sx, sy, chs);
+    for (var k = 0; k < 2400; k++) {
+      var f = fieldRaw(px, py, chs);
+      if (!f) break;
+      px += (-f[1] / f[2]) * step;
+      py += (f[0] / f[2]) * step;
+      f = fieldRaw(px, py, chs);
+      if (!f) break;
+      var s = (potentialAt(px, py, chs) - V0) / f[2];
+      if (s > step) s = step; else if (s < -step) s = -step;
+      px += (f[0] / f[2]) * s;
+      py += (f[1] / f[2]) * s;
+      pts.push([px, py]);
+      if (k > 14 && Math.hypot(px - sx, py - sy) < step * 1.5) {   // closed loop
+        pts.push([sx, sy]);
+        break;
+      }
+      if (px < -margin || px > w + margin || py < -margin || py > h + margin) break;
+    }
+    return pts;
+  }
+
+  function drawArrowHead(x, y, ux, uy, size, dpr) {
+    ctx.beginPath();
+    ctx.moveTo((x - size * ux + size * 0.58 * uy) * dpr, (y - size * uy - size * 0.58 * ux) * dpr);
+    ctx.lineTo(x * dpr, y * dpr);
+    ctx.lineTo((x - size * ux - size * 0.58 * uy) * dpr, (y - size * uy + size * 0.58 * ux) * dpr);
+    ctx.stroke();
+  }
+
+  function drawCharges(t, f, dpr) {
+    var bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+    [[f.chs[0], '+2'], [f.chs[1], '−1']].forEach(function (c) {
+      ctx.lineWidth = 1.5 * dpr;
+      ctx.beginPath();
+      ctx.arc(c[0][0] * dpr, c[0][1] * dpr, f.r0 * dpr, 0, 2 * Math.PI);
+      ctx.fillStyle = bg;
+      ctx.fill();
+      ctx.strokeStyle = t.ink;
+      ctx.stroke();
+      ctx.fillStyle = t.ink;
+      ctx.font = '600 ' + (10.5 * dpr) + 'px ui-monospace, Menlo, monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(c[1], c[0][0] * dpr, c[0][1] * dpr + 0.5 * dpr);
+    });
+  }
+
+  function render() {
+    var w = canvas.clientWidth, h = canvas.clientHeight;
+    if (!w || !h) return;
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    var t = tokens();
+    var r0 = 10;
+    var chs = [
+      [w * 0.30, h * 0.52, Q_POS],
+      [w * 0.70, h * 0.52, Q_NEG]
+    ];
+    var f = { chs: chs, r0: r0 };
+    var lines = traceField(chs, w, h, r0);
+    var x1 = chs[0][0], x2 = chs[1][0], yc = chs[0][1];
+    var equips = [
+      traceEquip(x1 - 26, yc, chs, w, h),
+      traceEquip(x1 - 46, yc, chs, w, h),
+      traceEquip(x1 - 74, yc, chs, w, h),
+      traceEquip(x2 + 18, yc, chs, w, h),
+      traceEquip(x2 + 32, yc, chs, w, h)
+    ];
+
+    function paint(fraction) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // equipotentials first: dashed, no arrows, fading in with the draw
+      ctx.strokeStyle = t.equip;
+      ctx.globalAlpha = 0.55 * fraction;
+      ctx.lineWidth = 1 * dpr;
+      ctx.setLineDash([5 * dpr, 5 * dpr]);
+      equips.forEach(function (pts) {
+        if (pts.length < 2) return;
+        ctx.beginPath();
+        ctx.moveTo(pts[0][0] * dpr, pts[0][1] * dpr);
+        for (var k = 1; k < pts.length; k++) ctx.lineTo(pts[k][0] * dpr, pts[k][1] * dpr);
+        ctx.stroke();
+      });
+      ctx.setLineDash([]);
+
+      // field lines + midline arrows
+      ctx.strokeStyle = t.accent;
+      ctx.globalAlpha = 0.7;
+      lines.forEach(function (l) {
+        var pts = l.pts;
+        var n = Math.max(2, Math.floor(pts.length * fraction));
+        ctx.lineWidth = 1 * dpr;
+        ctx.beginPath();
+        ctx.moveTo(pts[0][0] * dpr, pts[0][1] * dpr);
+        for (var k = 1; k < n; k++) ctx.lineTo(pts[k][0] * dpr, pts[k][1] * dpr);
+        ctx.stroke();
+        if (n > l.arrow.idx) {
+          ctx.lineWidth = 1.4 * dpr;
+          drawArrowHead(l.arrow.x, l.arrow.y, l.arrow.ux, l.arrow.uy, 6, dpr);
+        }
+      });
+      ctx.globalAlpha = 1;
+      drawCharges(t, f, dpr);
+    }
+
+    if (raf) cancelAnimationFrame(raf);
+    if (reduced) { paint(1); return; }
+    var t0 = null, DUR = 1400;
+    function tick(ts) {
+      if (t0 === null) t0 = ts;
+      var p = Math.min(1, (ts - t0) / DUR);
+      paint(p * p * (3 - 2 * p)); // smoothstep
+      if (p < 1) raf = requestAnimationFrame(tick);
+    }
+    raf = requestAnimationFrame(tick);
+  }
+
+  var pending = null;
+  function requestRender() {
+    clearTimeout(pending);
+    pending = setTimeout(render, 80);
+  }
+  window.addEventListener('resize', requestRender);
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', requestRender);
+  new MutationObserver(requestRender)
+    .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  render();
+
+  // ---- rail scrollspy (progressive enhancement) ----
+  if ('IntersectionObserver' in window) {
+    var links = {};
+    document.querySelectorAll('.rail a.nav[href^="#"]').forEach(function (a) {
+      links[a.getAttribute('href').slice(1)] = a;
+    });
+    var spy = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        Object.keys(links).forEach(function (id) {
+          links[id].removeAttribute('aria-current');
+        });
+        var link = links[e.target.id];
+        if (link) link.setAttribute('aria-current', 'true');
+      });
+    }, { rootMargin: '-35% 0px -55% 0px' });
+    ['film', 'what', 'gallery', 'numbers', 'built', 'contact'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) spy.observe(el);
+    });
+  }
+})();
+</script>
