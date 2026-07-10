@@ -434,16 +434,21 @@
   .gallery .fig > img { cursor: zoom-in; }
   .lightbox {
     position: fixed; inset: 0; z-index: 100;
-    display: grid; place-items: center;
+    display: flex;
+    overflow-y: auto;
     padding: 20px;
     background: rgba(14, 17, 16, 0.88);
     cursor: zoom-out;
   }
   .lightbox[hidden] { display: none; }
   .lightbox img {
-    max-width: min(1600px, 96vw);
-    max-height: 94vh;
-    width: auto; height: auto;
+    /* fit to page WIDTH; a tall figure scrolls vertically instead of
+       shrinking to fit the viewport. margin:auto centers a short image
+       both ways yet never clips the top of a tall one (flex auto-margin
+       overflow rule), which place-items:center would. */
+    margin: auto;
+    width: min(1600px, 96vw);
+    height: auto;
     border: 1px solid var(--rule);
     background: #FFFFFF;
     box-shadow: 0 18px 60px rgba(0, 0, 0, 0.5);
@@ -451,7 +456,7 @@
 </style>
 
 <div class="preview-note">
-  <strong>Work in progress</strong> — this portfolio is being actively built out; it should be fully operational by <strong>2026-07-13 @ 6:00&nbsp;AM PDT</strong> (GMT&minus;7). Last&nbsp;updated <span class="wip-updated">2026-07-10 2:59 PM CT</span>.
+  <strong>Work in progress</strong> — this portfolio is being actively built out; it should be fully operational by <strong>2026-07-13 @ 6:00&nbsp;AM PDT</strong> (GMT&minus;7). Last&nbsp;updated <span class="wip-updated">2026-07-10 3:32 PM CT</span>.
 </div>
 
 <div class="layout">
@@ -589,13 +594,13 @@
         Every element from code — no clip art.</figcaption>
       </figure>
       <figure class="fig">
-        <img src="assets/k16_solution_guide.png" alt="One page of the generated solution guide for Leibniz's Spring Loop, part c: a free-body diagram of the ball, a line-by-line derivation of the normal force with the reasoning annotated beside each algebra step, and a closing interpretation that the normal force is over 11 times the ball's weight" loading="lazy">
+        <img src="assets/k16_solution_guide.png" alt="One page of the generated solution guide for Dawn's Last Burn, parts a through c: a free-body diagram of the Dawn spacecraft in circular orbit around Ceres, line-by-line derivations of the orbital speed, the xenon-ion exhaust speed, and the burn's change in speed, with the reasoning annotated beside each algebra step, and closing interpretations of each result" loading="lazy">
         <figcaption class="figcap"><b>Fig.&nbsp;3</b> — Every problem ships
-        with a full step-by-step solution guide; this is one of its five pages
-        (part&nbsp;c of &ldquo;Leibniz&rsquo;s Spring Loop&rdquo;): the
+        with a full step-by-step solution guide; this is one of its four pages
+        (parts&nbsp;a&ndash;c of &ldquo;Dawn&rsquo;s Last Burn&rdquo;): the
         free-body diagram, each algebra line annotated with the reasoning
-        beside it, and the result interpreted — the track pushes with
-        11&times; the ball&rsquo;s weight.</figcaption>
+        beside it, and the result interpreted — the xenon ions leave at
+        ~40&nbsp;km/s, roughly ten times chemical-rocket exhaust.</figcaption>
       </figure>
       <figure class="fig">
         <div class="wipe" data-wipe
