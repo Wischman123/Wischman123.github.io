@@ -363,10 +363,45 @@
     * { animation: none !important; transition: none !important; }
     html { scroll-behavior: auto; }
   }
+
+  /* ---------- before/after wipe slider ----------
+     CSS delivery for public/assets/js/wipe_slider.js (the ONE shared module,
+     D-0 single-module rule — consumed here, NOT re-forked). This block is the
+     documented "copied CSS block" half of the module's contract; it mirrors the
+     wing's public/assets/site.css .wipe rules verbatim so the two consumers
+     render the component identically. No autonomous motion: the wipe rests at
+     50 % and only a native <input type=range> (keyboard + pointer + touch)
+     moves it — the frame carries no pointer handlers, so a vertical swipe on
+     the images scrolls the page (anti-target: no vertical-scroll capture). */
+  .wipe { margin: 1rem 0 0.4rem; }
+  .wipe__frame {
+    position: relative; border: 1px solid var(--rule); border-radius: 10px;
+    overflow: hidden; background: var(--bg-raised); line-height: 0;
+  }
+  .wipe__img { display: block; width: 100%; height: auto; }
+  .wipe__img--after { position: absolute; inset: 0; width: 100%; }
+  .wipe__badge {
+    position: absolute; top: 8px; font-family: var(--mono); font-size: 0.72rem;
+    background: var(--ink); color: var(--bg); padding: 0.15em 0.55em; border-radius: 4px;
+    line-height: 1.3;
+  }
+  .wipe__badge--before { left: 8px; }
+  .wipe__badge--after { right: 8px; }
+  .wipe__handle {
+    position: absolute; top: 0; bottom: 0; width: 2px; background: var(--accent);
+    transform: translateX(-1px); pointer-events: none;
+  }
+  .wipe__range { width: 100%; margin-top: 0.6rem; min-height: 40px; accent-color: var(--accent); }
+  .wipe noscript { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+  .wipe noscript img { width: 100%; height: auto; border: 1px solid var(--rule); border-radius: 8px; }
+  /* Portfolio-only override: .gallery .fig img (below) forces a border + white
+     bg on every gallery image; the stacked wipe images must not carry that, or
+     the absolutely-positioned "after" layer misaligns. Beats .gallery .fig img. */
+  .gallery .fig .wipe__img { border: 0; background: transparent; }
 </style>
 
 <div class="preview-note">
-  <strong>Work in progress</strong> — this portfolio is being actively built out. Last&nbsp;updated <span class="wip-updated">2026-07-10 8:27 AM CT</span>.
+  <strong>Work in progress</strong> — this portfolio is being actively built out. Last&nbsp;updated <span class="wip-updated">2026-07-10 9:14 AM CT</span>.
 </div>
 
 <div class="layout">
@@ -480,15 +515,41 @@
         not drawn by hand.</figcaption>
       </figure>
       <figure class="fig">
-        <img src="assets/d1_before_regeneration.png" alt="An earlier render of the Lovelace's Loop problem page where the hill sits on an incorrect two-level ground" loading="lazy">
-        <figcaption class="figcap"><b>Fig.&nbsp;4</b> — Caught in review: an
-        earlier render with flawed ground geometry (two levels)&hellip;</figcaption>
+        <div class="wipe" data-wipe
+             data-before="assets/d1_before_regeneration.png"
+             data-after="assets/d1_after_regeneration.png"
+             data-before-alt="An earlier render of the Lovelace's Loop problem page where the hill sits on an incorrect two-level ground"
+             data-after-alt="The corrected Lovelace's Loop page with continuous ground under the circular hill"
+             data-before-label="Flawed render"
+             data-after-label="Regenerated">
+          <noscript>
+            <img src="assets/d1_before_regeneration.png" alt="An earlier render of the Lovelace's Loop problem page where the hill sits on an incorrect two-level ground" loading="lazy">
+            <img src="assets/d1_after_regeneration.png" alt="The corrected Lovelace's Loop page with continuous ground under the circular hill" loading="lazy">
+          </noscript>
+        </div>
+        <figcaption class="figcap"><b>Fig.&nbsp;4</b> — Caught in review, then
+        regenerated: <em>drag the handle</em> to wipe between an earlier render
+        with flawed ground geometry (two levels) and the page re-derived from
+        corrected drawing code. Regenerate, don&rsquo;t patch.</figcaption>
       </figure>
       <figure class="fig">
-        <img src="assets/d1_after_regeneration.png" alt="The corrected Lovelace's Loop page with continuous ground under the circular hill" loading="lazy">
-        <figcaption class="figcap"><b>Fig.&nbsp;5</b> — &hellip;and the page
-        that replaced it, re-derived from the corrected drawing code.
-        Regenerate, don&rsquo;t patch.</figcaption>
+        <div class="wipe" data-wipe
+             data-before="assets/handwritten_era_test_2000.png"
+             data-after="assets/k15_eulers_hilltop_page.png"
+             data-before-alt="A friction test I wrote in 2000: typed, text-only problems titled Unit 3.5 Friction, a blank unfilled name line, and a coefficients-of-friction table — no diagrams"
+             data-after-alt="A 2026 generated page, Euler's Hilltop, with a computed hill-and-track diagram, two energy bar-chart scaffolds, and a historical vignette"
+             data-before-label="2000"
+             data-after-label="2026">
+          <noscript>
+            <img src="assets/handwritten_era_test_2000.png" alt="A friction test I wrote in 2000: typed, text-only problems titled Unit 3.5 Friction, a blank unfilled name line, and a coefficients-of-friction table — no diagrams" loading="lazy">
+            <img src="assets/k15_eulers_hilltop_page.png" alt="A 2026 generated page, Euler's Hilltop, with a computed hill-and-track diagram, two energy bar-chart scaffolds, and a historical vignette" loading="lazy">
+          </noscript>
+        </div>
+        <figcaption class="figcap"><b>Fig.&nbsp;5</b> — A quarter century of the
+        same course: <em>drag</em> between a friction test I typed in 2000
+        (text only — students drew every diagram by hand) and a 2026 page the
+        engine generates from code — computed diagram, energy scaffolds, and a
+        historical vignette.</figcaption>
       </figure>
       <figure class="fig">
         <img src="assets/loc_tracker_render.png" alt="The platform's own lines-of-code tracker render: stacked daily bars by project rising from 848 thousand to 1.5 million lines, with per-project subcharts" loading="lazy">
@@ -616,6 +677,14 @@
 
 </div><!-- /.content -->
 </div><!-- /.layout -->
+
+<!-- Before/after wipe sliders (P4, Figs 4 & 5). The ONE shared module
+     public/assets/js/wipe_slider.js (D-0 single-module rule; the systems wing
+     consumes the same file). Classic script — self-inits on DOMContentLoaded,
+     upgrades every [data-wipe] figure to a native-range wipe (keyboard + pointer
+     + touch), and degrades to the <noscript> side-by-side with JS off. The frame
+     carries no pointer handlers, so vertical swipes keep scrolling the page. -->
+<script src="./assets/js/wipe_slider.js"></script>
 
 <!-- Fig. 1 interactive field lab (P3). ES module = needs an http origin (fine
      on Pages / localhost; dead on file://, per site/RUNBOOK.md). Drives the
