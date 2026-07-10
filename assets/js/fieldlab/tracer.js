@@ -42,6 +42,48 @@ export const DEFAULTS = Object.freeze({
   equipMaxSteps: 2400,
 });
 
+// ---- equipotential level-family constants (plan §4a numeric contract) -------
+// The drawn equipotentials are a UNIFORM-ΔV family k·ΔV (k integer, includes 0)
+// with ΔV = Vcap_strong / N_SIDE, Vcap_strong = |q_strong| / R_MIN,
+// R_MIN = R_MIN_FACTOR·r0. These literals are frozen and MUST match the P3
+// Python fixture generator byte-for-byte (the 1e-12 cross-language level match
+// silently depends on r0 being identical on both sides).
+export const R_MIN_FACTOR = 2.5;   // R_MIN = 2.5·r0 = 25 px at r0=10
+export const N_SIDE = 6;           // rings per side of the strongest charge
+
+// Membership slack for the integer-side k-range (plan §4a): reused as the
+// endpoint-inclusion tolerance so k_max = floor((Vcap_pos + slack)/ΔV) lands on
+// the promised endpoint even when Vcap_pos/ΔV sits one ULP under an integer.
+export const LEVEL_MEMBERSHIP_REL = 1e-9;   // × Vcap_strong
+
+// Null-point (E≈0 saddle) bail for the equip tracer (plan §4c-iv). Below this
+// |E| the Newton correction s=(V−V0)/|E| and the perpendicular direction are
+// ill-conditioned, so the trace bails (bidirectional tracing then draws the
+// contour up to the saddle from both sides). MEASURED in P1, recorded in the
+// state-dir evidence epsilon_E_measurement_2026-07-10.txt (all 5 presets ×
+// canonical / minSep-clamp / dragged):
+//   * the smallest |E| on any VISIBLE kept-contour point is 1.594e-6 — the
+//     +1/−1 minSep V=0 separatrix at the canvas edge; the canonical & dragged
+//     minima are >= 8.4e-6 (far-field tails that dip toward 1e-6 lie in the
+//     invisible padded margin and escape the box regardless);
+//   * the true on-axis saddle has |E|->0, staying below 1e-6 within ~1 equipStep
+//     of it (measured growth 5e-7–2e-5 /px across +2/−1, +3/−1, +3/−2).
+// So 1e-6 sits below every legitimate VISIBLE contour field (no visible
+// truncation) yet bails within one step of a threaded null.
+export const EQUIP_EPS_E = 1e-6;
+
+// Seed-precision V-residual disjunct (plan §4c-i). The seed bisection stops on the
+// bracket-width disjunct (≤ 0.05 px) OR this V residual; the seed then gets ONE
+// Newton correction before it enters the polyline, so check (c) samples the
+// Newton-bound residual, never the bisection-bound one. FROZEN in P2 at 0.1·tol_c:
+// P2 measured check (c)'s frozen tolerance tol_c = 1e-5 (max off-level residual
+// |V(p)−level| across every traced point of all 5 presets = 1.6445e-6, at the +3/−2
+// innermost ring 23.5 px from the strong charge — see the state-dir record
+// P2_step0_shipped_family_2026-07-10.txt), so the seed contributes at most 10% of
+// tol_c. (P1 shipped a provisional 1e-7; this replaces it with the principled
+// 0.1·tol_c per §4c-i's freeze-order note.)
+export const EQUIP_SEED_V_RESID = 1e-6;   // = 0.1 · tol_c (tol_c = 1e-5, P2-frozen)
+
 // gauss_expected(q1, q2): the number of field lines seeded — and therefore the
 // expected len(traces_per_charge) at the model layer. Only the positive
 // (source) charge seeds lines, so this is LINES_PER_UNIT × |source charge|.
@@ -167,79 +209,249 @@ export function traceField(chs, opts) {
   return lines;
 }
 
-// Trace one equipotential from (sx, sy): step perpendicular to E, then
-// Newton-correct back onto the level set V0 (V decreases along E, so the
-// correction is s = (V − V0) / |E|). Closes the loop when it returns near the
-// seed. Mirrors the hero tracer exactly.
-export function traceEquip(sx, sy, chs, opts) {
-  const step = opts.equipStep, margin = opts.equipMargin, maxSteps = opts.equipMaxSteps;
-  const w = opts.w, h = opts.h;
-  const pts = [[sx, sy]];
-  let px = sx, py = sy;
-  const V0 = potentialAt(sx, sy, chs);
-  for (let k = 0; k < maxSteps; k++) {
-    let f = fieldRaw(px, py, chs);
-    if (!f) break;
-    px += (-f[1] / f[2]) * step;   // perpendicular to E
-    py += (f[0] / f[2]) * step;
-    f = fieldRaw(px, py, chs);
-    if (!f) break;
-    let s = (potentialAt(px, py, chs) - V0) / f[2];
-    if (s > step) s = step; else if (s < -step) s = -step;
-    px += (f[0] / f[2]) * s;       // Newton-correct back onto V0
-    py += (f[1] / f[2]) * s;
-    pts.push([px, py]);
-    if (k > 14 && Math.hypot(px - sx, py - sy) < step * 1.5) { pts.push([sx, sy]); break; }
-    if (px < -margin || px > w + margin || py < -margin || py > h + margin) break;
+// ---------------------------------------------------------------------------
+// LEVEL-FIRST EQUIPOTENTIALS (plan fieldlab_equipotential_levels_v1, §4a–4d)
+//
+// The equipotential layer is chosen as potential VALUES, not seed geometry: a
+// uniform-ΔV family (so spacing honestly encodes |E|), seeded by scanning the
+// charge axis for every level's crossings, traced level-true and bidirectionally
+// so open and mid-band contours (incl. the V=0 separatrix) render in full.
+// ---------------------------------------------------------------------------
+
+// selectEquipLevels(chs, opts): the uniform-ΔV family, PURE and depending ONLY
+// on the charge MAGNITUDES (never positions — the level-set is drag-invariant,
+// plan §4a). ΔV = Vcap_strong / N_SIDE, Vcap_strong = |q_strong| / R_MIN,
+// R_MIN = R_MIN_FACTOR·r0. The k-range is computed INTEGER-SIDE (plan §4a's
+// mandatory form) — the keep-if SCAN form is forbidden because it coin-flips an
+// endpoint by 1 ULP. Levels are RAW doubles k·ΔV: no rounding (NOT
+// even_levels()'s 6-dp rounding, which breaks uniform-ΔV for non-decimal ΔV).
+// Returns the levels plus the constants the P3 fixture and check (g) cross-check.
+export function selectEquipLevels(chs, opts) {
+  const o = Object.assign({}, DEFAULTS, opts);
+  const r0 = o.r0;
+  const R_MIN = R_MIN_FACTOR * r0;
+  let qPos = 0, qNeg = 0;                 // strongest +charge, most-negative charge
+  for (let i = 0; i < chs.length; i++) {
+    const q = chs[i][2];
+    if (q > qPos) qPos = q;
+    if (q < qNeg) qNeg = q;
   }
-  return pts;
+  const qStrong = Math.max(qPos, Math.abs(qNeg));
+  if (qStrong <= 0) {
+    return { levels: [], dV: 0, kMin: 0, kMax: 0, VcapStrong: 0, VcapPos: 0, VcapNeg: 0, r0, R_MIN, N_SIDE };
+  }
+  const VcapStrong = qStrong / R_MIN;
+  const dV = VcapStrong / N_SIDE;
+  const VcapPos = qPos / R_MIN;           // 0 when there is no positive charge
+  const VcapNeg = Math.abs(qNeg) / R_MIN; // 0 when there is no negative charge
+  const slack = LEVEL_MEMBERSHIP_REL * VcapStrong;   // ties on a ULP-boundary preset
+  // Single-signed degenerate branch needs NO separate code: a missing sign's
+  // Vcap is 0, so k_min = −floor((0+slack)/ΔV) = −floor(6e-9) = 0 (plan §4a).
+  const kMax = Math.floor((VcapPos + slack) / dV);
+  const kMin = -Math.floor((VcapNeg + slack) / dV);
+  const levels = [];
+  for (let k = kMin; k <= kMax; k++) levels.push(k * dV);
+  return { levels, dV, kMin, kMax, VcapStrong, VcapPos, VcapNeg, r0, R_MIN, N_SIDE };
 }
 
-// Seed points for equipotential rings: nested rings OUTWARD from each charge
-// (away from the other charge), count/spacing scaling with |charge| so a bigger
-// charge gets more, larger rings. Seeding relative to the LIVE charge positions
-// is what makes the equipotentials RECOMPUTE on every drag / ratio change.
-export function equipSeeds(chs, opts) {
-  const r0 = opts.r0;
+// clipLineToBox(bx, by, dx, dy, xlo, xhi, ylo, yhi): the [tMin, tMax] param
+// range for which (bx,by)+t·(dx,dy) lies inside the box, or null. Used to extend
+// the charge-axis scan across the full padded canvas (slab / Liang-Barsky clip).
+function clipLineToBox(bx, by, dx, dy, xlo, xhi, ylo, yhi) {
+  let tmin = -Infinity, tmax = Infinity;
+  if (Math.abs(dx) < 1e-12) {
+    if (bx < xlo || bx > xhi) return null;
+  } else {
+    let ta = (xlo - bx) / dx, tb = (xhi - bx) / dx;
+    if (ta > tb) { const s = ta; ta = tb; tb = s; }
+    tmin = Math.max(tmin, ta); tmax = Math.min(tmax, tb);
+  }
+  if (Math.abs(dy) < 1e-12) {
+    if (by < ylo || by > yhi) return null;
+  } else {
+    let ta = (ylo - by) / dy, tb = (yhi - by) / dy;
+    if (ta > tb) { const s = ta; ta = tb; tb = s; }
+    tmin = Math.max(tmin, ta); tmax = Math.min(tmax, tb);
+  }
+  if (tmin > tmax) return null;
+  return [tmin, tmax];
+}
+
+// equipSeedsForLevels(chs, levels, opts): axis-scan seeding (plan §4b). Sample V
+// densely along the full charge axis extended to the padded canvas; per level,
+// bracket sign changes of V−level and bisect to a stopping rule; ONE Newton
+// correction lands the seed on the level (the seed IS a trace point, §4c-i).
+// COMPLETENESS: two point-charge equipotentials are surfaces of revolution about
+// the charge axis, so every planar component crosses that line — axis-scan
+// cannot miss a component. That argument holds ONLY for N<=2 (asserted).
+// SEED-DROP guard (§4b): drop crossings within r_drop ≈ 15·equipStep/(2π) ≈ 5 px
+// of a charge — sized from the trace's own failure modes (fieldRaw r<1 bail;
+// rings too small for the >14-step closure window), NOT from R_MIN, so the +3/−1
+// k=−2 endpoint (axis crossings at r≈19–20 px) and the minSep separatrix survive.
+// Each returned seed carries its TARGET level for level-true tracing.
+export function equipSeedsForLevels(chs, levels, opts) {
+  if (chs.length > 2) {
+    throw new Error('equipSeedsForLevels: axis-scan completeness holds only for '
+      + 'N<=2 point charges; N>' + 2 + ' needs pairwise scan lines + off-axis '
+      + 'component handling (plan §4b N<=2 precondition)');
+  }
+  const o = Object.assign({}, DEFAULTS, opts);
+  const w = o.w, h = o.h, margin = o.equipMargin;
+  if (!chs.length) return [];
+  // Scan line: through both charges (N=2), or +x through the single charge (N=1,
+  // trivially complete by spherical symmetry).
+  let bx = chs[0][0], by = chs[0][1], dx = 1, dy = 0;
+  if (chs.length === 2) { dx = chs[1][0] - chs[0][0]; dy = chs[1][1] - chs[0][1]; }
+  const dm = Math.hypot(dx, dy) || 1;
+  dx /= dm; dy /= dm;
+  const box = clipLineToBox(bx, by, dx, dy, -margin, w + margin, -margin, h + margin);
+  if (!box) return [];
+  const [t0, t1] = box;
+  const nSamp = 2000;
+  const ts = new Array(nSamp), vs = new Array(nSamp);
+  for (let i = 0; i < nSamp; i++) {
+    const t = t0 + (t1 - t0) * i / (nSamp - 1);
+    ts[i] = t;
+    vs[i] = potentialAt(bx + dx * t, by + dy * t, chs);
+  }
+  const rDrop = 15 * o.equipStep / (2 * Math.PI);   // ~5 px at equipStep=2 (§4b)
   const seeds = [];
-  for (let i = 0; i < chs.length; i++) {
-    // Outward = away from the nearest other charge (falls back to +x if alone).
-    let ox = 1, oy = 0;
-    let bestD2 = Infinity, oj = -1;
-    for (let j = 0; j < chs.length; j++) {
-      if (j === i) continue;
-      const dx = chs[i][0] - chs[j][0], dy = chs[i][1] - chs[j][1];
-      const d2 = dx * dx + dy * dy;
-      if (d2 < bestD2) { bestD2 = d2; oj = j; }
-    }
-    if (oj >= 0) {
-      const dx = chs[i][0] - chs[oj][0], dy = chs[i][1] - chs[oj][1];
-      const m = Math.hypot(dx, dy) || 1;
-      ox = dx / m; oy = dy / m;
-    }
-    const m = Math.abs(chs[i][2]);
-    const nRings = Math.min(5, 2 + Math.round(m));
-    const spread = Math.sqrt(m);
-    for (let k = 1; k <= nRings; k++) {
-      const off = r0 + k * 13 * spread;
-      seeds.push([chs[i][0] + ox * off, chs[i][1] + oy * off]);
+  for (let li = 0; li < levels.length; li++) {
+    const level = levels[li];
+    for (let i = 1; i < nSamp; i++) {
+      const fa = vs[i - 1] - level, fb = vs[i] - level;
+      if (fa === 0 || (fa < 0) !== (fb < 0)) {
+        // bisect the [i-1, i] bracket to the P1 stopping rule
+        let ta = ts[i - 1], tb = ts[i], fA = fa;
+        for (let it = 0; it < 60; it++) {
+          if (Math.abs(tb - ta) <= 0.05) break;      // bracket-width disjunct (px)
+          const tm = 0.5 * (ta + tb);
+          const fm = potentialAt(bx + dx * tm, by + dy * tm, chs) - level;
+          if (Math.abs(fm) <= EQUIP_SEED_V_RESID) { ta = tb = tm; break; }
+          if ((fm < 0) === (fA < 0)) { ta = tm; fA = fm; } else { tb = tm; }
+        }
+        const tmid = 0.5 * (ta + tb);
+        let sx = bx + dx * tmid, sy = by + dy * tmid;
+        // ONE Newton correction of the seed onto the level (seed IS a trace point)
+        const fr = fieldRaw(sx, sy, chs);
+        if (fr && fr[2] >= EQUIP_EPS_E) {
+          let s = (potentialAt(sx, sy, chs) - level) / fr[2];
+          if (s > o.equipStep) s = o.equipStep; else if (s < -o.equipStep) s = -o.equipStep;
+          sx += (fr[0] / fr[2]) * s;
+          sy += (fr[1] / fr[2]) * s;
+        }
+        // seed-drop guard
+        let tooClose = false;
+        for (let c = 0; c < chs.length; c++) {
+          if (Math.hypot(sx - chs[c][0], sy - chs[c][1]) < rDrop) { tooClose = true; break; }
+        }
+        if (!tooClose) seeds.push({ x: sx, y: sy, level });
+      }
     }
   }
   return seeds;
 }
 
+// traceEquipDir: ONE directional equipotential trace from (sx, sy) along the
+// perpendicular to E (dir = +1 or −1 chooses the side). Level-true: V0 = the
+// requested LEVEL (§4c-i), NOT potentialAt(seed). Bails at the E≈0 null point
+// (|E| < EQUIP_EPS_E, §4c-iv). Returns { pts, closed }.
+function traceEquipDir(sx, sy, level, o, dir) {
+  const step = o.equipStep, margin = o.equipMargin, maxSteps = o.equipMaxSteps;
+  const w = o.w, h = o.h, chs = o.chs;
+  const pts = [[sx, sy]];
+  let px = sx, py = sy, closed = false;
+  for (let k = 0; k < maxSteps; k++) {
+    let f = fieldRaw(px, py, chs);
+    if (!f || f[2] < EQUIP_EPS_E) break;         // null-point / near-charge bail
+    px += dir * (-f[1] / f[2]) * step;           // perpendicular to E
+    py += dir * (f[0] / f[2]) * step;
+    f = fieldRaw(px, py, chs);
+    if (!f || f[2] < EQUIP_EPS_E) break;
+    let s = (potentialAt(px, py, chs) - level) / f[2];   // V0 = level
+    if (s > step) s = step; else if (s < -step) s = -step;
+    px += (f[0] / f[2]) * s;                      // Newton-correct onto the level
+    py += (f[1] / f[2]) * s;
+    pts.push([px, py]);
+    if (k > 14 && Math.hypot(px - sx, py - sy) < step * 1.5) { pts.push([sx, sy]); closed = true; break; }
+    if (px < -margin || px > w + margin || py < -margin || py > h + margin) break;
+  }
+  return { pts, closed };
+}
+
+// traceEquip(sx, sy, level, chs, opts): the full contour through the seed.
+// Traces forward; if it did NOT close (margin escape, fieldRaw/null bail, or
+// maxSteps exhaustion — regardless of reason, §4c-ii), re-traces the other
+// direction and concatenates reversed, deduping the shared seed. Returns
+// { level, pts, closed } (closed = endpoints within closure distance).
+export function traceEquip(sx, sy, level, chs, opts) {
+  const o = Object.assign({}, DEFAULTS, opts, { chs });
+  const step = o.equipStep;
+  const fwd = traceEquipDir(sx, sy, level, o, +1);
+  if (fwd.closed) return { level, pts: fwd.pts, closed: true };
+  const bwd = traceEquipDir(sx, sy, level, o, -1);
+  const pts = bwd.pts.slice().reverse().concat(fwd.pts.slice(1)); // [...bwd, seed, ...fwd]
+  const a = pts[0], b = pts[pts.length - 1];
+  const closed = pts.length > 3 && Math.hypot(a[0] - b[0], a[1] - b[1]) < step * 1.5;
+  return { level, pts, closed };
+}
+
+// Point-to-segment distance + "is (px,py) within tol of any polyline" — the
+// per-level closed-contour dedup test (§4c-iii).
+function pointSegDist(px, py, ax, ay, bx, by) {
+  const dx = bx - ax, dy = by - ay;
+  const l2 = dx * dx + dy * dy;
+  let t = l2 > 0 ? ((px - ax) * dx + (py - ay) * dy) / l2 : 0;
+  if (t < 0) t = 0; else if (t > 1) t = 1;
+  return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
+}
+function nearAnyPolyline(px, py, polylines, tol) {
+  for (let p = 0; p < polylines.length; p++) {
+    const poly = polylines[p];
+    for (let i = 1; i < poly.length; i++) {
+      if (pointSegDist(px, py, poly[i - 1][0], poly[i - 1][1], poly[i][0], poly[i][1]) < tol) return true;
+    }
+  }
+  return false;
+}
+
 // The single entry point the browser controller AND the headless test both
-// call. Returns everything needed to draw or to assert on the scene.
+// call. `equips` is now the TAGGED shape [{ level, pts }, …] (plan §4d).
 export function computeScene(chs, opts) {
   const o = Object.assign({}, DEFAULTS, opts);
   const src = sourceIndex(chs);
   o.sourceIdx = src;
   const lines = traceField(chs, o);
-  const equips = equipSeeds(chs, o).map((s) => traceEquip(s[0], s[1], chs, o));
+
+  // Level-first equipotentials: choose levels, seed by axis-scan, trace each.
+  const { levels } = selectEquipLevels(chs, o);
+  const seeds = equipSeedsForLevels(chs, levels, o);
+  const equips = [];
+  // Per-level dedup: a CLOSED loop crosses the axis twice, so its second seed
+  // lies on the already-traced loop — skip it. Open/truncated polylines never
+  // suppress later seeds (they may hold a level's untraced remainder, §4c-iii).
+  const closedByLevel = new Map();
+  for (let si = 0; si < seeds.length; si++) {
+    const seed = seeds[si];
+    const prior = closedByLevel.get(seed.level);
+    if (prior && nearAnyPolyline(seed.x, seed.y, prior, 2 * o.equipStep)) continue;
+    const tr = traceEquip(seed.x, seed.y, seed.level, chs, o);
+    if (tr.pts.length < 2) continue;
+    equips.push({ level: seed.level, pts: tr.pts });
+    if (tr.closed) {
+      let arr = closedByLevel.get(seed.level);
+      if (!arr) { arr = []; closedByLevel.set(seed.level, arr); }
+      arr.push(tr.pts);
+    }
+  }
+
   const tracesPerCharge = {};
   tracesPerCharge[src] = lines.length;
   const terminated = lines.filter((l) => l.terminatedOn >= 0).length;
-  return { sourceIdx: src, lines, equips, tracesPerCharge, terminated, escaped: lines.length - terminated };
+  return {
+    sourceIdx: src, lines, equips, levels,
+    tracesPerCharge, terminated, escaped: lines.length - terminated,
+  };
 }
 
 export const NAME = 'fieldlab_tracer';

@@ -24,19 +24,12 @@
 // Reduced motion: full static render, drag still works, NO draw-in animation.
 
 import { computeScene, sourceIndex, DEFAULTS } from './tracer.js';
+// Scene geometry (default charges + ratio presets) comes from the ONE canonical
+// scene module, so the page renders EXACTLY the geometry the gate validates
+// (plan P1). RATIO_PRESETS is re-exported to preserve this module's API surface.
+import { DEFAULT_CHARGES, RATIO_PRESETS } from './scenes.js';
+export { RATIO_PRESETS };
 
-// The ratio presets the control exposes. All keep |source| >= |sink| so the
-// source-seeding model is physically complete (no lines-from-infinity). Default
-// is +2 / -1 — the exact figure that already shipped in the hero.
-export const RATIO_PRESETS = [
-  { key: '1,-1', q0: 1, q1: -1, label: '+1 / −1' },
-  { key: '2,-1', q0: 2, q1: -1, label: '+2 / −1' },
-  { key: '3,-1', q0: 3, q1: -1, label: '+3 / −1' },
-  { key: '2,-2', q0: 2, q1: -2, label: '+2 / −2' },
-  { key: '3,-2', q0: 3, q1: -2, label: '+3 / −2' },
-];
-
-const DEFAULT_CHARGES = [[0.30, 0.52, 2], [0.70, 0.52, -1]]; // fractional x,y,q
 
 export function initFieldLab(canvas, config) {
   if (!canvas || !canvas.getContext) return null;
@@ -135,7 +128,8 @@ export function initFieldLab(canvas, config) {
     ctx.globalAlpha = 0.55 * p;
     ctx.lineWidth = 1 * dpr;
     ctx.setLineDash([5 * dpr, 5 * dpr]);
-    for (const pts of frame.scene.equips) {
+    for (const eq of frame.scene.equips) {   // eq = { level, pts } (tagged shape)
+      const pts = eq.pts;
       if (pts.length < 2) continue;
       ctx.beginPath();
       ctx.moveTo(pts[0][0] * dpr, pts[0][1] * dpr);
@@ -310,10 +304,12 @@ export function initFieldLab(canvas, config) {
   function updateAria() {
     const q0 = charges[0][2], q1 = charges[1][2];
     canvas.setAttribute('aria-label',
-      `Electric field lines and dashed equipotential curves from a two-charge `
-      + `system, charges plus ${Math.abs(q0)} and minus ${Math.abs(q1)}, traced `
-      + `numerically by this page, with midline direction arrows. Drag either `
-      + `charge, or use the charge-ratio buttons, to recompute.`);
+      `Electric field lines and dashed equipotential curves at equal potential `
+      + `steps from a two-charge system, charges plus ${Math.abs(q0)} and minus `
+      + `${Math.abs(q1)}, traced numerically by this page, with midline direction `
+      + `arrows. Because the potential step between adjacent dashed curves is `
+      + `constant, their spacing shows the field strength. Drag either charge, or `
+      + `use the charge-ratio buttons, to recompute.`);
     if (cfg.controlsEl) {
       const key = `${q0},${q1}`;
       cfg.controlsEl.querySelectorAll('[data-ratio]').forEach((b) => {
