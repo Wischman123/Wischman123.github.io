@@ -166,6 +166,73 @@
   }
   .figcap b { color: var(--ink); font-weight: 600; }
 
+  /* ---------- field lab (interactive Fig. 1) ---------- */
+  .fl-stage { position: relative; }
+  /* touch-action: pan-y keeps vertical PAGE SCROLL working over the canvas on
+     mobile (a background swipe still scrolls); a grab on a charge captures the
+     pointer so the drag doesn't scroll. Mouse + keyboard get full 2-D control. */
+  #fieldfig { cursor: grab; touch-action: pan-y; border-radius: 2px; }
+  #fieldfig:active { cursor: grabbing; }
+  #fieldfig:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .fl-hint {
+    position: absolute;
+    left: 50%;
+    bottom: 10px;
+    transform: translateX(-50%);
+    margin: 0;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    background: var(--bg-raised);
+    background: color-mix(in srgb, var(--bg) 84%, transparent);
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    padding: 4px 12px;
+    pointer-events: none;
+    opacity: 0.92;
+    transition: opacity 0.4s ease;
+  }
+  .fl-hint[data-dismissed="true"] { opacity: 0; }
+  .fl-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 7px;
+    margin-top: 14px;
+  }
+  .fl-clabel {
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-soft);
+    margin-right: 2px;
+  }
+  .fl-controls button {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 12px;
+    color: var(--ink-soft);
+    background: var(--bg-raised);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 5px 9px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .fl-controls button:hover { color: var(--ink); border-color: var(--ink-soft); }
+  .fl-controls button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .fl-controls button[aria-pressed="true"] {
+    color: var(--accent-text);
+    border-color: var(--accent);
+    background: var(--bg-raised);
+    background: color-mix(in srgb, var(--accent) 9%, var(--bg-raised));
+  }
+  .fl-controls .fl-reset { margin-left: auto; color: var(--ink-soft); }
+
   /* ---------- placeholder frames (graph paper) ---------- */
   .frame {
     border: 1.5px dashed var(--rule);
@@ -299,7 +366,7 @@
 </style>
 
 <div class="preview-note">
-  <strong>Work in progress</strong> — this portfolio is being actively built out. Last&nbsp;updated <span class="wip-updated">2026-07-10 7:46 AM CT</span>.
+  <strong>Work in progress</strong> — this portfolio is being actively built out. Last&nbsp;updated <span class="wip-updated">2026-07-10 8:27 AM CT</span>.
 </div>
 
 <div class="layout">
@@ -325,14 +392,27 @@
     generating assessments with computed diagrams, grading scanned paper locally,
     and writing every student a narrative report.</p>
   </div>
-  <figure class="fig">
-    <canvas id="fieldfig" role="img" aria-label="Electric field lines and dashed equipotential curves from a two-charge system, charges plus two and minus one, traced numerically by this page with midline direction arrows"></canvas>
+  <figure class="fig" id="fieldlab">
+    <div class="fl-stage">
+      <canvas id="fieldfig" role="img" aria-label="Electric field lines and dashed equipotential curves from a two-charge system, charges plus two and minus one, traced numerically by this page with midline direction arrows. Drag either charge, or use the charge-ratio buttons, to recompute."></canvas>
+      <p class="fl-hint" id="fl-hint" aria-hidden="true">drag a charge</p>
+    </div>
+    <div class="fl-controls" id="fl-controls" role="group" aria-label="Charge ratio">
+      <span class="fl-clabel">Charge&nbsp;ratio</span>
+      <button type="button" data-ratio="1,-1" aria-pressed="false">+1&nbsp;/&nbsp;&minus;1</button>
+      <button type="button" data-ratio="2,-1" aria-pressed="true">+2&nbsp;/&nbsp;&minus;1</button>
+      <button type="button" data-ratio="3,-1" aria-pressed="false">+3&nbsp;/&nbsp;&minus;1</button>
+      <button type="button" data-ratio="2,-2" aria-pressed="false">+2&nbsp;/&nbsp;&minus;2</button>
+      <button type="button" data-ratio="3,-2" aria-pressed="false">+3&nbsp;/&nbsp;&minus;2</button>
+      <button type="button" class="fl-reset" data-reset>Reset</button>
+    </div>
     <figcaption class="figcap"><b>Fig.&nbsp;1</b> — Electric field lines
     (arrowed) and equipotential curves (dashed) from a two-charge system
-    (+2&nbsp;/&nbsp;−1), traced numerically by this page as it loaded — line
+    (+2&nbsp;/&nbsp;&minus;1 to start), traced numerically by this page — line
     counts per Gauss&rsquo;s law, equipotentials perpendicular to the field,
-    per the platform&rsquo;s own validators. The platform emits diagrams like
-    this into Word as native, editable drawing objects.</figcaption>
+    per the platform&rsquo;s own validators. Drag either charge, or switch the
+    ratio, to recompute it live. The platform emits diagrams like this into
+    Word as native, editable drawing objects.</figcaption>
   </figure>
 </header>
 
@@ -537,230 +617,18 @@
 </div><!-- /.content -->
 </div><!-- /.layout -->
 
+<!-- Fig. 1 interactive field lab (P3). ES module = needs an http origin (fine
+     on Pages / localhost; dead on file://, per site/RUNBOOK.md). Drives the
+     page's OWN tracer only — no physics-engine source is published (plan d4). -->
+<script type="module">
+  import { initFieldLab } from './assets/js/fieldlab/fieldlab.js';
+  initFieldLab(document.getElementById('fieldfig'), {
+    hintEl: document.getElementById('fl-hint'),
+    controlsEl: document.getElementById('fl-controls')
+  });
+</script>
 <script>
 (function () {
-  var canvas = document.getElementById('fieldfig');
-  if (!canvas || !canvas.getContext) return;
-  var ctx = canvas.getContext('2d');
-  var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var raf = null;
-
-  function tokens() {
-    var s = getComputedStyle(document.documentElement);
-    return {
-      accent: s.getPropertyValue('--accent').trim() || '#A15A26',
-      ink: s.getPropertyValue('--ink').trim() || '#1E2B33',
-      equip: s.getPropertyValue('--equip').trim() || '#5B7B92'
-    };
-  }
-
-  // Two-charge system, +2 / −1, mirroring the platform's conventions
-  // (physics/lib/charges.py + em_field_map.py):
-  //  - line count out of the source ∝ charge: 16 from +2;
-  //  - Gauss's-law terminations: 16 × |−1|/+2 = 8 land on −1, 8 escape;
-  //  - each field line carries a midline direction arrow (arrow_frac = 0.5);
-  //  - equipotential curves dashed, perpendicular to the field, no arrows
-  //    (EP_LINE_COLOR steel blue in the library; --equip token here);
-  //  - charge circles labeled with relative charge.
-  var Q_POS = 2, Q_NEG = -1, N_LINES = 16;
-
-  function fieldRaw(px, py, chs) {
-    var ex = 0, ey = 0;
-    for (var i = 0; i < chs.length; i++) {
-      var dx = px - chs[i][0], dy = py - chs[i][1];
-      var r2 = dx * dx + dy * dy;
-      if (r2 < 1) return null;
-      var r3 = Math.pow(r2, 1.5);
-      ex += chs[i][2] * dx / r3;
-      ey += chs[i][2] * dy / r3;
-    }
-    var m = Math.hypot(ex, ey);
-    if (m === 0) return null;
-    return [ex, ey, m];
-  }
-
-  function potentialAt(px, py, chs) {
-    var v = 0;
-    for (var i = 0; i < chs.length; i++) {
-      var r = Math.hypot(px - chs[i][0], py - chs[i][1]);
-      if (r < 1) r = 1;
-      v += chs[i][2] / r;
-    }
-    return v;
-  }
-
-  // index + unit direction at fractional arc length (midline arrow spot)
-  function arcMeta(pts, frac) {
-    var cum = [0], i;
-    for (i = 1; i < pts.length; i++) {
-      cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
-    }
-    var target = frac * cum[cum.length - 1];
-    for (i = 1; i < pts.length - 1 && cum[i] < target; i++) {}
-    var dx = pts[i][0] - pts[i - 1][0], dy = pts[i][1] - pts[i - 1][1];
-    var m = Math.hypot(dx, dy) || 1;
-    return { idx: i, x: pts[i][0], y: pts[i][1], ux: dx / m, uy: dy / m };
-  }
-
-  function traceField(chs, w, h, r0) {
-    var lines = [], step = 2.2, margin = 60;
-    var half = Math.PI / N_LINES;   // half-step seed offset -> mirror symmetry
-    for (var i = 0; i < N_LINES; i++) {
-      var a = half + 2 * Math.PI * i / N_LINES;
-      var px = chs[0][0] + r0 * Math.cos(a), py = chs[0][1] + r0 * Math.sin(a);
-      var pts = [[px, py]];
-      for (var k = 0; k < 3000; k++) {
-        var f = fieldRaw(px, py, chs);
-        if (!f) break;
-        px += (f[0] / f[2]) * step; py += (f[1] / f[2]) * step;
-        pts.push([px, py]);
-        if (Math.hypot(px - chs[1][0], py - chs[1][1]) < r0) break;   // terminated on −1
-        if (px < -margin || px > w + margin || py < -margin || py > h + margin) break;  // escaped
-      }
-      lines.push({ pts: pts, arrow: arcMeta(pts, 0.5) });
-    }
-    return lines;
-  }
-
-  // Trace one equipotential: step perpendicular to E, then Newton-correct
-  // back onto the level set (V decreases along E: s = (V - V0) / |E|).
-  function traceEquip(sx, sy, chs, w, h) {
-    var pts = [[sx, sy]], px = sx, py = sy, step = 2.0, margin = 40;
-    var V0 = potentialAt(sx, sy, chs);
-    for (var k = 0; k < 2400; k++) {
-      var f = fieldRaw(px, py, chs);
-      if (!f) break;
-      px += (-f[1] / f[2]) * step;
-      py += (f[0] / f[2]) * step;
-      f = fieldRaw(px, py, chs);
-      if (!f) break;
-      var s = (potentialAt(px, py, chs) - V0) / f[2];
-      if (s > step) s = step; else if (s < -step) s = -step;
-      px += (f[0] / f[2]) * s;
-      py += (f[1] / f[2]) * s;
-      pts.push([px, py]);
-      if (k > 14 && Math.hypot(px - sx, py - sy) < step * 1.5) {   // closed loop
-        pts.push([sx, sy]);
-        break;
-      }
-      if (px < -margin || px > w + margin || py < -margin || py > h + margin) break;
-    }
-    return pts;
-  }
-
-  function drawArrowHead(x, y, ux, uy, size, dpr) {
-    ctx.beginPath();
-    ctx.moveTo((x - size * ux + size * 0.58 * uy) * dpr, (y - size * uy - size * 0.58 * ux) * dpr);
-    ctx.lineTo(x * dpr, y * dpr);
-    ctx.lineTo((x - size * ux - size * 0.58 * uy) * dpr, (y - size * uy + size * 0.58 * ux) * dpr);
-    ctx.stroke();
-  }
-
-  function drawCharges(t, f, dpr) {
-    var bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
-    [[f.chs[0], '+2'], [f.chs[1], '−1']].forEach(function (c) {
-      ctx.lineWidth = 1.5 * dpr;
-      ctx.beginPath();
-      ctx.arc(c[0][0] * dpr, c[0][1] * dpr, f.r0 * dpr, 0, 2 * Math.PI);
-      ctx.fillStyle = bg;
-      ctx.fill();
-      ctx.strokeStyle = t.ink;
-      ctx.stroke();
-      ctx.fillStyle = t.ink;
-      ctx.font = '600 ' + (10.5 * dpr) + 'px ui-monospace, Menlo, monospace';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(c[1], c[0][0] * dpr, c[0][1] * dpr + 0.5 * dpr);
-    });
-  }
-
-  function render() {
-    var w = canvas.clientWidth, h = canvas.clientHeight;
-    if (!w || !h) return;
-    var dpr = Math.min(window.devicePixelRatio || 1, 2);
-    canvas.width = Math.round(w * dpr);
-    canvas.height = Math.round(h * dpr);
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    var t = tokens();
-    var r0 = 10;
-    var chs = [
-      [w * 0.30, h * 0.52, Q_POS],
-      [w * 0.70, h * 0.52, Q_NEG]
-    ];
-    var f = { chs: chs, r0: r0 };
-    var lines = traceField(chs, w, h, r0);
-    var x1 = chs[0][0], x2 = chs[1][0], yc = chs[0][1];
-    var equips = [
-      traceEquip(x1 - 26, yc, chs, w, h),
-      traceEquip(x1 - 38, yc, chs, w, h),
-      traceEquip(x1 - 52, yc, chs, w, h),
-      traceEquip(x1 - 70, yc, chs, w, h),
-      traceEquip(x1 - 92, yc, chs, w, h),
-      traceEquip(x2 + 18, yc, chs, w, h),
-      traceEquip(x2 + 26, yc, chs, w, h),
-      traceEquip(x2 + 36, yc, chs, w, h)
-    ];
-
-    function paint(fraction) {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // equipotentials first: dashed, no arrows, fading in with the draw
-      ctx.strokeStyle = t.equip;
-      ctx.globalAlpha = 0.55 * fraction;
-      ctx.lineWidth = 1 * dpr;
-      ctx.setLineDash([5 * dpr, 5 * dpr]);
-      equips.forEach(function (pts) {
-        if (pts.length < 2) return;
-        ctx.beginPath();
-        ctx.moveTo(pts[0][0] * dpr, pts[0][1] * dpr);
-        for (var k = 1; k < pts.length; k++) ctx.lineTo(pts[k][0] * dpr, pts[k][1] * dpr);
-        ctx.stroke();
-      });
-      ctx.setLineDash([]);
-
-      // field lines + midline arrows
-      ctx.strokeStyle = t.accent;
-      ctx.globalAlpha = 0.7;
-      lines.forEach(function (l) {
-        var pts = l.pts;
-        var n = Math.max(2, Math.floor(pts.length * fraction));
-        ctx.lineWidth = 1 * dpr;
-        ctx.beginPath();
-        ctx.moveTo(pts[0][0] * dpr, pts[0][1] * dpr);
-        for (var k = 1; k < n; k++) ctx.lineTo(pts[k][0] * dpr, pts[k][1] * dpr);
-        ctx.stroke();
-        if (n > l.arrow.idx) {
-          ctx.lineWidth = 1.4 * dpr;
-          drawArrowHead(l.arrow.x, l.arrow.y, l.arrow.ux, l.arrow.uy, 6, dpr);
-        }
-      });
-      ctx.globalAlpha = 1;
-      drawCharges(t, f, dpr);
-    }
-
-    if (raf) cancelAnimationFrame(raf);
-    if (reduced) { paint(1); return; }
-    var t0 = null, DUR = 1400;
-    function tick(ts) {
-      if (t0 === null) t0 = ts;
-      var p = Math.min(1, (ts - t0) / DUR);
-      paint(p * p * (3 - 2 * p)); // smoothstep
-      if (p < 1) raf = requestAnimationFrame(tick);
-    }
-    raf = requestAnimationFrame(tick);
-  }
-
-  var pending = null;
-  function requestRender() {
-    clearTimeout(pending);
-    pending = setTimeout(render, 80);
-  }
-  window.addEventListener('resize', requestRender);
-  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', requestRender);
-  new MutationObserver(requestRender)
-    .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
-  render();
-
   // ---- rail scrollspy (progressive enhancement) ----
   if ('IntersectionObserver' in window) {
     var links = {};
