@@ -125,8 +125,21 @@
     .flowdash{animation:none !important;}
     .pulse{animation:none !important;}
   }
+
+  /* entry hand-off: picks up where index.html's bottom gradient leaves
+     off (that page's warm paper -> this page's cool paper). The
+     --entry-from values mirror index.html's --bg per theme. */
+  .entry-fade{
+    --entry-from:#FAF9F5;
+    height:72px;
+    background:linear-gradient(to bottom, var(--entry-from), var(--paper));
+  }
+  @media (prefers-color-scheme: dark){ .entry-fade{ --entry-from:#212927; } }
+  :root[data-theme="light"] .entry-fade{ --entry-from:#FAF9F5; }
+  :root[data-theme="dark"] .entry-fade{ --entry-from:#212927; }
 </style>
 
+<div class="entry-fade" aria-hidden="true"></div>
 <div class="wrap">
   <p class="eyebrow">Ports &amp; Adapters · Subject-free core</p>
   <h1>The assessment engine, drawn as a hexagon</h1>
