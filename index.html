@@ -330,8 +330,17 @@
   .ch-lab-strong { fill: var(--ink); font-family: var(--mono); font-size: 11px; font-weight: 600; }
 
   /* ---------- how it's built ---------- */
-  .built { margin: 24px 0 0; padding: 0; list-style: none; max-width: 74ch; }
-  .built li { padding: 9px 0; border-bottom: 1px solid var(--rule); font-size: 0.98rem; color: var(--ink-soft); }
+  .built { margin: 24px 0 0; padding: 0; list-style: none; }
+  .built li {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    column-gap: 12px;
+    align-items: baseline;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--rule);
+    font-size: 0.98rem;
+    color: var(--ink-soft);
+  }
   .built li:first-child { border-top: 1px solid var(--rule); }
   .built .kw {
     font-family: var(--mono);
@@ -340,7 +349,6 @@
     text-transform: uppercase;
     letter-spacing: 0.08em;
     color: var(--ink);
-    margin-right: 12px;
   }
   .arch-link { margin-top: 22px; font-size: 1.02rem; }
 
@@ -357,6 +365,8 @@
     .gallery { grid-template-columns: 1fr; }
     .readout .row { grid-template-columns: 1fr; gap: 2px; }
     .readout .val { text-align: left; }
+    .built li { display: block; }
+    .built .kw { display: block; margin-bottom: 2px; }
     .section { padding-top: 56px; }
   }
   @media (prefers-reduced-motion: reduce) {
@@ -398,10 +408,29 @@
      bg on every gallery image; the stacked wipe images must not carry that, or
      the absolutely-positioned "after" layer misaligns. Beats .gallery .fig img. */
   .gallery .fig .wipe__img { border: 0; background: transparent; }
+
+  /* ---------- click-to-enlarge lightbox (gallery stills) ---------- */
+  .gallery .fig > img { cursor: zoom-in; }
+  .lightbox {
+    position: fixed; inset: 0; z-index: 100;
+    display: grid; place-items: center;
+    padding: 20px;
+    background: rgba(14, 17, 16, 0.88);
+    cursor: zoom-out;
+  }
+  .lightbox[hidden] { display: none; }
+  .lightbox img {
+    max-width: min(1600px, 96vw);
+    max-height: 94vh;
+    width: auto; height: auto;
+    border: 1px solid var(--rule);
+    background: #FFFFFF;
+    box-shadow: 0 18px 60px rgba(0, 0, 0, 0.5);
+  }
 </style>
 
 <div class="preview-note">
-  <strong>Work in progress</strong> — this portfolio is being actively built out. Last&nbsp;updated <span class="wip-updated">2026-07-10 1:34 PM CT</span>.
+  <strong>Work in progress</strong> — this portfolio is being actively built out; it should be fully operational by <strong>2026-07-13 @ 6:00&nbsp;AM PDT</strong> (GMT&minus;7). Last&nbsp;updated <span class="wip-updated">2026-07-10 2:59 PM CT</span>.
 </div>
 
 <div class="layout">
@@ -429,7 +458,7 @@
   </div>
   <figure class="fig" id="fieldlab">
     <div class="fl-stage">
-      <canvas id="fieldfig" role="img" aria-label="Electric field lines and dashed equipotential curves from a two-charge system, charges plus two and minus one, traced numerically by this page with midline direction arrows. Drag either charge, or use the charge-ratio buttons, to recompute."></canvas>
+      <canvas id="fieldfig" role="img" aria-label="Electric field lines and dashed equipotential curves at equal potential steps from a two-charge system, charges plus two and minus one, traced numerically by this page with midline direction arrows. Because the potential step between adjacent dashed curves is constant, their spacing shows the field strength. Drag either charge, or use the charge-ratio buttons, to recompute."></canvas>
       <p class="fl-hint" id="fl-hint" aria-hidden="true">drag a charge</p>
     </div>
     <div class="fl-controls" id="fl-controls" role="group" aria-label="Charge ratio">
@@ -444,8 +473,9 @@
     <figcaption class="figcap"><b>Fig.&nbsp;1</b> — Electric field lines
     (arrowed) and equipotential curves (dashed) from a two-charge system
     (+2&nbsp;/&nbsp;&minus;1 to start), traced numerically by this page — line
-    counts per Gauss&rsquo;s law, equipotentials perpendicular to the field,
-    per the platform&rsquo;s own validators. Drag either charge, or switch the
+    counts per Gauss&rsquo;s law, equipotentials drawn at equal potential steps
+    (so their spacing shows the field strength), per the platform&rsquo;s own
+    validators. Drag either charge, or switch the
     ratio, to recompute it live. The platform emits diagrams like this into
     Word as native, editable drawing objects.</figcaption>
   </figure>
@@ -502,17 +532,20 @@
     <h2 id="gal-h">The work, as it ships.</h2>
     <div class="gallery">
       <figure class="fig">
-        <img src="assets/k16_spring_loop_page.png" alt="Generated physics problem page: Leibniz's Spring Loop, with a computed spring-launch-into-loop diagram, three energy bar-chart scaffolds, and a historical vignette about Leibniz" loading="lazy">
+        <img src="assets/k15_eulers_hilltop_page.png" alt="Generated physics problem page: Euler's Hilltop, with a computed ramp-and-hill diagram and energy bar-chart scaffolds" loading="lazy">
         <figcaption class="figcap"><b>Fig.&nbsp;2</b> — A generated problem
-        page, as shipped: computed spring-loop diagram, energy bar-chart
-        scaffolds, historical vignette. Every element from code — no clip
-        art.</figcaption>
+        page, as shipped: the diagram is computed from the problem&rsquo;s own
+        numbers, with energy bar-chart scaffolds and a historical vignette.
+        Every element from code — no clip art.</figcaption>
       </figure>
       <figure class="fig">
-        <img src="assets/k15_eulers_hilltop_page.png" alt="Generated physics problem page: Euler's Hilltop, with a computed ramp-and-hill diagram and energy bar-chart scaffolds" loading="lazy">
-        <figcaption class="figcap"><b>Fig.&nbsp;3</b> — Same engine, different
-        problem: the diagram is computed from the problem&rsquo;s own numbers,
-        not drawn by hand.</figcaption>
+        <img src="assets/k16_solution_guide.png" alt="One page of the generated solution guide for Leibniz's Spring Loop, part c: a free-body diagram of the ball, a line-by-line derivation of the normal force with the reasoning annotated beside each algebra step, and a closing interpretation that the normal force is over 11 times the ball's weight" loading="lazy">
+        <figcaption class="figcap"><b>Fig.&nbsp;3</b> — Every problem ships
+        with a full step-by-step solution guide; this is one of its five pages
+        (part&nbsp;c of &ldquo;Leibniz&rsquo;s Spring Loop&rdquo;): the
+        free-body diagram, each algebra line annotated with the reasoning
+        beside it, and the result interpreted — the track pushes with
+        11&times; the ball&rsquo;s weight.</figcaption>
       </figure>
       <figure class="fig">
         <div class="wipe" data-wipe
@@ -584,10 +617,11 @@
       <figure class="fig">
         <img src="assets/gate_rejection_ui.png" alt="The teacher portal's problems-drafted page: one of two AI drafts passed validation into the review queue, and the other was dropped with its reason listed — a missing free-body diagram." loading="lazy">
         <figcaption class="figcap"><b>Fig.&nbsp;10</b> — The quality gate doing
-        its job: it admits the drafts that pass the physics floor into the
-        review queue and drops the ones that fail — here, one of two dropped for
-        a missing free-body diagram, with the reason shown. No auto-rewrite; a
-        failed draft is never shown for review.</figcaption>
+        its job: drafts that pass the physics floor enter the review queue;
+        drafts that fail are dropped with the reason shown — here, a missing
+        free-body diagram — and the job keeps generating fresh candidates until
+        the requested number pass, within a call budget. A failed draft is
+        never patched in place and never shown for review.</figcaption>
       </figure>
     </div>
     <p class="gallery-note">Deliberately over-filled — the final page keeps
@@ -632,7 +666,7 @@
 
     <figure class="fig chart-fig">
       <!-- FIG10-SVG-START (generated by tools/loc_full_arc.py) -->
-      <svg viewBox="0 0 640 240" role="img" aria-label="First-party lines of code across four git-tracked project repos (physics, tools, research, dotfiles), recomputed from git history under one counting rule, rising from near zero at the mid-March 2026 first commits to about 1.24 million by 2026-07-10.">
+      <svg viewBox="0 0 640 240" role="img" aria-label="First-party lines of code across four git-tracked project repos (physics, tools, research, dotfiles), recomputed from git history under one counting rule, rising from near zero at the mid-March 2026 first commits to about 1.24 million committed lines by 2026-07-10. An open marker above the curve's endpoint shows the 1.53-million-line working-tree total across every tracked directory, the headline figure above the chart.">
       <line class="ch-grid" x1="40" y1="200" x2="620" y2="200"></line>
       <line class="ch-grid" x1="40" y1="144" x2="620" y2="144"></line>
       <line class="ch-grid" x1="40" y1="87" x2="620" y2="87"></line>
@@ -644,8 +678,11 @@
       <path class="ch-area" d="M40,200 L76,196 L112,196 L148,193 L184,188 L220,180 L256,173 L292,163 L327,153 L363,143 L399,134 L435,115 L471,102 L507,89 L543,85 L579,76 L615,61 L620,60 L620,200 L40,200 Z"></path>
       <path class="ch-line" d="M40,200 L76,196 L112,196 L148,193 L184,188 L220,180 L256,173 L292,163 L327,153 L363,143 L399,134 L435,115 L471,102 L507,89 L543,85 L579,76 L615,61 L620,60"></path>
       <circle class="ch-dot" cx="40" cy="200" r="3"></circle>
+      <line class="ch-grid" stroke-dasharray="3 3" x1="620" y1="33" x2="620" y2="55"></line>
       <circle class="ch-dot" cx="620" cy="60" r="3.5"></circle>
-      <text class="ch-lab-strong" x="612" y="53" text-anchor="end">1.24M</text>
+      <circle class="ch-open" cx="620" cy="28" r="4"></circle>
+      <text class="ch-lab-strong" x="610" y="20" text-anchor="end">1.53M <tspan class="ch-lab">working tree, all dirs</tspan></text>
+      <text class="ch-lab-strong" x="610" y="74" text-anchor="end">1.24M <tspan class="ch-lab">committed</tspan></text>
       <text class="ch-lab" x="40" y="218" text-anchor="start">03-19</text>
       <text class="ch-lab" x="148" y="218" text-anchor="middle">04-09</text>
       <text class="ch-lab" x="292" y="218" text-anchor="middle">05-07</text>
@@ -655,7 +692,7 @@
     </svg>
       <!-- FIG10-SVG-END -->
       <!-- FIG10-CAP-START (generated by tools/loc_full_arc.py) -->
-      <figcaption class="figcap"><b>Fig.&nbsp;11</b> — First-party lines of code over the platform&rsquo;s life, recomputed from git history under today&rsquo;s counting rules (2026-07-10) — one rule applied to every historical checkout, back to the mid-March first commit. Plotted: the four separate git repositories with history reaching that far back (physics, tools, research, dotfiles). Their ~1.24M lines are about four-fifths (81%) of the 1,527,768 first-party lines above — that headline is the 2026-07-09 tracker snapshot of the working tree across every tracked directory; this curve counts only what is committed, in these four repositories. <em>The mid-March start is the first commit; the curve is code committed, not hand-tallied.</em></figcaption>
+      <figcaption class="figcap"><b>Fig.&nbsp;11</b> — First-party lines of code over the platform&rsquo;s life, recomputed from git history under today&rsquo;s counting rules (2026-07-10) — one rule applied to every historical checkout, back to the mid-March first commit. The open marker is the 1,527,768 headline above (the 2026-07-09 working-tree snapshot across every tracked directory); only ~1.24M of those lines are committed in the four git repositories with history reaching that far back (physics, tools, research, dotfiles) — that committed subset is the curve. 1,228,602 of the headline&rsquo;s lines sit in physics, tools, dotfiles — the repositories behind the work shown on this page. <em>The mid-March start is the first commit; the curve is code committed, not hand-tallied.</em></figcaption>
       <!-- FIG10-CAP-END -->
     </figure>
   </section>
@@ -680,7 +717,7 @@
 
 <footer class="footer" id="contact">
   <div class="wrap inner">
-    <span class="who">Brendan Wischweh &nbsp;·&nbsp; <a href="mailto:bmwischweh@gmail.com">bmwischweh@gmail.com</a></span>
+    <span class="who">Brendan Wischweh &nbsp;·&nbsp; <a href="mailto:Mr.Wischweh@gmail.com">Mr.Wischweh@gmail.com</a></span>
     <span class="meta">Built with Claude Code — this page included. All student names shown are fictional.</span>
   </div>
 </footer>
@@ -729,5 +766,44 @@
       if (el) spy.observe(el);
     });
   }
+})();
+(function () {
+  // ---- click-to-enlarge lightbox (gallery stills only; the wipe sliders
+  //      and the field lab keep their own drag interactions) ----
+  var stills = document.querySelectorAll('.gallery .fig > img');
+  if (!stills.length) return;
+  var box = document.createElement('div');
+  box.className = 'lightbox';
+  box.hidden = true;
+  box.setAttribute('role', 'dialog');
+  box.setAttribute('aria-modal', 'true');
+  box.setAttribute('aria-label', 'Enlarged figure — click or press Escape to close');
+  var big = document.createElement('img');
+  box.appendChild(big);
+  document.body.appendChild(box);
+  var opener = null;
+  function openBox(img) {
+    opener = img;
+    big.src = img.currentSrc || img.src;
+    big.alt = img.alt || '';
+    box.hidden = false;
+  }
+  function closeBox() {
+    box.hidden = true;
+    big.removeAttribute('src');
+    if (opener) { opener.focus(); opener = null; }
+  }
+  Array.prototype.forEach.call(stills, function (img) {
+    img.setAttribute('tabindex', '0');
+    img.setAttribute('role', 'button');
+    img.addEventListener('click', function () { openBox(img); });
+    img.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openBox(img); }
+    });
+  });
+  box.addEventListener('click', closeBox);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !box.hidden) closeBox();
+  });
 })();
 </script>
