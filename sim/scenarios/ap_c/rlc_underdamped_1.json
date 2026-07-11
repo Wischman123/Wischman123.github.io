@@ -1,0 +1,74 @@
+{
+  "schema_version": "0.1",
+  "id": "rlc_underdamped_1",
+  "title": "RLC underdamped relaxation — series C — L — R (V_0=5V, R=0.2Ω, L=1H, C=1F, ω_d≈0.995 rad/s)",
+  "preset_required": "ap_c",
+  "feature_toggles_required": [],
+  "engine_subsystem": "circuit",
+  "scene_defaults": {
+    "gravity_model": "off",
+    "g": 0,
+    "air_resistance": false,
+    "spring_mass": false,
+    "rope_mass": false
+  },
+  "bodies": [
+    {
+      "id": "placeholder",
+      "type": "particle",
+      "mass_kg": 1,
+      "position_m": { "x": 0, "y": 0 },
+      "velocity_m_per_s": { "x": 0, "y": 0 },
+      "pinned": true
+    }
+  ],
+  "surfaces": [],
+  "fields": [],
+  "forces": [],
+  "constraints": [],
+  "circuit_topology": {
+    "nodes": ["n_top", "n_mid", "gnd"],
+    "ground_node": "gnd",
+    "elements": [
+      {
+        "id": "C1",
+        "type": "Capacitor",
+        "value": 1,
+        "from_node": "n_top",
+        "to_node": "gnd",
+        "initial_voltage": 5,
+        "initial_current": 0
+      },
+      {
+        "id": "L1",
+        "type": "Inductor",
+        "value": 1,
+        "from_node": "n_top",
+        "to_node": "n_mid",
+        "initial_voltage": 5,
+        "initial_current": 0
+      },
+      {
+        "id": "R1",
+        "type": "Resistor",
+        "value": 0.2,
+        "from_node": "n_mid",
+        "to_node": "gnd"
+      }
+    ]
+  },
+  "metadata": {
+    "title": "RLC underdamped relaxation — series C — L — R",
+    "description": "Canonical pedagogical RLC underdamped relaxation fixture (Phase 5.C Step 4(b)5). Series single-loop C — L — R with V_0 = 5 V (cap pre-charged), R = 0.2 Ω, L = 1 H, C = 1 F, no source. Damping parameters: α = R/(2L) = 0.1 s⁻¹, β = 1/(LC) = 1 s⁻², ω_d² = β − α² = 0.99 s⁻², ω_d ≈ 0.99499 rad/s, T_d = 2π/ω_d ≈ 6.31479 s, envelope time constant τ_env = 1/α = 10 s. Closed-form: v_C(t) = V_0·exp(−α·t)·(cos(ω_d·t) + (α/ω_d)·sin(ω_d·t)) oscillates within ±V_0·exp(−α·t) envelope; i(t) = C·dv_C/dt = −(V_0/(L·ω_d))·exp(−α·t)·sin(ω_d·t) is initially zero, then negative during the first half-cycle as the cap discharges (passive sign convention on cap), then oscillates within the same envelope. Initial energy ½·C·V_0² = 12.5 J transfers oscillatorily between cap and inductor while the resistor dissipates monotonically; at t→∞, all 12.5 J has been dissipated by the resistor. Disc-ratio |β − α²|/max(β, α²) = 0.99 — well above the near-critical Taylor threshold (1e-3) and the rejection threshold (1e-6); standard formula path runs. First zero-crossing of v_C at t_1 ≈ 1.6794 s (slightly later than the lightly-damped quarter period T_d/4 ≈ 1.5787 s — the phase shift φ = atan(α/ω_d) ≈ 0.1002 rad is a structural feature of underdamped oscillation). Closure verified to 1e-3 relative error (loosens vs. RC/RL's 1e-4 because oscillatory phase drift accumulates over many cycles) at dt = T_d/200 ≈ 0.0316 s (tightens vs. the 0c JSON dt_pin_rule's T_d/100 upper bound — phase-drift over ~8 oscillation cycles at 5/α exceeds the 1e-3 budget at the upper bound; T_d/200 cuts phase error 4× and leaves headroom) over t ∈ [0, 5/α = 50 s] against the closed-form predictor `rlcUnderdamped` in `sim/scenarios/ap_c/_derivations/circuit_analytic.js` (Phase 5.C Q3=b analytic-primary discipline). The placeholder pinned body is the smallest schema-compliant body the loader requires (`bodies` minItems: 1); circuit-only scenes carry no spatial dynamics, and `engine_subsystem: 'circuit'` opts the scene out of `enforce_3d_scene` per Phase 5.C Q11=m1 lock. Per-scene tolerance LOCKED in 0c JSON: relative_tol=1e-3 at dt=T_d/200, t_horizon=5/α=50 s (per 0c JSON `per_scene_tolerances.rlc_underdamped_1`). SST contract (plan §923-929): parameters in this JSON are the SOLE source of truth; the scene-test parses ONCE and feeds the parsed object to BOTH `runCircuitCheck` and `rlcUnderdamped` — no inline R/L/C/V_0 drift surface. IC pairs (Q8=a overspecification check): cap declares initial_voltage=V_0=5 (dynamic state at t=0) and initial_current=0 (consistent partner — single-loop topology forces i_C = i_L, and inductor enforces i_L(0)=0 via continuity); inductor declares initial_current=0 (dynamic state at t=0) and initial_voltage=V_0=5 (consistent partner — KVL with i=0 forces v_L(0+) = v_C − v_R = V_0). Sign-flip discipline (CRITICAL): inductor is from `n_top` to `n_mid`; conventional current during cap discharge flows positive in the from→to direction, so `i_branch_L1 ≈ −rlcBranchCurrent(t)` (the predictor uses the cap's passive sign convention, returning negative during discharge). 4(b)5 inherits the SST scaffold from 4(b)3 / 4(b)4 directly via copy-and-substitute (extractRCParams / extractRLParams → extractRLCParams).",
+    "tags": ["circuit", "rlc", "underdamped", "transient", "ap_c", "second_order", "oscillatory"]
+  },
+  "simulation": {
+    "duration_s": 12,
+    "integrator": "rk4",
+    "dt_s": 0.02,
+    "adaptive_dt": false
+  },
+  "outputs": [
+    { "quantity": "energy.K" }
+  ]
+}

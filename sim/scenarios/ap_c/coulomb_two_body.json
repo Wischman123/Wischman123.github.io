@@ -1,0 +1,128 @@
+{
+  "schema_version": "0.1",
+  "id": "coulomb_two_body",
+  "title": "Coulomb two-body mutual circular orbit (q=±1 µC, m=1 g, r₀=1 m, T≈1.482 s)",
+  "preset_required": "ap_c",
+  "feature_toggles_required": [],
+  "scene_defaults": {
+    "gravity_model": "off",
+    "g": 0,
+    "air_resistance": false,
+    "spring_mass": false,
+    "rope_mass": false
+  },
+  "bodies": [
+    {
+      "id": "q1",
+      "type": "charge",
+      "mass_kg": 0.001,
+      "charge_C": 0.000001,
+      "position_m": {
+        "x": -0.5,
+        "y": 0
+      },
+      "velocity_m_per_s": {
+        "x": 0,
+        "y": 2.119858485842864
+      }
+    },
+    {
+      "id": "q2",
+      "type": "charge",
+      "mass_kg": 0.001,
+      "charge_C": -0.000001,
+      "position_m": {
+        "x": 0.5,
+        "y": 0
+      },
+      "velocity_m_per_s": {
+        "x": 0,
+        "y": -2.119858485842864
+      }
+    }
+  ],
+  "surfaces": [],
+  "fields": [],
+  "forces": [
+    {
+      "type": "coulomb",
+      "applies_to": [
+        "q1",
+        "q2"
+      ]
+    }
+  ],
+  "constraints": [],
+  "simulation": {
+    "duration_s": 14.81982252386382,
+    "integrator": "rk4",
+    "dt_s": 0.001,
+    "adaptive_dt": false
+  },
+  "outputs": [
+    {
+      "quantity": "position.x",
+      "body_id": "q1"
+    },
+    {
+      "quantity": "position.y",
+      "body_id": "q1"
+    },
+    {
+      "quantity": "velocity.x",
+      "body_id": "q1"
+    },
+    {
+      "quantity": "velocity.y",
+      "body_id": "q1"
+    },
+    {
+      "quantity": "position.x",
+      "body_id": "q2"
+    },
+    {
+      "quantity": "position.y",
+      "body_id": "q2"
+    },
+    {
+      "quantity": "velocity.x",
+      "body_id": "q2"
+    },
+    {
+      "quantity": "velocity.y",
+      "body_id": "q2"
+    },
+    {
+      "quantity": "energy.K"
+    },
+    {
+      "quantity": "energy.U_electric"
+    },
+    {
+      "quantity": "energy.total"
+    }
+  ],
+  "expected": {
+    "tolerance_band": "v1.0",
+    "periodic": true,
+    "period_s": 1.4819822523863821,
+    "values": {
+      "U_electric_initial": -0.0089876,
+      "K_initial": 0.004493800000000001,
+      "E_total_initial": -0.004493799999999999,
+      "F_coulomb_initial": 0.0089876,
+      "D_pred": 3e-12,
+      "q1:position.x": -0.4999998584538644,
+      "q1:position.y": 0.00037622454714044155,
+      "q1:velocity.x": 0.0015950855976843044,
+      "q1:velocity.y": 2.119857885734987,
+      "q2:position.x": 0.4999998584538644,
+      "q2:position.y": -0.00037622454714044155,
+      "q2:velocity.x": -0.0015950855976843044,
+      "q2:velocity.y": -2.119857885734987,
+      "energy.K": 0.004493800000010872,
+      "energy.total": -0.0044938000000108,
+      "energy.U_electric": -0.008987600000021672
+    }
+  }
+}
