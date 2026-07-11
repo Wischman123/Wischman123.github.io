@@ -1,6 +1,6 @@
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<title>Brendan Wischweh — the teacher, on camera</title>
+<title>Brendan Wischweh — videos</title>
 <style>
   /* ---------- tokens: shared with the main page (worksheet / chalkboard) ---------- */
   :root {
@@ -120,6 +120,16 @@
   .video-frame { aspect-ratio: 16 / 9; margin-top: 12px; }
   .video-frame.is-live { border-style: solid; }
   .video-frame iframe { width: 100%; height: 100%; border: 0; display: block; }
+  .pending {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    text-align: center;
+    padding: 12px;
+    line-height: 2;
+  }
   .play {
     width: 54px; height: 54px; border-radius: 50%;
     border: 2px solid var(--ink-soft);
@@ -165,13 +175,29 @@
 <p class="back"><a href="index.html">&larr; back to the main page</a></p>
 
 <header>
-  <p class="eyebrow">The teacher, on camera</p>
-  <h1>Two eras of one classroom, on film.</h1>
-  <p class="sub">A preview of the person behind the platform: Brendan Wischweh,
+  <p class="eyebrow">On screen</p>
+  <h1>The demo to come, and two eras of one classroom.</h1>
+  <p class="sub">First the platform&rsquo;s demo — the whole loop, on screen —
+  which is still in the works. Then the person behind it: Brendan Wischweh,
   first mid-lockdown at a tablet, then three years later explaining to parents
   what he and a colleague had rebuilt. Neither film loads anything from YouTube
   until you press play.</p>
 </header>
+
+<section class="film" aria-labelledby="film-demo-h">
+  <h2 id="film-demo-h">Coming — the whole loop, on screen</h2>
+  <p class="prose">A test generated, gated, graded, and turned into feedback —
+  in the system&rsquo;s weekly production form. Format in progress: film or
+  interactive walkthrough.</p>
+  <figure class="fig">
+    <div class="frame video-frame">
+      <div class="pending">
+        <span class="play" aria-hidden="true"></span>
+        demo slot — format decision pending<br>(film · scroll walkthrough · interactive)
+      </div>
+    </div>
+  </figure>
+</section>
 
 <section class="film" aria-labelledby="film-2023-h">
   <h2 id="film-2023-h">2023 — the course, rebuilt before the code was</h2>

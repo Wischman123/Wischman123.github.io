@@ -244,29 +244,6 @@
     display: grid;
     place-items: center;
   }
-  .frame .pending {
-    font-family: var(--mono);
-    font-size: 12px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--ink-soft);
-    text-align: center;
-    padding: 12px;
-    line-height: 2;
-  }
-  .video-frame { aspect-ratio: 16 / 9; margin-top: 8px; }
-  .play {
-    width: 54px; height: 54px; border-radius: 50%;
-    border: 2px solid var(--ink-soft);
-    display: grid; place-items: center; margin: 0 auto 6px;
-  }
-  .play::after {
-    content: "";
-    border-style: solid;
-    border-width: 9px 0 9px 15px;
-    border-color: transparent transparent transparent var(--ink-soft);
-    margin-left: 4px;
-  }
 
   /* ---------- what it is ---------- */
   .three-up { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px; margin-top: 28px; }
@@ -476,14 +453,13 @@
 </style>
 
 <div class="preview-note">
-  <strong>Work in progress</strong> — this portfolio is being actively built out; it should be fully operational by <strong>2026-07-13 @ 6:00&nbsp;AM PDT</strong> (GMT&minus;7). Last&nbsp;updated <span class="wip-updated">2026-07-10 4:23 PM CT</span>.
+  <strong>Work in progress</strong> — this portfolio is being actively built out; it should be fully operational by <strong>2026-07-13 @ 6:00&nbsp;AM PDT</strong> (GMT&minus;7). Last&nbsp;updated <span class="wip-updated">2026-07-11 9:49 AM CT</span>.
 </div>
 
 <div class="layout">
 <aside class="rail" aria-label="Page navigation">
   <div class="rail-inner">
     <a class="mark" href="#top">Brendan<br>Wischweh</a>
-    <a class="nav" href="#film">Demo</a>
     <a class="nav" href="#what">What it is</a>
     <a class="nav" href="#gallery">Gallery</a>
     <a class="nav" href="#numbers">The numbers</a>
@@ -530,24 +506,6 @@
 
 <main class="wrap">
 
-  <section class="section" id="film" aria-labelledby="film-h">
-    <p class="eyebrow">The demo</p>
-    <h2 id="film-h">The whole loop, on screen.</h2>
-    <p class="prose">A test generated, gated, graded, and turned into feedback —
-    in the system&rsquo;s weekly production form. Format in progress: film or
-    interactive walkthrough.</p>
-    <div class="frame video-frame">
-      <div class="pending">
-        <div class="play" aria-hidden="true"></div>
-        demo slot — format decision pending<br>(film · scroll walkthrough · interactive)
-      </div>
-    </div>
-    <p class="prose">Meanwhile, the teacher himself is already on film — a
-    2023 video for parents on the Honors Physics rebuild, and a 2020 lockdown
-    problem walkthrough: <a href="videos.html">the teacher, on camera
-    &rarr;</a></p>
-  </section>
-
   <section class="section" id="what" aria-labelledby="what-h">
     <p class="eyebrow">What it is</p>
     <h2 id="what-h">One platform, three jobs.</h2>
@@ -576,6 +534,9 @@
         against my stated values.</p>
       </div>
     </div>
+    <p class="arch-link">The demo — the whole loop, on screen — is in the
+    works, and the teacher is already on film:
+    <a href="videos.html">the videos page &rarr;</a></p>
   </section>
 
   <section class="section" id="gallery" aria-labelledby="gal-h">
@@ -830,7 +791,7 @@
         if (link) link.setAttribute('aria-current', 'true');
       });
     }, { rootMargin: '-35% 0px -55% 0px' });
-    ['film', 'what', 'gallery', 'numbers', 'built', 'contact'].forEach(function (id) {
+    ['what', 'gallery', 'numbers', 'built', 'contact'].forEach(function (id) {
       var el = document.getElementById(id);
       if (el) spy.observe(el);
     });
