@@ -3,7 +3,7 @@
   "id": "proof_energy_c001_bungee",
   "title": "C1: Germain’s Bungee Jump — Phase G verifying scene (energy-C001)",
   "preset_required": "1st_year",
-  "feature_toggles_required": [],
+  "feature_toggles_required": ["lol"],
   "scene_defaults": {
     "gravity_model": "constant_g",
     "g": 9.8,
