@@ -267,27 +267,6 @@
     border-color: transparent transparent transparent var(--ink-soft);
     margin-left: 4px;
   }
-  /* click-to-load YouTube facade (#teacher): the page stays self-contained
-     until the visitor presses play; only then does the embed load. */
-  .video-cue {
-    display: grid; place-items: center; align-content: center;
-    width: 100%; height: 100%;
-    font-family: var(--mono);
-    font-size: 12px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--ink-soft);
-    text-align: center;
-    padding: 12px;
-    line-height: 2;
-    text-decoration: none;
-  }
-  .video-cue:hover .play,
-  .video-cue:focus-visible .play { border-color: var(--accent); }
-  .video-cue:hover .play::after,
-  .video-cue:focus-visible .play::after { border-left-color: var(--accent); }
-  .video-frame.is-live { border-style: solid; }
-  .video-frame iframe { width: 100%; height: 100%; border: 0; display: block; }
 
   /* ---------- what it is ---------- */
   .three-up { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px; margin-top: 28px; }
@@ -505,12 +484,12 @@
   <div class="rail-inner">
     <a class="mark" href="#top">Brendan<br>Wischweh</a>
     <a class="nav" href="#film">Demo</a>
-    <a class="nav" href="#teacher">The teacher</a>
     <a class="nav" href="#what">What it is</a>
     <a class="nav" href="#gallery">Gallery</a>
     <a class="nav" href="#numbers">The numbers</a>
     <a class="nav" href="#built">How it&rsquo;s built</a>
     <a class="nav ext" href="architecture.html">Architecture &#8599;</a>
+    <a class="nav" href="videos.html">Videos &#8599;</a>
     <a class="nav" href="#contact">Contact</a>
   </div>
 </aside>
@@ -563,34 +542,10 @@
         demo slot — format decision pending<br>(film · scroll walkthrough · interactive)
       </div>
     </div>
-  </section>
-
-  <section class="section" id="teacher" aria-labelledby="teacher-h">
-    <p class="eyebrow">The teacher, on camera</p>
-    <h2 id="teacher-h">The course was rebuilt before the code was.</h2>
-    <p class="prose">A preview of the person behind this page. In 2023 —
-    years before this platform&rsquo;s first commit — Brendan Wischweh and a
-    teaching colleague recorded this for the parents of their students:
-    how, and why, they had significantly changed their Honors Physics
-    course. Different tools, same convictions; the platform above was built
-    to serve the classroom this video describes.</p>
-    <figure class="fig">
-      <div class="frame video-frame" id="yt-frame">
-        <a class="video-cue" id="yt-cue" href="https://www.youtube.com/watch?v=7r5iW6gx8Hg">
-          <span class="play" aria-hidden="true"></span>
-          press play — honors physics, rebuilt (2023)<br>loads YouTube&rsquo;s player only when you do
-        </a>
-      </div>
-      <figcaption class="figcap"><b>On film</b> — recorded in 2023 for
-      parents: two teachers on what they changed in Honors Physics, and why.
-      Nothing loads from YouTube until you press play — this page stays
-      self-contained until you ask it not to be.</figcaption>
-    </figure>
-    <p class="prose">More on the channel, if you care to peruse:
-    <a href="https://www.youtube.com/@physicswithwischweh7720">problem
-    walkthroughs recorded for students</a> during the COVID spring of 2020.
-    Please excuse the handwriting — it was drawn live on a very old tablet,
-    and the tablet won.</p>
+    <p class="prose">Meanwhile, the teacher himself is already on film — a
+    2023 video for parents on the Honors Physics rebuild, and a 2020 lockdown
+    problem walkthrough: <a href="videos.html">the teacher, on camera
+    &rarr;</a></p>
   </section>
 
   <section class="section" id="what" aria-labelledby="what-h">
@@ -847,30 +802,6 @@
      + touch), and degrades to the <noscript> side-by-side with JS off. The frame
      carries no pointer handlers, so vertical swipes keep scrolling the page. -->
 <script src="./assets/js/wipe_slider.js"></script>
-
-<!-- Click-to-load YouTube facade (#teacher). Progressive enhancement: with
-     JS off the cue is a plain link to the video's YouTube page; with JS on,
-     pressing play swaps in the privacy-enhanced (youtube-nocookie) embed.
-     The page itself makes NO request to YouTube until that click. -->
-<script>
-(function () {
-  var cue = document.getElementById('yt-cue');
-  var frame = document.getElementById('yt-frame');
-  if (!cue || !frame) return;
-  cue.addEventListener('click', function (e) {
-    e.preventDefault();
-    var ifr = document.createElement('iframe');
-    ifr.src = 'https://www.youtube-nocookie.com/embed/7r5iW6gx8Hg?autoplay=1';
-    ifr.title = 'Honors Physics, rebuilt — a 2023 video for parents (YouTube)';
-    ifr.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture; web-share');
-    ifr.setAttribute('allowfullscreen', '');
-    ifr.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
-    frame.classList.add('is-live');
-    frame.replaceChild(ifr, cue);
-  });
-})();
-</script>
-
 <!-- Fig. 1 interactive field lab (P3). ES module = needs an http origin (fine
      on Pages / localhost; dead on file://, per site/RUNBOOK.md). Drives the
      page's OWN tracer only — no physics-engine source is published (plan d4). -->

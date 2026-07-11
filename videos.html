@@ -1,0 +1,249 @@
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow">
+<title>Brendan Wischweh — the teacher, on camera</title>
+<style>
+  /* ---------- tokens: shared with the main page (worksheet / chalkboard) ---------- */
+  :root {
+    --bg: #FAF9F5;
+    --bg-raised: #FFFFFF;
+    --ink: #1E2B33;
+    --ink-soft: #56666F;
+    --rule: #DDD7CB;
+    --accent: #A15A26;
+    --accent-text: #8E4E1F;
+    --gridline: rgba(30, 43, 51, 0.08);
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #212927;
+      --bg-raised: #29322F;
+      --ink: #E9E7DE;
+      --ink-soft: #A2ABA1;
+      --rule: #3D4744;
+      --accent: #D68C4E;
+      --accent-text: #D68C4E;
+      --gridline: rgba(233, 231, 222, 0.07);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #212927;
+    --bg-raised: #29322F;
+    --ink: #E9E7DE;
+    --ink-soft: #A2ABA1;
+    --rule: #3D4744;
+    --accent: #D68C4E;
+    --accent-text: #D68C4E;
+    --gridline: rgba(233, 231, 222, 0.07);
+  }
+  :root[data-theme="light"] {
+    --bg: #FAF9F5;
+    --bg-raised: #FFFFFF;
+    --ink: #1E2B33;
+    --ink-soft: #56666F;
+    --rule: #DDD7CB;
+    --accent: #A15A26;
+    --accent-text: #8E4E1F;
+    --gridline: rgba(30, 43, 51, 0.08);
+  }
+
+  html { background: var(--bg); }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: 17px;
+    line-height: 1.65;
+    margin: 0;
+  }
+  a { color: var(--accent-text); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  h1, h2 { text-wrap: balance; margin: 0; }
+
+  .wrap { max-width: 860px; margin: 0 auto; padding: 0 24px 72px; }
+  .prose { max-width: 66ch; }
+
+  .back {
+    font-family: var(--mono);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 26px 0 0;
+    margin: 0;
+  }
+  .back a { color: var(--ink-soft); text-decoration: none; }
+  .back a:hover { color: var(--accent-text); }
+
+  header { padding: 56px 0 0; }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--accent-text);
+    margin: 0 0 14px;
+  }
+  h1 {
+    font-size: clamp(1.7rem, 4vw, 2.4rem);
+    font-weight: 600;
+    line-height: 1.16;
+    margin-bottom: 16px;
+  }
+  .sub { font-size: 1.08rem; color: var(--ink-soft); margin: 0; max-width: 60ch; }
+
+  .film { padding: 64px 0 0; }
+  .film h2 { font-size: 1.35rem; font-weight: 600; line-height: 1.25; margin-bottom: 14px; }
+  .fig { margin: 0; }
+  .figcap {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: var(--ink-soft);
+    margin-top: 10px;
+  }
+  .figcap b { color: var(--ink); font-weight: 600; }
+
+  /* graph-paper frame + click-to-load facade: the page stays self-contained
+     until the visitor presses play; only then does YouTube's embed load. */
+  .frame {
+    border: 1.5px dashed var(--rule);
+    background-color: var(--bg-raised);
+    background-image:
+      linear-gradient(var(--gridline) 1px, transparent 1px),
+      linear-gradient(90deg, var(--gridline) 1px, transparent 1px);
+    background-size: 24px 24px;
+    display: grid;
+    place-items: center;
+  }
+  .video-frame { aspect-ratio: 16 / 9; margin-top: 12px; }
+  .video-frame.is-live { border-style: solid; }
+  .video-frame iframe { width: 100%; height: 100%; border: 0; display: block; }
+  .play {
+    width: 54px; height: 54px; border-radius: 50%;
+    border: 2px solid var(--ink-soft);
+    display: grid; place-items: center; margin: 0 auto 6px;
+  }
+  .play::after {
+    content: "";
+    border-style: solid;
+    border-width: 9px 0 9px 15px;
+    border-color: transparent transparent transparent var(--ink-soft);
+    margin-left: 4px;
+  }
+  .video-cue {
+    display: grid; place-items: center; align-content: center;
+    width: 100%; height: 100%;
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    text-align: center;
+    padding: 12px;
+    line-height: 2;
+    text-decoration: none;
+  }
+  .video-cue:hover .play,
+  .video-cue:focus-visible .play { border-color: var(--accent); }
+  .video-cue:hover .play::after,
+  .video-cue:focus-visible .play::after { border-left-color: var(--accent); }
+
+  .footer {
+    margin-top: 72px;
+    border-top: 1px solid var(--rule);
+    padding-top: 18px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--ink-soft);
+  }
+</style>
+
+<div class="wrap">
+
+<p class="back"><a href="index.html">&larr; back to the main page</a></p>
+
+<header>
+  <p class="eyebrow">The teacher, on camera</p>
+  <h1>Two eras of one classroom, on film.</h1>
+  <p class="sub">A preview of the person behind the platform: Brendan Wischweh,
+  first mid-lockdown at a tablet, then three years later explaining to parents
+  what he and a colleague had rebuilt. Neither film loads anything from YouTube
+  until you press play.</p>
+</header>
+
+<section class="film" aria-labelledby="film-2023-h">
+  <h2 id="film-2023-h">2023 — the course, rebuilt before the code was</h2>
+  <p class="prose">Years before this platform&rsquo;s first commit, Brendan and
+  a teaching colleague recorded this for the parents of their students: how,
+  and why, they had significantly changed their Honors Physics course.
+  Different tools, same convictions — the platform on the main page was built
+  to serve the classroom this video describes.</p>
+  <figure class="fig">
+    <div class="frame video-frame">
+      <a class="video-cue" data-yt="7r5iW6gx8Hg"
+         data-yt-title="Honors Physics, rebuilt — a 2023 video for parents (YouTube)"
+         href="https://www.youtube.com/watch?v=7r5iW6gx8Hg">
+        <span class="play" aria-hidden="true"></span>
+        press play — honors physics, rebuilt (2023)<br>loads YouTube&rsquo;s player only when you do
+      </a>
+    </div>
+    <figcaption class="figcap"><b>On film</b> — recorded in 2023 for parents:
+    two teachers on what they changed in Honors Physics, and why.</figcaption>
+  </figure>
+</section>
+
+<section class="film" aria-labelledby="film-2020-h">
+  <h2 id="film-2020-h">2020 — lockdown walkthroughs, one problem at a time</h2>
+  <p class="prose">When COVID emptied the classroom, the teaching moved to
+  video: short walkthroughs, one physics problem each, recorded for students
+  working from home. Here is one from the projectile-motion set. Please excuse
+  the handwriting — it was drawn live on a very old tablet, and the tablet
+  won.</p>
+  <figure class="fig">
+    <div class="frame video-frame">
+      <a class="video-cue" data-yt="Dia0RjUo6uQ"
+         data-yt-title="Projectile-motion walkthrough for students, October 2020 (YouTube)"
+         href="https://www.youtube.com/watch?v=Dia0RjUo6uQ">
+        <span class="play" aria-hidden="true"></span>
+        press play — projectiles, worksheet 3, problem 1 (october 2020)<br>loads YouTube&rsquo;s player only when you do
+      </a>
+    </div>
+    <figcaption class="figcap"><b>On film</b> — one of a series; the rest —
+    projectiles, circular motion, universal gravitation — live on the channel,
+    <a href="https://www.youtube.com/@physicswithwischweh7720">Physics with
+    Wischweh</a>, if you care to peruse.</figcaption>
+  </figure>
+</section>
+
+<footer class="footer">
+  Brendan Wischweh &nbsp;&middot;&nbsp; <a href="index.html">the main page</a>
+  &nbsp;&middot;&nbsp; built with Claude Code — this page included.
+</footer>
+
+</div>
+
+<!-- Click-to-load YouTube facade. Progressive enhancement: with JS off each
+     cue is a plain link to the video's YouTube page; with JS on, pressing
+     play swaps in the privacy-enhanced (youtube-nocookie) embed. The page
+     itself makes NO request to YouTube until that click. -->
+<script>
+(function () {
+  document.querySelectorAll('.video-cue[data-yt]').forEach(function (cue) {
+    cue.addEventListener('click', function (e) {
+      e.preventDefault();
+      var frame = cue.closest('.video-frame');
+      var ifr = document.createElement('iframe');
+      ifr.src = 'https://www.youtube-nocookie.com/embed/'
+        + cue.getAttribute('data-yt') + '?autoplay=1';
+      ifr.title = cue.getAttribute('data-yt-title') || 'YouTube video';
+      ifr.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture; web-share');
+      ifr.setAttribute('allowfullscreen', '');
+      ifr.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+      frame.classList.add('is-live');
+      frame.replaceChild(ifr, cue);
+    });
+  });
+})();
+</script>
