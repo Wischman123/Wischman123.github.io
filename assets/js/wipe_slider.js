@@ -69,12 +69,16 @@
 
     var handle = document.createElement("div");
     handle.className = "wipe__handle";
+    var grab = document.createElement("div");
+    grab.className = "wipe__grab";
+    grab.setAttribute("aria-hidden", "true");
 
     frame.appendChild(imgBefore);
     frame.appendChild(imgAfter);
     frame.appendChild(badgeB);
     frame.appendChild(badgeA);
     frame.appendChild(handle);
+    frame.appendChild(grab);
 
     var range = document.createElement("input");
     range.type = "range";
@@ -91,14 +95,58 @@
       // [v, 100] by clipping its LEFT edge — divider sits at v% (handle.left).
       imgAfter.style.clipPath = "inset(0 0 0 " + v + "%)";
       handle.style.left = v + "%";
+      grab.style.left = v + "%";
       badgeB.style.opacity = v > 12 ? "1" : "0.25";
       badgeA.style.opacity = v < 88 ? "1" : "0.25";
       root.setAttribute("data-wipe-value", String(v));
     }
     range.addEventListener("input", function () { apply(parseInt(range.value, 10)); });
 
-    root.appendChild(frame);
+    // Handle-scoped pointer drag: grab the divider and slide it across the
+    // image. Pointer capture keeps the drag alive across the whole frame, while
+    // touch elsewhere on the image still scrolls — touch-action:none is scoped
+    // to the grab strip only (the documented anti-scroll-hijack invariant). The
+    // native range stays the keyboard/a11y driver.
+    var draggingWipe = false;
+    function frameV(clientX) {
+      var r = frame.getBoundingClientRect();
+      var v = r.width ? ((clientX - r.left) / r.width) * 100 : 50;
+      return Math.max(0, Math.min(100, v));
+    }
+    function onWipeMove(ev) {
+      if (!draggingWipe) return;
+      var v = Math.round(frameV(ev.clientX));
+      range.value = String(v);
+      apply(v);
+    }
+    function endWipe() {
+      if (!draggingWipe) return;
+      draggingWipe = false;
+      document.removeEventListener("pointermove", onWipeMove);
+      document.removeEventListener("pointerup", endWipe);
+      document.removeEventListener("pointercancel", endWipe);
+    }
+    grab.addEventListener("pointerdown", function (ev) {
+      draggingWipe = true;
+      ev.preventDefault();
+      document.addEventListener("pointermove", onWipeMove);
+      document.addEventListener("pointerup", endWipe);
+      document.addEventListener("pointercancel", endWipe);
+    });
+
+    // Opt-in bottom crop (data-crop-bottom): presence enables the CSS crop; a
+    // numeric value overrides the default aspect-ratio so it is eye-tunable per
+    // mount without touching JS. Non-destructive — survives an image re-render.
+    var crop = root.getAttribute("data-crop-bottom");
+    if (crop !== null) {
+      root.classList.add("wipe--crop");
+      if (crop && !isNaN(parseFloat(crop))) frame.style.aspectRatio = crop;
+    }
+
+    // The range control mounts ABOVE the picture (control at the top of the
+    // image, uniform across every wipe on the site) — the frame follows it.
     root.appendChild(range);
+    root.appendChild(frame);
     apply(50);
   }
 
