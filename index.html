@@ -367,44 +367,28 @@
     box-shadow: 0 18px 60px rgba(0, 0, 0, 0.5);
   }
 
-  /* ---------- hand-off into the architecture page ----------
-     This band used to be a GRADIENT: the homepage's warm paper dissolving into
-     architecture.html's cool paper, with the --arch-* values hand-mirrored from
-     that page. Since 2026-07-12 both pages share one palette (theme.css), so
-     there are no longer two papers to blend — the gradient is gone and the band
-     is flat. It keeps its job: the whole band is one link into that page. */
-  .arch-fade {
-    display: grid;
-    justify-items: center;
-    gap: 10px;
-    /* `min-height: 44vh` + `align-content: end` + 110px/88px asymmetric padding
-       are GONE (2026-07-12). They were not decoration: they made the band a
-       PAGE ENDING — a half-screen of empty paper you fell through, with the
-       text pinned to the bottom edge, dissolving into architecture.html. Once
-       the band moved above the footer, that half-screen became a hole in the
-       middle of the page. It is an ordinary content block now, so it takes the
-       ordinary rhythm: `.section`'s 72px lead-in, and symmetric padding. */
-    margin-top: 72px;
-    padding: 64px 24px;
-    text-align: center;
-    text-decoration: none;
-    background: var(--paper);
-    color: var(--text);
-    border-top: 1px solid var(--rule);
-  }
-  .arch-fade .cue {
-    font-family: var(--mono); font-size: 12px;
-    letter-spacing: 0.14em; text-transform: uppercase;
-    color: var(--muted);
-  }
-  .arch-fade .headline { font-family: var(--serif); font-size: 1.5rem; font-weight: 600; }
-  .arch-fade .sub { font-size: 0.95rem; color: var(--muted); max-width: 46ch; }
-  .arch-fade:hover .headline,
-  .arch-fade:focus-visible .headline { text-decoration: underline; }
-  /* The band's own 88px bottom padding already carries the gap to whatever
-     follows it, so the footer's 88px top margin would double it. Collapse the
-     margin only in that adjacency — a standalone .footer keeps its own. */
-  .arch-fade + .footer { margin-top: 0; }
+  /* ---------- hand-off into the architecture page: NOT STYLED HERE ----------
+     `.arch-fade` used to be styled in this block. It no longer is, and adding a
+     rule for it back here is a REGRESSION, not a tweak.
+
+     The band is one of the site's two NEXT BANDS (the other is `.nextbar`, at
+     the foot of every deep page). They are the same control — a whole-band link
+     into the next page — and they now share ONE affordance contract, `.nextband`,
+     which lives in the site-rail component:
+
+         physics/tools/showcase/templates/_siterail.css
+
+     That file is included by the deep pages' Jinja base AND stamped into this
+     page inside the SITERAIL block below (which is why the rules resolve here at
+     all). While the band's rules were private to this page, its only hover was an
+     underline on the headline — no background change whatever — so the front page
+     looked dead on hover while the shared banner's hover was being "fixed" for the
+     deep pages. One contract, both bands: that cannot happen again.
+
+     Layout too: `min-height: 44vh` + `align-content: end` are GONE (2026-07-12).
+     They made the band a PAGE ENDING — a half-screen of paper you fell through —
+     which became a hole in the middle of the page once the band moved above the
+     footer. It is an ordinary content block now, on the ordinary rhythm. */
 </style>
 
 <div class="preview-note">
@@ -774,9 +758,10 @@
      document — is gone. The page now ends on the author's name, not on a link
      out. Inside .content it takes the content column, aligning with every
      other section instead of running under the rail. -->
-<a class="arch-fade" href="architecture.html">
+<a class="arch-fade nextband" href="architecture.html">
   <span class="cue">before you go — the system&rsquo;s blueprint</span>
-  <span class="headline">Into the architecture &rarr;</span>
+  <span class="headline nextband__label">Into the architecture
+    <span class="nextband__arrow" aria-hidden="true">&rarr;</span></span>
   <span class="sub">The same platform drawn as a hexagon: one subject-free core,
     adapters at the ports, and the build gate that keeps every dependency
     pointing inward.</span>
