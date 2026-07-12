@@ -1,60 +1,12 @@
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
 <title>Brendan Wischweh — a classroom rebuilt with Claude Code</title>
+<link rel="stylesheet" href="assets/theme.css?v=1">
 <style>
-  /* ---------- tokens: light = worksheet paper, dark = chalkboard ---------- */
-  :root {
-    --bg: #FAF9F5;
-    --bg-raised: #FFFFFF;
-    --ink: #1E2B33;
-    --ink-soft: #56666F;
-    --rule: #DDD7CB;
-    --accent: #A15A26;
-    --accent-text: #8E4E1F;
-    --equip: #5B7B92;
-    --gridline: rgba(30, 43, 51, 0.08);
-    --banner-bg: #F3E7D6;
-    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
-    --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, "Liberation Mono", monospace;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #212927;
-      --bg-raised: #29322F;
-      --ink: #E9E7DE;
-      --ink-soft: #A2ABA1;
-      --rule: #3D4744;
-      --accent: #D68C4E;
-      --accent-text: #D68C4E;
-      --equip: #8FAEC4;
-      --gridline: rgba(233, 231, 222, 0.07);
-      --banner-bg: #33302A;
-    }
-  }
-  :root[data-theme="dark"] {
-    --bg: #212927;
-    --bg-raised: #29322F;
-    --ink: #E9E7DE;
-    --ink-soft: #A2ABA1;
-    --rule: #3D4744;
-    --accent: #D68C4E;
-    --accent-text: #D68C4E;
-    --equip: #8FAEC4;
-    --gridline: rgba(233, 231, 222, 0.07);
-    --banner-bg: #33302A;
-  }
-  :root[data-theme="light"] {
-    --bg: #FAF9F5;
-    --bg-raised: #FFFFFF;
-    --ink: #1E2B33;
-    --ink-soft: #56666F;
-    --rule: #DDD7CB;
-    --accent: #A15A26;
-    --accent-text: #8E4E1F;
-    --equip: #5B7B92;
-    --gridline: rgba(30, 43, 51, 0.08);
-    --banner-bg: #F3E7D6;
-  }
+  /* Tokens (--bg, --ink, --rule, --accent, --serif, …) now come from
+     assets/theme.css — the ONE place the site's palette is declared. This page
+     used to hold the master copy and three other files hand-mirrored it. Do not
+     reintroduce a :root block here; edit theme.css. */
 
   /* ---------- base ---------- */
   html { background: var(--bg); scroll-behavior: smooth; }
@@ -386,7 +338,11 @@
     position: absolute; top: 0; bottom: 0; width: 2px; background: var(--accent);
     transform: translateX(-1px); pointer-events: none;
   }
-  .wipe__range { width: 100%; margin-top: 0.6rem; min-height: 40px; accent-color: var(--accent); }
+  .wipe__range { width: 100%; margin-bottom: 0.6rem; min-height: 40px; accent-color: var(--accent); }
+  .wipe__grab { position: absolute; top: 0; bottom: 0; left: 0; width: 24px; margin-left: -12px; cursor: ew-resize; touch-action: none; pointer-events: auto; }
+  .wipe__handle::after { content: ""; position: absolute; top: 50%; left: 50%; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; background: var(--bg); border: 2px solid var(--accent); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.22); }
+  .wipe--crop .wipe__frame { aspect-ratio: 1.43; }
+  .wipe--crop .wipe__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; }
   .wipe noscript { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
   .wipe noscript img { width: 100%; height: auto; border: 1px solid var(--rule); border-radius: 8px; }
   /* Portfolio-only override: .gallery .fig img (below) forces a border + white
@@ -418,13 +374,13 @@
     box-shadow: 0 18px 60px rgba(0, 0, 0, 0.5);
   }
 
-  /* ---------- gradient hand-off into the architecture page ----------
-     The page's last stretch of scroll dissolves into architecture.html's
-     cool-paper palette; the whole band is one link. Pure CSS on native
-     scroll — no scroll hijacking. The --arch-* values mirror that page's
-     own --paper/--text/--muted per theme; change them there, change here. */
+  /* ---------- hand-off into the architecture page ----------
+     This band used to be a GRADIENT: the homepage's warm paper dissolving into
+     architecture.html's cool paper, with the --arch-* values hand-mirrored from
+     that page. Since 2026-07-12 both pages share one palette (theme.css), so
+     there are no longer two papers to blend — the gradient is gone and the band
+     is flat. It keeps its job: the whole band is one link into that page. */
   .arch-fade {
-    --arch-paper: #e9eef6; --arch-text: #101d31; --arch-muted: #566885;
     display: grid;
     justify-items: center;
     align-content: end;
@@ -433,27 +389,23 @@
     padding: 110px 24px 88px;
     text-align: center;
     text-decoration: none;
-    background: linear-gradient(to bottom, var(--bg) 0%, var(--arch-paper) 82%);
-    color: var(--arch-text);
+    background: var(--paper);
+    color: var(--text);
+    border-top: 1px solid var(--rule);
   }
-  @media (prefers-color-scheme: dark) {
-    .arch-fade { --arch-paper: #080d18; --arch-text: #e6edf8; --arch-muted: #93a2bd; }
-  }
-  :root[data-theme="light"] .arch-fade { --arch-paper: #e9eef6; --arch-text: #101d31; --arch-muted: #566885; }
-  :root[data-theme="dark"] .arch-fade { --arch-paper: #080d18; --arch-text: #e6edf8; --arch-muted: #93a2bd; }
   .arch-fade .cue {
     font-family: var(--mono); font-size: 12px;
     letter-spacing: 0.14em; text-transform: uppercase;
-    color: var(--arch-muted);
+    color: var(--muted);
   }
   .arch-fade .headline { font-family: var(--serif); font-size: 1.5rem; font-weight: 600; }
-  .arch-fade .sub { font-size: 0.95rem; color: var(--arch-muted); max-width: 46ch; }
+  .arch-fade .sub { font-size: 0.95rem; color: var(--muted); max-width: 46ch; }
   .arch-fade:hover .headline,
   .arch-fade:focus-visible .headline { text-decoration: underline; }
 </style>
 
 <div class="preview-note">
-  <strong>Work in progress</strong> — this portfolio is being actively built out; it should be fully operational by <strong>2026-07-13 @ 6:00&nbsp;AM PDT</strong> (GMT&minus;7). Last&nbsp;updated <span class="wip-updated">2026-07-11 9:49 AM CT</span>.
+  <strong>Work in progress</strong> — this portfolio is being actively built out; it should be fully operational by <strong>2026-07-13 @ 6:00&nbsp;AM PDT</strong> (GMT&minus;7). Last&nbsp;updated <span class="wip-updated">2026-07-11 9:50 AM CT</span>.
 </div>
 
 <div class="layout">
@@ -466,6 +418,7 @@
     <a class="nav" href="#built">How it&rsquo;s built</a>
     <a class="nav ext" href="architecture.html">Architecture &#8599;</a>
     <a class="nav" href="videos.html">Videos &#8599;</a>
+    <a class="nav ext" href="systems.html">Systems &#8599;</a>
     <a class="nav" href="#contact">Contact</a>
   </div>
 </aside>
@@ -568,7 +521,7 @@
         it.</em></figcaption>
       </figure>
       <figure class="fig">
-        <div class="wipe" data-wipe
+        <div class="wipe" data-wipe data-crop-bottom
              data-before="assets/d1_before_regeneration.png"
              data-after="assets/d1_after_regeneration.png"
              data-before-alt="An earlier render of the Lovelace's Loop problem page where the hill sits on an incorrect two-level ground"
@@ -653,9 +606,11 @@
     <h2 id="num-h">Measured, not estimated.</h2>
     <div class="readout">
       <div class="row">
-        <span class="val">1,527,768</span>
+        <!-- FIG10-TILE-START (generated by tools/loc_full_arc.py) -->
+        <span class="val">1,561,711</span>
         <span class="lab"><b>first-party lines directed</b> — directed, not hand-typed</span>
-        <span class="date">verified 2026-07-09</span>
+        <span class="date">verified 2026-07-12</span>
+        <!-- FIG10-TILE-END -->
       </div>
       <div class="row">
         <span class="val">831</span>
@@ -686,34 +641,35 @@
 
     <figure class="fig chart-fig">
       <!-- FIG10-SVG-START (generated by tools/loc_full_arc.py) -->
-      <svg viewBox="0 0 640 240" role="img" aria-label="First-party lines of code across four git-tracked project repos (physics, tools, research, dotfiles), recomputed from git history under one counting rule, rising from near zero at the mid-March 2026 first commits to about 1.24 million committed lines by 2026-07-10. A solid marker above the curve's endpoint shows the 1.53-million-line working-tree total across every tracked directory, the headline figure above the chart; the open marker at the curve's endpoint is the committed subset. Current pace: about 13,369 lines per day over the last 36 days.">
+      <svg viewBox="0 0 640 240" role="img" aria-label="Two measured series of first-party lines of code. The solid curve is code COMMITTED to the four git-tracked project repositories (physics, tools, research, dotfiles), recomputed from git history under one counting rule, rising from near zero at the mid-March 2026 first commits to 1.27 million by 2026-07-12, marked with an open circle. The dashed curve is the WORKING TREE across every tracked directory -- committed code plus work on disk not yet committed -- reaching 1.56 million, the headline figure above the chart. It begins on 2026-05-28 because that is the first snapshot in the line-count tracker; a working tree cannot be reconstructed from git history for dates before it was recorded. The 290,894-line gap between the two is uncommitted work plus directories outside those four repositories. Current pace: about 13,838 committed lines per day over the last 31 days.">
       <line class="ch-grid" x1="40" y1="200" x2="620" y2="200"></line>
-      <line class="ch-grid" x1="40" y1="144" x2="620" y2="144"></line>
-      <line class="ch-grid" x1="40" y1="87" x2="620" y2="87"></line>
-      <line class="ch-grid" x1="40" y1="31" x2="620" y2="31"></line>
+      <line class="ch-grid" x1="40" y1="150" x2="620" y2="150"></line>
+      <line class="ch-grid" x1="40" y1="101" x2="620" y2="101"></line>
+      <line class="ch-grid" x1="40" y1="51" x2="620" y2="51"></line>
       <text class="ch-lab" x="34" y="203" text-anchor="end">0</text>
-      <text class="ch-lab" x="34" y="147" text-anchor="end">500K</text>
-      <text class="ch-lab" x="34" y="90" text-anchor="end">1.0M</text>
-      <text class="ch-lab" x="34" y="34" text-anchor="end">1.50M</text>
-      <path class="ch-area" d="M40,200 L76,196 L112,196 L148,193 L184,188 L220,180 L256,173 L292,163 L327,153 L363,143 L399,134 L435,115 L471,102 L507,89 L543,85 L579,76 L615,61 L620,60 L620,200 L40,200 Z"></path>
-      <path class="ch-line" d="M40,200 L76,196 L112,196 L148,193 L184,188 L220,180 L256,173 L292,163 L327,153 L363,143 L399,134 L435,115 L471,102 L507,89 L543,85 L579,76 L615,61 L620,60"></path>
+      <text class="ch-lab" x="34" y="153" text-anchor="end">500K</text>
+      <text class="ch-lab" x="34" y="104" text-anchor="end">1.0M</text>
+      <text class="ch-lab" x="34" y="54" text-anchor="end">1.50M</text>
+      <path class="ch-area" d="M40,200 L75,197 L111,196 L146,194 L181,191 L217,185 L252,178 L287,170 L322,161 L358,152 L393,144 L428,127 L464,116 L499,105 L534,101 L570,93 L605,80 L620,74 L620,200 L40,200 Z"></path>
+      <path class="ch-line" d="M40,200 L75,197 L111,196 L146,194 L181,191 L217,185 L252,178 L287,170 L322,161 L358,152 L393,144 L428,127 L464,116 L499,105 L534,101 L570,93 L605,80 L620,74"></path>
+      <path class="ch-line" stroke-dasharray="5 3" d="M393.0,127.8 L413.2,119.8 L418.3,115.4 L423.3,110.7 L443.5,101.0 L453.6,97.4 L458.6,99.9 L463.7,99.6 L473.7,96.2 L478.8,92.4 L488.9,87.6 L509.0,85.5 L529.2,83.3 L554.4,79.9 L559.5,79.3 L574.6,74.2 L579.7,71.9 L589.7,68.5 L604.9,61.1 L609.9,54.5 L615.0,49.2 L620.0,44.7"></path>
       <circle class="ch-dot" cx="40" cy="200" r="3"></circle>
-      <line class="ch-grid" stroke-dasharray="3 3" x1="620" y1="33" x2="620" y2="55"></line>
-      <circle class="ch-open" cx="620" cy="60" r="3.5"></circle>
-      <circle class="ch-dot" cx="620" cy="28" r="4"></circle>
-      <text class="ch-lab-strong" x="610" y="20" text-anchor="end">1.53M <tspan class="ch-lab">working tree, all dirs</tspan></text>
-      <text class="ch-lab-strong" x="610" y="74" text-anchor="end">1.24M <tspan class="ch-lab">committed</tspan></text>
-      <text class="ch-lab-strong" x="50" y="52">+13,369 <tspan class="ch-lab">lines/day — last 36 days</tspan></text>
+      <circle class="ch-open" cx="393.0" cy="127.8" r="2.5"></circle>
+      <circle class="ch-open" cx="620" cy="74" r="3.5"></circle>
+      <circle class="ch-dot" cx="620" cy="45" r="4"></circle>
+      <text class="ch-lab-strong" x="610" y="37" text-anchor="end">1.56M <tspan class="ch-lab">working tree, all dirs</tspan></text>
+      <text class="ch-lab-strong" x="610" y="141" text-anchor="end">1.27M <tspan class="ch-lab">committed, 4 repos</tspan></text>
+      <text class="ch-lab-strong" x="50" y="80">+13,838 <tspan class="ch-lab">committed lines/day — last 31 days</tspan></text>
       <text class="ch-lab" x="40" y="218" text-anchor="start">03-19</text>
-      <text class="ch-lab" x="148" y="218" text-anchor="middle">04-09</text>
-      <text class="ch-lab" x="292" y="218" text-anchor="middle">05-07</text>
-      <text class="ch-lab" x="399" y="218" text-anchor="middle">05-28</text>
-      <text class="ch-lab" x="543" y="218" text-anchor="middle">06-25</text>
-      <text class="ch-lab" x="620" y="218" text-anchor="end">07-10</text>
+      <text class="ch-lab" x="146" y="218" text-anchor="middle">04-09</text>
+      <text class="ch-lab" x="287" y="218" text-anchor="middle">05-07</text>
+      <text class="ch-lab" x="393" y="218" text-anchor="middle">05-28</text>
+      <text class="ch-lab" x="534" y="218" text-anchor="middle">06-25</text>
+      <text class="ch-lab" x="620" y="218" text-anchor="end">07-12</text>
     </svg>
       <!-- FIG10-SVG-END -->
       <!-- FIG10-CAP-START (generated by tools/loc_full_arc.py) -->
-      <figcaption class="figcap"><b>Fig.&nbsp;11</b> — First-party lines of code over the platform&rsquo;s life, recomputed from git history under today&rsquo;s counting rules (2026-07-10) — one rule applied to every historical checkout, back to the mid-March first commit. The solid marker is the 1,527,768 headline above (the 2026-07-09 working-tree snapshot across every tracked directory); the open marker below it (~1.24M) is what&rsquo;s committed in the four git repositories with history reaching that far back (physics, tools, research, dotfiles) — that committed subset is the curve, the only series honestly plottable over the full arc. 1,228,602 of the headline&rsquo;s lines sit in physics, tools, dotfiles — the repositories behind the work shown on this page. <em>The mid-March start is the first commit; the curve is code committed, not hand-tallied.</em></figcaption>
+      <figcaption class="figcap"><b>Fig.&nbsp;11</b> — First-party lines of code over the platform&rsquo;s life, under one counting rule (2026-07-12). <b>Solid:</b> code <b>committed</b> to the four git repositories whose history reaches back to the mid-March first commit (physics, tools, research, dotfiles), recomputed by checking out every historical commit and counting it — 1,270,817 lines, marked with an open circle. <b>Dashed:</b> the <b>working tree</b> across every tracked directory — committed code plus work on disk not yet committed — reaching the 1,561,711 headline above. It begins May&nbsp;28, not in March, because that is the first snapshot in the line-count tracker: git records commits, so a past <em>working tree</em> simply was never written down, and drawing it before it was measured would be inventing data. The 290,894-line gap between the two is uncommitted work plus directories outside those four repos. 1,213,923 of the headline&rsquo;s lines sit in physics, tools, dotfiles — the repositories behind the work shown on this page. <em>Scratch and run-artifact directories are excluded from both series.</em></figcaption>
       <!-- FIG10-CAP-END -->
     </figure>
   </section>
@@ -733,6 +689,14 @@
     as a hexagon — read the architecture page &rarr;</a></p>
   </section>
 
+<!-- SYSTEMS-STRIP-START (runner-merged; do not hand-edit) -->
+  <section class="section systems-strip" id="systems" aria-labelledby="systems-strip-h">
+    <p class="eyebrow">The systems wing</p>
+    <h2 id="systems-strip-h">See the platform, running.</h2>
+    <p>Field lines you drag, a simulator embedded live, a library that regenerates instead of patching, and a gate that says no — each exhibit is the real system, on the page.</p>
+    <p><a class="strip-link" href="systems.html">Enter the systems wing &rarr;</a></p>
+  </section>
+  <!-- SYSTEMS-STRIP-END -->
 
 </main>
 

@@ -1,0 +1,156 @@
+/* theme.css — THE token source for the whole site.
+ *
+ * WHY THIS FILE EXISTS
+ * --------------------
+ * The site used to carry the same palette in five hand-copied places:
+ * index.html's :root, videos.html's :root, site.css's :root, architecture.html's
+ * :root, and the deep wing's base.html.j2. site.css's own header admitted it
+ * ("EXTRACTED VERBATIM ... re-extract them here if the live index changes") —
+ * i.e. drift was managed by remembering to re-paste. This file ends that: every
+ * page that can link CSS links THIS, and nothing else declares a colour.
+ *
+ * THE PALETTE (2026-07-12): the site adopted architecture.html's identity —
+ * cool blue-biased neutrals, azure hero — replacing the former warm
+ * "worksheet paper / chalkboard" cream-and-rust. Type was deliberately NOT
+ * changed: the Iowan Old Style serif stays (see --serif below).
+ *
+ * TWO NAME SETS, ON PURPOSE
+ * -------------------------
+ *   1. CANONICAL (--paper/--card/--text/--muted/--line/--core/...) — the
+ *      architecture-page names. New CSS should use these.
+ *   2. COMPAT (--bg/--ink/--rule/--accent/...) — the old worksheet names,
+ *      re-pointed at the canonical tokens below. index.html, videos.html and
+ *      site.css contain hundreds of var(--ink)/var(--rule) references; aliasing
+ *      is a one-block change where renaming would be a thousand-line sweep.
+ *      They are NOT deprecated-and-rotting: they are the compatibility layer.
+ *
+ * !! CYCLE HAZARD — READ BEFORE ADDING AN ALIAS !!
+ * CSS custom properties are substituted lazily, in the scope of the element
+ * that USES them. So if this file says `--bg-raised: var(--card)` and some
+ * other rule says `#thing { --card: var(--bg-raised) }`, the two definitions
+ * form a cycle *inside #thing* and BOTH resolve to invalid — the element loses
+ * its colour with no console error. Aliases must therefore flow in ONE
+ * direction only: canonical (literal hex) -> compat (var()). Never alias a
+ * canonical name back to a compat name anywhere on the site.
+ *
+ * THREE THEME MODES, kept in step deliberately:
+ *   :root                              — light default
+ *   @media (prefers-color-scheme:dark) — follows the OS
+ *   :root[data-theme=light|dark]       — the on-page toggle, wins over the OS
+ * A token added to one MUST be added to all three. tests/test_theme_tokens.py
+ * asserts that, and asserts this file agrees with architecture.html and the
+ * deep wing's base.html.j2 (which cannot link CSS — they inline their own copy
+ * because the deep pages are gated to make zero external requests).
+ */
+
+/* ============================ CANONICAL ================================= */
+
+:root {
+  --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --mono: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  /* Kept from the worksheet era by explicit choice (2026-07-12): the palette
+     went cool, the reading voice did not. Body prose stays serif. */
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+
+  --paper: #e9eef6;
+  --card: #ffffff;
+  --text: #101d31;
+  --muted: #566885;
+  --line: #d5deec;
+
+  --core: #2f63ff;    /* azure — the hero */
+  --mech: #7a5cf0;    /* violet — pure mechanism */
+  --drive: #0f9d8f;   /* teal — driving adapters */
+  --driven: #c67f22;  /* amber — driven ports */
+  --subject: #dc4046; /* coral — subject plugins */
+  --gate: #5d6c82;    /* slate — the gate */
+  --edge: #6a7a92;
+
+  --radius: 14px;
+  --shadow: 0 1px 2px rgba(16, 29, 49, .06), 0 10px 30px rgba(16, 29, 49, .07);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #080d18;
+    --card: #0e1626;
+    --text: #e6edf8;
+    --muted: #93a2bd;
+    --line: #1d2942;
+    --core: #5f8bff;
+    --mech: #9a86ff;
+    --drive: #2fd4bf;
+    --driven: #eab24a;
+    --subject: #ff6a70;
+    --gate: #8b9ab2;
+    --edge: #8494ad;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 18px 46px rgba(0, 0, 0, .45);
+  }
+}
+
+/* The explicit toggle wins in BOTH directions — a user who picks light on a
+   dark-mode OS must get light, so the light values are restated here rather
+   than left to the :root default (which the media query would override). */
+:root[data-theme="light"] {
+  --paper: #e9eef6;
+  --card: #ffffff;
+  --text: #101d31;
+  --muted: #566885;
+  --line: #d5deec;
+  --core: #2f63ff;
+  --mech: #7a5cf0;
+  --drive: #0f9d8f;
+  --driven: #c67f22;
+  --subject: #dc4046;
+  --gate: #5d6c82;
+  --edge: #6a7a92;
+  --shadow: 0 1px 2px rgba(16, 29, 49, .06), 0 10px 30px rgba(16, 29, 49, .07);
+}
+
+:root[data-theme="dark"] {
+  --paper: #080d18;
+  --card: #0e1626;
+  --text: #e6edf8;
+  --muted: #93a2bd;
+  --line: #1d2942;
+  --core: #5f8bff;
+  --mech: #9a86ff;
+  --drive: #2fd4bf;
+  --driven: #eab24a;
+  --subject: #ff6a70;
+  --gate: #8b9ab2;
+  --edge: #8494ad;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 18px 46px rgba(0, 0, 0, .45);
+}
+
+/* ====================== COMPAT (one direction only) ====================== */
+/* Declared ONCE, not per theme: each alias resolves through the canonical
+   token, which is what changes per theme. Adding these to the theme blocks
+   above would be three copies of the same indirection. */
+
+:root {
+  --bg: var(--paper);
+  --bg-raised: var(--card);
+  --ink: var(--text);
+  --ink-soft: var(--muted);
+  --rule: var(--line);
+
+  --accent: var(--core);
+  --accent-text: var(--core); /* was a darker shade of --accent for link text;
+                                 --core is already a legible link blue in both
+                                 themes, so the two collapse into one. */
+  --equip: var(--drive);      /* was a blue-grey; no site rule uses it, but the
+                                 injected story block maps --drive through it. */
+
+  /* Derived, so they follow the theme instead of needing a per-theme literal.
+     --gridline was ink-at-8%; this reproduces that intent exactly. */
+  --gridline: color-mix(in srgb, var(--text) 8%, transparent);
+  --banner-bg: color-mix(in srgb, var(--core) 10%, var(--card));
+}
+
+/* Reduced motion: honored site-wide. Exhibit animations must also check it in
+   JS before painting (sim_embed.js does). */
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+  html { scroll-behavior: auto; }
+}
