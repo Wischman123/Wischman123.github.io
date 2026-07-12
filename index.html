@@ -383,10 +383,16 @@
   .arch-fade {
     display: grid;
     justify-items: center;
-    align-content: end;
     gap: 10px;
-    min-height: 44vh;
-    padding: 110px 24px 88px;
+    /* `min-height: 44vh` + `align-content: end` + 110px/88px asymmetric padding
+       are GONE (2026-07-12). They were not decoration: they made the band a
+       PAGE ENDING — a half-screen of empty paper you fell through, with the
+       text pinned to the bottom edge, dissolving into architecture.html. Once
+       the band moved above the footer, that half-screen became a hole in the
+       middle of the page. It is an ordinary content block now, so it takes the
+       ordinary rhythm: `.section`'s 72px lead-in, and symmetric padding. */
+    margin-top: 72px;
+    padding: 64px 24px;
     text-align: center;
     text-decoration: none;
     background: var(--paper);
@@ -402,6 +408,10 @@
   .arch-fade .sub { font-size: 0.95rem; color: var(--muted); max-width: 46ch; }
   .arch-fade:hover .headline,
   .arch-fade:focus-visible .headline { text-decoration: underline; }
+  /* The band's own 88px bottom padding already carries the gap to whatever
+     follows it, so the footer's 88px top margin would double it. Collapse the
+     margin only in that adjacency — a standalone .footer keeps its own. */
+  .arch-fade + .footer { margin-top: 0; }
 </style>
 
 <div class="preview-note">
@@ -689,16 +699,23 @@
     as a hexagon — read the architecture page &rarr;</a></p>
   </section>
 
-<!-- SYSTEMS-STRIP-START (runner-merged; do not hand-edit) -->
-  <section class="section systems-strip" id="systems" aria-labelledby="systems-strip-h">
-    <p class="eyebrow">The systems wing</p>
-    <h2 id="systems-strip-h">See the platform, running.</h2>
-    <p>Field lines you drag, a simulator embedded live, a library that regenerates instead of patching, and a gate that says no — each exhibit is the real system, on the page.</p>
-    <p><a class="strip-link" href="systems.html">Enter the systems wing &rarr;</a></p>
-  </section>
-  <!-- SYSTEMS-STRIP-END -->
-
 </main>
+
+<!-- The architecture band is the LAST CONTENT BLOCK, immediately above the
+     contact footer. It sat BELOW the footer until 2026-07-12, when it was a
+     full-bleed gradient dissolving this page's warm paper into
+     architecture.html's cool one. theme.css gave both pages one palette, so
+     the gradient — and with it the reason to hang the band off the end of the
+     document — is gone. The page now ends on the author's name, not on a link
+     out. Inside .content it takes the content column, aligning with every
+     other section instead of running under the rail. -->
+<a class="arch-fade" href="architecture.html">
+  <span class="cue">before you go — the system&rsquo;s blueprint</span>
+  <span class="headline">Into the architecture &rarr;</span>
+  <span class="sub">The same platform drawn as a hexagon: one subject-free core,
+    adapters at the ports, and the build gate that keeps every dependency
+    pointing inward.</span>
+</a>
 
 <footer class="footer" id="contact">
   <div class="wrap inner">
@@ -709,16 +726,6 @@
 
 </div><!-- /.content -->
 </div><!-- /.layout -->
-
-<!-- Gradient hand-off: scrolling past the footer dissolves into the
-     architecture page's palette; the band is one big link there. -->
-<a class="arch-fade" href="architecture.html">
-  <span class="cue">the page ends — the system&rsquo;s blueprint picks up</span>
-  <span class="headline">Into the architecture &rarr;</span>
-  <span class="sub">The same platform drawn as a hexagon: one subject-free core,
-    adapters at the ports, and the build gate that keeps every dependency
-    pointing inward.</span>
-</a>
 
 <!-- Before/after wipe sliders (P4, Figs 4 & 5). The ONE shared module
      public/assets/js/wipe_slider.js (D-0 single-module rule; the systems wing
