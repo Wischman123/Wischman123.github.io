@@ -502,13 +502,61 @@
     <a href="videos.html">the videos page &rarr;</a></p>
   </section>
 
+  <section class="section" id="answer-key" aria-labelledby="akey-h">
+    <!-- ANSWER-KEY COMPARISON (Fig. 2). Sits immediately after the story, which is
+         INJECTED at stage time: inject_story_section.py anchors on THIS section's
+         opening tag and inserts before it. That is why this comment lives INSIDE the
+         section — anything above the opening tag is anchor-adjacent, and the story
+         lands between it and the section it describes.
+         Static content (page images + fixed copy), so it lives in the source rather
+         than in a third injector. The image pair is rebuilt and VERIFIED by
+         physics/tools/showcase/build_answer_key_compare.py --install-to <assets>.
+         Reuses the shared [data-wipe] component — not a second slider. -->
+    <p class="eyebrow">The same problem, answered twice</p>
+    <h2 id="akey-h">Both are right. Only one is teachable.</h2>
+    <p class="prose">The story you just followed ends in an answer key. So here is that
+      key — <em>Euler&rsquo;s Hilltop</em>, the same problem — written two ways. On the
+      left, a plain Claude agent handed nothing but the problem statement. On the right,
+      the same problem through the platform. Drag the divider.</p>
+    <figure class="fig">
+      <div class="wipe" data-wipe
+           data-before="assets/k015_key_plain.png"
+           data-after="assets/k015_key_system.png"
+           data-before-alt="A plain agent's answer key: a title, a raster matplotlib sketch of the hill whose labels collide with each other, a table listing every final answer, and worked solutions in plain-text math."
+           data-after-alt="The platform's answer key: a vector scene diagram carrying radial and tangential axes, two LOL energy bar charts showing six boxes of gravitational energy becoming one of kinetic and five gravitational, and the part-a answer in a worked solution box."
+           data-before-label="Plain Claude"
+           data-after-label="This platform">
+        <noscript>
+          <img src="assets/k015_key_plain.png" alt="A plain agent's answer key for Euler's Hilltop: raster diagram with colliding labels, an answers table, and plain-text math." loading="lazy">
+          <img src="assets/k015_key_system.png" alt="The platform's answer key for Euler's Hilltop: vector diagram with radial and tangential axes, LOL energy bar charts, and typeset equations." loading="lazy">
+        </noscript>
+      </div>
+      <figcaption class="figcap"><b>Fig.&nbsp;2</b> — Page one of each answer key for
+        <b>energy-K015</b>, both rendered through real Word (2026-07-12). <b>The physics
+        agrees.</b> Both get v<sub>B</sub>&nbsp;=&nbsp;6.26&nbsp;m/s, n&nbsp;=&nbsp;3.9&nbsp;N,
+        and the elegant h<sub>max</sub>&nbsp;=&nbsp;R/2. Correctness is not the
+        differentiator, and pretending otherwise would be dishonest. What differs is
+        everything that makes a key <em>usable in a classroom</em>: the plain key draws a
+        raster sketch whose labels overlap — it never looked at its own output — states the
+        answers in plain-text math, opens with a table that hands over every result, and
+        closes by proposing a <b>10-point scoring rubric</b>. The platform&rsquo;s key
+        draws a vector scene with the radial and tangential axes the problem turns on,
+        speaks in the <b>LOL energy bars</b> this course actually teaches (six boxes of
+        gravitational energy; one becomes kinetic), sets real Word equation objects, and
+        annotates the reasoning beside each line. It proposes no score at all — this
+        classroom does not grade, and a key that reaches for points has misunderstood the
+        assignment. <em>The left panel is a control: the agent that wrote it was given the
+        problem and nothing else, and never read a line of this repository.</em></figcaption>
+    </figure>
+  </section>
+
   <section class="section" id="gallery" aria-labelledby="gal-h">
     <p class="eyebrow">Artifact gallery</p>
     <h2 id="gal-h">The work, as it ships.</h2>
     <div class="gallery">
       <figure class="fig">
         <img src="assets/k15_eulers_hilltop_page.png" alt="Generated physics problem page: Euler's Hilltop, with a computed ramp-and-hill diagram and energy bar-chart scaffolds" loading="lazy">
-        <figcaption class="figcap"><b>Fig.&nbsp;2</b> — A generated problem
+        <figcaption class="figcap"><b>Fig.&nbsp;3</b> — A generated problem
         page, as shipped: the diagram is computed from the problem&rsquo;s own
         numbers, with energy bar-chart scaffolds and a historical vignette.
         Every element from code — no clip art.</figcaption>
@@ -520,7 +568,7 @@
           <img src="assets/dawns_last_burn_p3.png" alt="Page 3: part d — energy and angular-momentum conservation give a quadratic for the new orbit's high point, solved with the quadratic formula; the smaller root is recognized as the burn point, a built-in check, and the altitude above Ceres' surface is computed" loading="lazy">
           <img src="assets/dawns_last_burn_p4.png" alt="Page 4: part e — the inelastic debris collision solved by momentum conservation, the kinetic energy lost in the collision computed, and a closing historical vignette about Konstantin Tsiolkovsky, who derived the rocket equation" loading="lazy">
         </div>
-        <figcaption class="figcap"><b>Fig.&nbsp;3</b> — A complete worked
+        <figcaption class="figcap"><b>Fig.&nbsp;4</b> — A complete worked
         example, all four pages of one problem: &ldquo;Dawn&rsquo;s Last
         Burn&rdquo; (Problem&nbsp;1 of a year-end review homework set, teacher
         answer-key edition) — NASA&rsquo;s Dawn probe firing its ion thruster
@@ -543,7 +591,7 @@
             <img src="assets/d1_after_regeneration.png" alt="The corrected Lovelace's Loop page with continuous ground under the circular hill" loading="lazy">
           </noscript>
         </div>
-        <figcaption class="figcap"><b>Fig.&nbsp;4</b> — Caught in review, then
+        <figcaption class="figcap"><b>Fig.&nbsp;5</b> — Caught in review, then
         regenerated: <em>drag the handle</em> to wipe between an earlier render
         with flawed ground geometry (two levels) and the page re-derived from
         corrected drawing code. Regenerate, don&rsquo;t patch.</figcaption>
@@ -561,7 +609,7 @@
             <img src="assets/k15_eulers_hilltop_page.png" alt="A 2026 generated page, Euler's Hilltop, with a computed hill-and-track diagram, two energy bar-chart scaffolds, and a historical vignette" loading="lazy">
           </noscript>
         </div>
-        <figcaption class="figcap"><b>Fig.&nbsp;5</b> — A quarter century of the
+        <figcaption class="figcap"><b>Fig.&nbsp;6</b> — A quarter century of the
         same course: <em>drag</em> between a friction test I typed in 2000
         (text only — students drew every diagram by hand) and a 2026 page the
         engine generates from code — computed diagram, energy scaffolds, and a
@@ -569,20 +617,20 @@
       </figure>
       <figure class="fig">
         <img src="assets/loc_tracker_render.png" alt="The platform's own lines-of-code tracker render: stacked daily bars by project rising from 848 thousand to 1.5 million lines, with per-project subcharts" loading="lazy">
-        <figcaption class="figcap"><b>Fig.&nbsp;6</b> — The tracker&rsquo;s own
+        <figcaption class="figcap"><b>Fig.&nbsp;7</b> — The tracker&rsquo;s own
         daily render: first-party lines by project. This is the instrument
         behind Fig.&nbsp;11 below.</figcaption>
       </figure>
       <figure class="fig">
         <img src="assets/parallel_forms_A_C.png" alt="Two parallel forms of the same Digital Electronics quiz, Form A and Form C side by side: same flip-flop and counter concepts, different problems" loading="lazy">
-        <figcaption class="figcap"><b>Fig.&nbsp;7</b> — Two parallel forms of
+        <figcaption class="figcap"><b>Fig.&nbsp;8</b> — Two parallel forms of
         one quiz (A and C, of four generated): same concepts, same
         difficulty, different problems. Rendered by Word from the shipped
         docx.</figcaption>
       </figure>
       <figure class="fig">
         <img src="assets/feedback_report_fictional.png" alt="The front of a narrative feedback report for a fictional demo student, Average Armadillo: a list of concepts demonstrated, then concepts to revisit with each misconception named and a specific problem to try again" loading="lazy">
-        <figcaption class="figcap"><b>Fig.&nbsp;8</b> — A narrative feedback
+        <figcaption class="figcap"><b>Fig.&nbsp;9</b> — A narrative feedback
         report from the mechanics-test smoke run. The names are demo personas
         (&ldquo;Average Armadillo&rdquo;) that label the sample, not real
         students: concepts owned, then each shaky one named as a specific
@@ -591,7 +639,7 @@
       </figure>
       <figure class="fig">
         <img src="assets/feedback_report_back.png" alt="The back of the same feedback report, headed Your next steps: for each missed concept, the Modeling unit that covers it plus several targeted, conceptual review questions to attempt again" loading="lazy">
-        <figcaption class="figcap"><b>Fig.&nbsp;9</b> — The back of that same
+        <figcaption class="figcap"><b>Fig.&nbsp;10</b> — The back of that same
         report, &ldquo;Your next steps&rdquo;: every missed concept points to
         the Modeling unit that covers it and a few targeted questions to try
         again &mdash; conceptual, not plug-and-chug, and framed as a revisit
@@ -599,7 +647,7 @@
       </figure>
       <figure class="fig">
         <img src="assets/gate_rejection_ui.png" alt="The teacher portal's problems-drafted page: one of two AI drafts passed validation into the review queue, and the other was dropped with its reason listed — a missing free-body diagram." loading="lazy">
-        <figcaption class="figcap"><b>Fig.&nbsp;10</b> — The quality gate doing
+        <figcaption class="figcap"><b>Fig.&nbsp;11</b> — The quality gate doing
         its job: drafts that pass the physics floor enter the review queue;
         drafts that fail are dropped with the reason shown — here, a missing
         free-body diagram — and the job keeps generating fresh candidates until
@@ -679,7 +727,7 @@
     </svg>
       <!-- FIG10-SVG-END -->
       <!-- FIG10-CAP-START (generated by tools/loc_full_arc.py) -->
-      <figcaption class="figcap"><b>Fig.&nbsp;11</b> — First-party lines of code over the platform&rsquo;s life, under one counting rule (2026-07-12). <b>Solid:</b> code <b>committed</b> to the four git repositories whose history reaches back to the mid-March first commit (physics, tools, research, dotfiles), recomputed by checking out every historical commit and counting it — 1,270,817 lines, marked with an open circle. <b>Dashed:</b> the <b>working tree</b> across every tracked directory — committed code plus work on disk not yet committed — reaching the 1,561,711 headline above. It begins May&nbsp;28, not in March, because that is the first snapshot in the line-count tracker: git records commits, so a past <em>working tree</em> simply was never written down, and drawing it before it was measured would be inventing data. The 290,894-line gap between the two is uncommitted work plus directories outside those four repos. 1,213,923 of the headline&rsquo;s lines sit in physics, tools, dotfiles — the repositories behind the work shown on this page. <em>Scratch and run-artifact directories are excluded from both series.</em></figcaption>
+      <figcaption class="figcap"><b>Fig.&nbsp;12</b> — First-party lines of code over the platform&rsquo;s life, under one counting rule (2026-07-12). <b>Solid:</b> code <b>committed</b> to the four git repositories whose history reaches back to the mid-March first commit (physics, tools, research, dotfiles), recomputed by checking out every historical commit and counting it — 1,270,817 lines, marked with an open circle. <b>Dashed:</b> the <b>working tree</b> across every tracked directory — committed code plus work on disk not yet committed — reaching the 1,561,711 headline above. It begins May&nbsp;28, not in March, because that is the first snapshot in the line-count tracker: git records commits, so a past <em>working tree</em> simply was never written down, and drawing it before it was measured would be inventing data. The 290,894-line gap between the two is uncommitted work plus directories outside those four repos. 1,213,923 of the headline&rsquo;s lines sit in physics, tools, dotfiles — the repositories behind the work shown on this page. <em>Scratch and run-artifact directories are excluded from both series.</em></figcaption>
       <!-- FIG10-CAP-END -->
     </figure>
   </section>
