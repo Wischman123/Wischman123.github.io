@@ -41,42 +41,28 @@
   }
   .preview-note strong { color: var(--ink); font-weight: 600; }
 
-  /* ---------- left rail ---------- */
-  .layout { display: grid; grid-template-columns: 208px minmax(0, 1fr); }
-  .rail { border-right: 1px solid var(--rule); }
-  .rail-inner {
-    position: sticky;
-    top: 0;
-    padding: 30px 22px;
-    display: flex;
-    flex-direction: column;
-  }
-  .rail .mark {
-    font-family: var(--serif);
-    font-size: 1.02rem;
-    font-weight: 600;
-    color: var(--ink);
-    text-decoration: none;
-    margin-bottom: 22px;
-    line-height: 1.3;
-  }
-  .rail a.nav {
-    font-family: var(--mono);
-    font-size: 11.5px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--ink-soft);
-    text-decoration: none;
-    padding: 7px 0;
-  }
-  .rail a.nav:hover { color: var(--accent-text); }
-  .rail a.nav[aria-current="true"] { color: var(--accent-text); }
-  .rail a.nav[aria-current="true"]::before { content: "— "; }
-  .rail .ext { margin-top: 16px; border-top: 1px solid var(--rule); padding-top: 14px; }
-  @media (max-width: 1099px) {
-    .layout { display: block; }
-    .rail { display: none; }
-  }
+  /* ---------- left rail ----------
+     GONE FROM HERE — and deliberately not replaced by a copy.
+
+     This page used to own the site's rail: the .layout grid, the .rail column,
+     its hand-written link list, and a scrollspy at the foot of the page. Three
+     other pages then MIRRORED it (site.css says so in as many words: "if
+     index.html's .rail rules change, re-mirror them here"), and the deep-dive
+     wing carried a different nav surface again — a .deepnav strip.
+
+     There is now ONE rail component for the whole site:
+       markup   physics/tools/showcase/templates/_siterail.html.j2  (a macro)
+       styling  physics/tools/showcase/templates/_siterail.css
+       links    physics/tools/showcase/deep_nav.py::SITE_NAV        (order+labels)
+     The generated deep pages get it from base.html.j2; THIS page and the other
+     three hand-authored root pages have it stamped in by inject_site_rail.py,
+     inside <!-- SITERAIL BEGIN/END --> markers. The rail is position:fixed and
+     insets the page with one body{padding-left} rule, so no .layout grid — and
+     no wrapper element — is needed here any more.
+
+     It also FIXES what this rail did below 1100px: it vanished
+     (.rail{display:none}) with no fallback. The shared one collapses into a
+     sticky top bar instead. Add or reorder a page in SITE_NAV; never here. */
 
   /* ---------- section scaffolding ---------- */
   .section { padding: 72px 0 0; }
@@ -425,21 +411,16 @@
   <strong>Work in progress</strong> — this portfolio is being actively built out; it should be fully operational by <strong>2026-07-13 @ 6:00&nbsp;AM PDT</strong> (GMT&minus;7). Last&nbsp;updated <span class="wip-updated">2026-07-11 9:50 AM CT</span>.
 </div>
 
-<div class="layout">
-<aside class="rail" aria-label="Page navigation">
-  <div class="rail-inner">
-    <a class="mark" href="#top">Brendan<br>Wischweh</a>
-    <a class="nav" href="#what">What it is</a>
-    <a class="nav" href="#gallery">Gallery</a>
-    <a class="nav" href="#numbers">The numbers</a>
-    <a class="nav" href="#built">How it&rsquo;s built</a>
-    <a class="nav ext" href="architecture.html">Architecture &#8599;</a>
-    <a class="nav" href="videos.html">Videos &#8599;</a>
-    <a class="nav ext" href="systems.html">Systems &#8599;</a>
-    <a class="nav" href="#contact">Contact</a>
-  </div>
-</aside>
-<div class="content">
+<!-- The left rail is INJECTED here, immediately above this header, inside the
+     SITERAIL BEGIN / SITERAIL END marker pair
+     (physics/tools/showcase/inject_site_rail.py). The hand-authored rail aside
+     that used to sit here — with the .layout/.content grid wrappers that
+     positioned it — was removed when the shared rail landed: the injector owns
+     only the region between its markers and cannot delete an aside, so leaving
+     it would have rendered TWO rails.
+     (NB: the marker names are spelled out in prose above rather than shown as
+     literal comment syntax — an HTML comment cannot nest, so an inner comment
+     close would END this one and dump the rest of it onto the page as text.) -->
 
 <header class="wrap hero" id="top">
   <div>
@@ -808,9 +789,6 @@
   </div>
 </footer>
 
-</div><!-- /.content -->
-</div><!-- /.layout -->
-
 <!-- Before/after wipe sliders (P4, Figs 4 & 5). The ONE shared module
      public/assets/js/wipe_slider.js (D-0 single-module rule; the systems wing
      consumes the same file). Classic script — self-inits on DOMContentLoaded,
@@ -828,30 +806,14 @@
     controlsEl: document.getElementById('fl-controls')
   });
 </script>
+<!-- The rail scrollspy that used to live here MOVED INTO the shared rail
+     component (_siterail.html.j2), which ships it with the markup it depends on.
+     It bound '.rail a.nav[href^="#"]' and hardcoded the observed section ids —
+     both of which the shared component changed, so a copy left here would have
+     matched nothing and failed SILENTLY. The ported one derives the ids it
+     observes from the rail's own anchors, and sets aria-current="page" (the
+     HTML-spec value) rather than the "true" this copy used. -->
 <script>
-(function () {
-  // ---- rail scrollspy (progressive enhancement) ----
-  if ('IntersectionObserver' in window) {
-    var links = {};
-    document.querySelectorAll('.rail a.nav[href^="#"]').forEach(function (a) {
-      links[a.getAttribute('href').slice(1)] = a;
-    });
-    var spy = new IntersectionObserver(function (entries) {
-      entries.forEach(function (e) {
-        if (!e.isIntersecting) return;
-        Object.keys(links).forEach(function (id) {
-          links[id].removeAttribute('aria-current');
-        });
-        var link = links[e.target.id];
-        if (link) link.setAttribute('aria-current', 'true');
-      });
-    }, { rootMargin: '-35% 0px -55% 0px' });
-    ['what', 'gallery', 'numbers', 'built', 'contact'].forEach(function (id) {
-      var el = document.getElementById(id);
-      if (el) spy.observe(el);
-    });
-  }
-})();
 (function () {
   // ---- click-to-enlarge lightbox (gallery stills only; the wipe sliders
   //      and the field lab keep their own drag interactions) ----

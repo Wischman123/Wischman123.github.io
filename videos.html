@@ -23,16 +23,12 @@
   .wrap { max-width: 860px; margin: 0 auto; padding: 0 24px 72px; }
   .prose { max-width: 66ch; }
 
-  .back {
-    font-family: var(--mono);
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    padding: 26px 0 0;
-    margin: 0;
-  }
-  .back a { color: var(--ink-soft); text-decoration: none; }
-  .back a:hover { color: var(--accent-text); }
+  /* .back — REMOVED 2026-07-12. This page's only navigation was a bare
+     "← back to the main page" link, because it was the one page the old rail
+     never reached. The shared site rail (injected above, inside SITERAIL
+     markers; links from deep_nav.py::SITE_NAV) now carries every page of the
+     site from every page of the site, so the back-link was a redundant
+     one-directional escape hatch. The footer still names the main page. */
 
   header { padding: 56px 0 0; }
   .eyebrow {
@@ -129,9 +125,12 @@
   }
 </style>
 
+<!-- The left rail is INJECTED immediately above this wrap, inside the
+     SITERAIL BEGIN / SITERAIL END marker pair
+     (physics/tools/showcase/inject_site_rail.py): ONE rail component for the
+     whole site. The bare back-link that used to open this page went with it —
+     see the .back note in the stylesheet above. -->
 <div class="wrap">
-
-<p class="back"><a href="index.html">&larr; back to the main page</a></p>
 
 <header>
   <p class="eyebrow">On screen</p>
