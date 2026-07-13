@@ -110,29 +110,43 @@ body.wing {
 .wing .fieldlab-controls { font-size: 0.92rem; color: var(--ink-soft); margin: 0.4rem 0 0; }
 .wing .fieldlab-controls button { font-family: var(--mono); font-size: 0.82rem; padding: 0.15rem 0.6rem; margin: 0 0.15rem; border: 1px solid var(--accent); border-radius: 4px; background: transparent; color: var(--accent-text); cursor: pointer; }
 .wing .fieldlab-controls button:hover { background: var(--accent); color: var(--bg); }
-/* --- left navigation rail + hero jump-list --- REMOVED 2026-07-12 -----------
- * This block hand-mirrored index.html's .rail component ("if index.html's .rail
- * rules change, re-mirror them here" — i.e. drift prevented by remembering to
- * re-paste), plus the .layout grid that positioned it and the in-hero .wing-nav
- * that stood in for it below 1100px, where the rail simply vanished.
- *
- * The site has ONE rail component now, and this page has it stamped in:
- *   markup   physics/tools/showcase/templates/_siterail.html.j2  (a Jinja macro)
- *   styling  physics/tools/showcase/templates/_siterail.css
- *   links    physics/tools/showcase/deep_nav.py::SITE_NAV        (order + labels)
- *   stamped  physics/tools/showcase/inject_site_rail.py -> SITERAIL markers
- *
- * It is position:fixed (no .layout grid needed), it COLLAPSES into a sticky top
- * bar below 1100px instead of disappearing, and it carries this page's exhibit
- * anchors in its own "On this page" zone — which is why the .wing-nav jump-list
- * went with it rather than staying as a second nav. Do not reintroduce a .rail
- * rule here; edit _siterail.css.
- *
- * The component reads its colours through var() fallback chains
- * (--text -> --ink, --line -> --rule, --core -> --accent-text, …) precisely
- * because this page still links THIS stylesheet's older token names instead of
- * theme.css's. Finishing that migration is a separate, still-open job; the rail
- * renders correctly either way and does not block on it. */
+.wing nav.wing-nav { margin-top: 1.2rem; display: flex; flex-wrap: wrap; gap: 0.5rem 1.1rem; }
+.wing nav.wing-nav a { color: var(--accent-text); text-decoration: none; font-size: 0.95rem; border-bottom: 1px solid transparent; }
+.wing nav.wing-nav a:hover { border-bottom-color: var(--accent); }
+
+/* --- left navigation rail --------------------------------------------------
+ * REUSES the canonical .rail component from public/index.html (identical
+ * .layout / .rail / .rail-inner / .mark / a.nav / .ext structure and verbatim
+ * values), so the wing's sidebar is visually indistinguishable from the home
+ * page's nav — one nav language across the site. Scoped under .wing. The
+ * in-hero .wing-nav stays in the markup as the <1100px fallback (rail hides
+ * there, exactly as index.html hides its rail). Token-driven; theme-agnostic.
+ * If index.html's .rail rules change, re-mirror them here. */
+.wing .layout { display: grid; grid-template-columns: 208px minmax(0, 1fr); }
+.wing .rail { border-right: 1px solid var(--rule); }
+.wing .rail-inner {
+  position: sticky; top: 0; padding: 30px 22px;
+  display: flex; flex-direction: column;
+}
+.wing .rail .mark {
+  font-family: var(--serif); font-size: 1.02rem; font-weight: 600;
+  color: var(--ink); text-decoration: none; margin-bottom: 22px; line-height: 1.3;
+}
+.wing .rail a.nav {
+  font-family: var(--mono); font-size: 11.5px; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--ink-soft); text-decoration: none; padding: 7px 0;
+}
+.wing .rail a.nav:hover { color: var(--accent-text); }
+.wing .rail a.nav[aria-current="true"] { color: var(--accent-text); }
+.wing .rail a.nav[aria-current="true"]::before { content: "— "; }
+.wing .rail .ext { margin-top: 16px; border-top: 1px solid var(--rule); padding-top: 14px; }
+@media (max-width: 1099px) {
+  .wing .layout { display: block; }
+  .wing .rail { display: none; }
+}
+@media (min-width: 1100px) {
+  .wing nav.wing-nav { display: none; }   /* rail replaces the hero jump-list on desktop */
+}
 
 .wing .exhibit { border-bottom: 1px solid var(--rule); padding: 2.2rem 0; }
 .wing .exhibit:last-of-type { border-bottom: none; }
@@ -205,6 +219,11 @@ body.wing {
 }
 .sim-embed__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 @media (max-width: 640px) { .sim-embed__grid { grid-template-columns: 1fr; } }
+/* D5 — a card that spans every column of the embed grid. For scenes that need
+   horizontal room (an orbit) and for any odd card that would otherwise orphan
+   in the 1fr 1fr row. Collapses to a normal single column at the mobile break
+   automatically, since the grid is one column there. */
+.sim-embed__wide { grid-column: 1 / -1; }
 .sim-embed__cap { font-size: 0.85rem; color: var(--ink-soft); margin: 0.4rem 0 0; }
 /* W3 — the embedded frame runs canvas-only (minimal chrome); this per-card
    link opens the SAME scene in the full simulator (all controls) in a new tab. */

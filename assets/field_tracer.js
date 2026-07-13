@@ -157,34 +157,13 @@ export function initFieldLab(canvas, config) {
   let lastW = 0;                // last CSS width/height chargesPx is expressed in
   let lastH = 0;
 
-  // Read the page's palette, CANONICAL name first and the COMPAT name as the
-  // fallback — the same one-way chain the shared site-rail component uses.
-  //
-  // WHY BOTH. This one module now has two hosts with two different token sets:
-  //   * public/systems.html links site.css, which declares ONLY the compat names
-  //     (--accent / --ink / --bg). The canonical lookups below return '' there and
-  //     the compat values win — so that page renders EXACTLY as it did before.
-  //   * deep/sims.html inlines base.html.j2's palette, which declares ONLY the
-  //     canonical names (--core / --text / --paper). Reading only --accent there
-  //     would return '' and silently fall through to the hardcoded warm literals —
-  //     a rust-and-cream field lab dropped into a cool blue page, and unreadable in
-  //     dark mode, with nothing logged.
-  // Aliases flow canonical -> compat and never back (theme.css's cycle hazard), so
-  // this order is the safe one.
   function themeColors() {
     if (typeof getComputedStyle !== 'function') return cfg;
     const s = getComputedStyle(document.documentElement);
-    const pick = (...names) => {
-      for (const n of names) {
-        const v = (s.getPropertyValue(n) || '').trim();
-        if (v) return v;
-      }
-      return '';
-    };
     return {
-      lineColor: pick('--core', '--accent') || cfg.lineColor,
-      inkColor: pick('--text', '--ink') || cfg.inkColor,
-      bgColor: pick('--paper', '--bg') || cfg.bgColor,
+      lineColor: (s.getPropertyValue('--accent') || '').trim() || cfg.lineColor,
+      inkColor: (s.getPropertyValue('--ink') || '').trim() || cfg.inkColor,
+      bgColor: (s.getPropertyValue('--bg') || '').trim() || cfg.bgColor,
     };
   }
 
