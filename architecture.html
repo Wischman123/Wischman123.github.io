@@ -76,9 +76,106 @@
   .foot .rule{color:var(--text);}
   .foot .paths{display:block;margin-top:8px;word-break:break-word;}
 
+  /* ===========================================================================
+     THE DIAGRAM BREATHES — two clocks, because it draws two different things.
+
+     --beat (6s)  the peristaltic wave.  Teacher UI fires -> the API relays ->
+                  the core INHALES until it is visibly distended -> it clamps
+                  down (systole) -> and that squeeze is what drives the four
+                  driven ports.  Every green/yellow element is the SAME 6s
+                  animation sampled at a different --wd delay; the delay IS the
+                  ripple.  A rest phase closes the beat, so it reads as a
+                  creature and not a conveyor belt.
+
+     --osc (10s)  the subject plugins.  Those arrows are double-ENDED
+                  (importlib load <-> register_check), so nothing flows one
+                  way: the dashes swing OUT and BACK.  0.1 Hz, with a lurch-
+                  twitch-hang-snap profile whose acceleration keeps changing
+                  sign, i.e. real jerk, not a sine wave.
+     =========================================================================== */
+  .diagram{ --beat:6s; --osc:10s; }
+
+  /* --- a travelling signal: rounded beads streaming along an arrow --------- */
+  .wave{
+    fill:none; stroke-width:3; stroke-linecap:round;
+    stroke-dasharray:2 11;        /* bead period = 13 user units */
+    opacity:0;                    /* dark until the wave front reaches it */
+    animation:wave-travel var(--beat) linear infinite both;
+    animation-delay:var(--wd,0s);
+  }
+  .wave--drive{stroke:var(--drive);}
+  .wave--driven{stroke:var(--driven);}
+
+  /* Piecewise-linear offsets, so the SPEED is explicit and readable:
+     ramp in (27 px/s) -> surge (71) -> cruise (57) -> decay (33) as it fades. */
+  @keyframes wave-travel{
+    0%   {stroke-dashoffset:0;    opacity:0;}
+    5%   {stroke-dashoffset:-8;   opacity:.95;}   /* front arrives, snaps bright */
+    12%  {stroke-dashoffset:-38;}                 /* surge */
+    22%  {stroke-dashoffset:-72;}                 /* cruise */
+    28%  {stroke-dashoffset:-92;  opacity:.95;}
+    34%  {stroke-dashoffset:-104; opacity:0;}     /* tail passes; 104 = 8 beads */
+    100% {stroke-dashoffset:-104; opacity:0;}     /* dark for the rest of the beat */
+  }
+
+  /* --- the core: inhale, hold, SNAP, ring down, rest ----------------------- */
+  .corebody{
+    transform-box:view-box;
+    transform-origin:600px 340px;      /* the hexagon's centre, in viewBox units */
+    animation:core-breathe var(--beat) linear infinite both;
+  }
+  @keyframes core-breathe{
+    0%,20%  {transform:scale(1);     animation-timing-function:cubic-bezier(.4,0,.5,1);}
+    40%     {transform:scale(1.032); animation-timing-function:cubic-bezier(.3,0,.3,1);}
+    45%     {transform:scale(1.040); animation-timing-function:cubic-bezier(.85,0,.1,1);} /* hold... */
+    50%     {transform:scale(0.982); animation-timing-function:cubic-bezier(.2,.8,.3,1);} /* ...SNAP */
+    55%     {transform:scale(1.011); animation-timing-function:cubic-bezier(.3,0,.4,1);}  /* recoil */
+    62%     {transform:scale(0.997); animation-timing-function:cubic-bezier(.4,0,.4,1);}  /* ring-down */
+    70%,100%{transform:scale(1);}                                                          /* diastole */
+  }
+  .pulse{animation:core-glow var(--beat) ease-in-out infinite both;}
+  @keyframes core-glow{
+    0%,20%  {opacity:.05;}
+    45%     {opacity:.24;}   /* brightest at full inflation */
+    52%     {opacity:.06;}   /* the squeeze drives it out through the ports */
+    70%,100%{opacity:.05;}
+  }
+
+  /* --- a card lights as the pulse lands in it ------------------------------ */
+  .card{animation:card-hit var(--beat) ease-out infinite both; animation-delay:var(--wd,0s);}
+  @keyframes card-hit{
+    0%   {fill-opacity:.10;}
+    6%   {fill-opacity:.34;}
+    9%   {fill-opacity:.26;}   /* two-stage flicker, not a clean fade */
+    22%  {fill-opacity:.10;}
+    100% {fill-opacity:.10;}
+  }
+
+  /* --- the port notches are valves: shut at rest, open on the beat --------- */
+  .port{opacity:.55; animation:port-open var(--beat) ease-out infinite both; animation-delay:var(--wd,0s);}
+  @keyframes port-open{
+    0%   {opacity:.55;}
+    5%   {opacity:1;}
+    30%  {opacity:.55;}
+    100% {opacity:.55;}
+  }
+
+  /* --- subject plugins: 0.1 Hz swing, with jerk ---------------------------- */
+  .flowdash{animation:sub-oscillate var(--osc) linear infinite both; animation-delay:var(--wd,0s);}
+  @keyframes sub-oscillate{
+    0%   {stroke-dashoffset:0;   animation-timing-function:cubic-bezier(.16,.9,.2,1);}  /* violent launch, hard decel */
+    30%  {stroke-dashoffset:-33; animation-timing-function:cubic-bezier(.6,0,.7,1);}    /* recoil — acceleration flips sign */
+    40%  {stroke-dashoffset:-26; animation-timing-function:cubic-bezier(.2,.6,.2,1);}   /* flips again */
+    48%  {stroke-dashoffset:-31; animation-timing-function:cubic-bezier(.9,0,.12,1);}   /* HANGS... then rips back */
+    80%  {stroke-dashoffset:8;   animation-timing-function:cubic-bezier(.35,0,.25,1);}  /* overshoots past home */
+    100% {stroke-dashoffset:0;}                                                          /* settles */
+  }
+
   @media (prefers-reduced-motion: reduce){
-    .flowdash{animation:none !important;}
-    .pulse{animation:none !important;}
+    .flowdash,.wave,.corebody,.pulse,.card,.port{animation:none !important;}
+    .wave{opacity:.55;}          /* show the beads, held still */
+    .port{opacity:1;}            /* valves drawn open */
+    .corebody{transform:none;}
   }
 
   /* entry hand-off: this used to fade index.html's WARM paper into this page's
@@ -400,31 +497,46 @@
         <text class="t-col" x="1045" y="120" text-anchor="middle">Driven adapters · ports</text>
         <text class="t-col" x="600" y="762" text-anchor="middle">Subject adapters — plug in from outside</text>
 
-        <!-- ===== the dependency gate (wraps the core) ===== -->
+        <!-- ===== the dependency gate (wraps the core) =====
+             The gate does NOT breathe.  The core is alive; the rule that
+             contains it is not — that is the whole point of the drawing. -->
         <rect x="344" y="86" width="516" height="516" rx="20" fill="none"
               stroke="var(--gate)" stroke-width="1.4" stroke-dasharray="6 7" opacity=".85"/>
+
+        <!-- ===== core: outer hexagon = L2, inner hexagon = L1 =====
+             Everything that is part of the membrane lives in .corebody and
+             scales about the hexagon's centre (600,340).  The TEXT is left
+             outside the group on purpose — scaling type makes it shimmer. -->
+        <g class="corebody">
+          <!-- soft glow behind the core; brightens as the membrane fills -->
+          <polygon class="pulse" points="600,100 807.85,220 807.85,460 600,580 392.15,460 392.15,220"
+                   fill="var(--core)" opacity=".07"/>
+          <!-- L2 outer hex -->
+          <polygon points="600,100 807.85,220 807.85,460 600,580 392.15,460 392.15,220"
+                   fill="var(--core)" fill-opacity=".10" stroke="var(--core)" stroke-width="2"/>
+          <!-- L1 inner hex -->
+          <polygon points="600,230 695.26,285 695.26,395 600,450 504.74,395 504.74,285"
+                   fill="var(--mech)" fill-opacity=".16" stroke="var(--mech)" stroke-width="1.8"/>
+
+          <!-- port notches = valves.  The driving port opens as the wave enters;
+               the four driven ports open on the squeeze that fires them. -->
+          <rect class="port" style="--wd:2.10s" x="386" y="348" width="12" height="26" rx="2" fill="var(--core)"/>
+          <rect class="port" style="--wd:2.65s" x="802" y="228" width="12" height="24" rx="2" fill="var(--core)"/>
+          <rect class="port" style="--wd:2.75s" x="802" y="288" width="12" height="24" rx="2" fill="var(--core)"/>
+          <rect class="port" style="--wd:2.85s" x="802" y="363" width="12" height="24" rx="2" fill="var(--core)"/>
+          <rect class="port" style="--wd:2.95s" x="802" y="428" width="12" height="24" rx="2" fill="var(--core)"/>
+
+          <!-- inward chevrons (L2 depends on L1) -->
+          <g stroke="var(--mech)" stroke-width="1.6" fill="none" opacity=".65">
+            <path d="M590,246 L600,254 L610,246"/>
+            <path d="M590,240 L600,248 L610,240"/>
+          </g>
+        </g>
+
+        <!-- The gate's label card paints AFTER the core, so the hexagon's top
+             vertex hides behind it at full inflation instead of stabbing through. -->
         <rect x="452" y="73" width="296" height="26" rx="8" fill="var(--card)" stroke="var(--gate)" stroke-width="1.2"/>
         <text class="t-gate" x="600" y="90" text-anchor="middle">Dependency gate · import-linter</text>
-
-        <!-- ===== core: outer hexagon = L2, inner hexagon = L1 ===== -->
-        <!-- soft pulse behind core -->
-        <polygon class="pulse" points="600,100 807.85,220 807.85,460 600,580 392.15,460 392.15,220"
-                 fill="var(--core)" opacity=".07">
-          <animate attributeName="opacity" values=".05;.13;.05" dur="5.5s" repeatCount="indefinite"/>
-        </polygon>
-        <!-- L2 outer hex -->
-        <polygon points="600,100 807.85,220 807.85,460 600,580 392.15,460 392.15,220"
-                 fill="var(--core)" fill-opacity=".10" stroke="var(--core)" stroke-width="2"/>
-        <!-- L1 inner hex -->
-        <polygon points="600,230 695.26,285 695.26,395 600,450 504.74,395 504.74,285"
-                 fill="var(--mech)" fill-opacity=".16" stroke="var(--mech)" stroke-width="1.8"/>
-
-        <!-- port notches on hex edges -->
-        <rect x="386" y="348" width="12" height="26" rx="2" fill="var(--core)"/>            <!-- left / driving -->
-        <rect x="802" y="228" width="12" height="24" rx="2" fill="var(--core)"/>
-        <rect x="802" y="288" width="12" height="24" rx="2" fill="var(--core)"/>
-        <rect x="802" y="363" width="12" height="24" rx="2" fill="var(--core)"/>
-        <rect x="802" y="428" width="12" height="24" rx="2" fill="var(--core)"/>
 
         <!-- core labels -->
         <text class="t-core"  x="600" y="150" text-anchor="middle">L2 · Engine core</text>
@@ -436,49 +548,55 @@
         <text class="t-sub"   x="600" y="351" text-anchor="middle">diagrams · DrawingML · OMML</text>
         <text class="t-sub"   x="600" y="368" text-anchor="middle">stdlib + python-docx only</text>
 
-        <!-- inward chevrons (L2 depends on L1) -->
-        <g stroke="var(--mech)" stroke-width="1.6" fill="none" opacity=".65">
-          <path d="M590,246 L600,254 L610,246"/>
-          <path d="M590,240 L600,248 L610,240"/>
-        </g>
-
         <!-- ===== driving adapters (left) ===== -->
         <g>
-          <rect x="70" y="204" width="190" height="60" rx="10" fill="var(--drive)" fill-opacity=".10" stroke="var(--drive)" stroke-width="1.6"/>
+          <!-- the Teacher UI is where the beat STARTS: --wd:0s -->
+          <rect class="card" style="--wd:0s" x="70" y="204" width="190" height="60" rx="10" fill="var(--drive)" fill-opacity=".10" stroke="var(--drive)" stroke-width="1.6"/>
           <text class="t-title" x="165" y="229" text-anchor="middle">Teacher UI</text>
           <text class="t-sub"   x="165" y="248" text-anchor="middle">tools/product/ui</text>
 
-          <rect x="70" y="330" width="190" height="60" rx="10" fill="var(--drive)" fill-opacity=".10" stroke="var(--drive)" stroke-width="1.6"/>
+          <rect class="card" style="--wd:1.25s" x="70" y="330" width="190" height="60" rx="10" fill="var(--drive)" fill-opacity=".10" stroke="var(--drive)" stroke-width="1.6"/>
           <text class="t-title" x="165" y="355" text-anchor="middle">Thin API · FastAPI</text>
           <text class="t-sub"   x="165" y="374" text-anchor="middle">tools/product/api</text>
         </g>
-        <!-- UI -> API -> core -->
+        <!-- UI -> API -> core.  Each solid arrow keeps its arrowhead; a .wave
+             overlay rides on top of it carrying the beads.  The --wd delays
+             (0s, .8s) are what make the ripple travel down the chain. -->
         <path d="M165,264 L165,330" fill="none" stroke="var(--drive)" stroke-width="2" marker-end="url(#ah-drive)"/>
+        <path class="wave wave--drive" style="--wd:0s" d="M165,264 L165,330"/>
         <text class="t-tiny" x="176" y="300" text-anchor="start">http only</text>
         <path d="M260,360 L384,360" fill="none" stroke="var(--drive)" stroke-width="2" marker-end="url(#ah-drive)"/>
+        <path class="wave wave--drive" style="--wd:.8s" d="M260,360 L384,360"/>
 
         <!-- ===== driven adapters (right, through ports) ===== -->
         <g>
-          <rect x="938" y="150" width="212" height="54" rx="10" fill="var(--driven)" fill-opacity=".10" stroke="var(--driven)" stroke-width="1.6"/>
+          <rect class="card" style="--wd:4.00s" x="938" y="150" width="212" height="54" rx="10" fill="var(--driven)" fill-opacity=".10" stroke="var(--driven)" stroke-width="1.6"/>
           <text class="t-title" x="1044" y="173" text-anchor="middle">LLM Gateway</text>
           <text class="t-sub"   x="1044" y="191" text-anchor="middle">gateway/port.py</text>
 
-          <rect x="938" y="248" width="212" height="54" rx="10" fill="var(--driven)" fill-opacity=".10" stroke="var(--driven)" stroke-width="1.6"/>
+          <rect class="card" style="--wd:4.10s" x="938" y="248" width="212" height="54" rx="10" fill="var(--driven)" fill-opacity=".10" stroke="var(--driven)" stroke-width="1.6"/>
           <text class="t-title" x="1044" y="271" text-anchor="middle">Document renderer</text>
           <text class="t-sub"   x="1044" y="289" text-anchor="middle">python-docx</text>
 
-          <rect x="938" y="346" width="212" height="54" rx="10" fill="var(--driven)" fill-opacity=".10" stroke="var(--driven)" stroke-width="1.6"/>
+          <rect class="card" style="--wd:4.20s" x="938" y="346" width="212" height="54" rx="10" fill="var(--driven)" fill-opacity=".10" stroke="var(--driven)" stroke-width="1.6"/>
           <text class="t-title" x="1044" y="369" text-anchor="middle">Bubble-sheet scanner</text>
           <text class="t-sub"   x="1044" y="387" text-anchor="middle">bubble_grader</text>
 
-          <rect x="938" y="444" width="212" height="54" rx="10" fill="var(--driven)" fill-opacity=".10" stroke="var(--driven)" stroke-width="1.6"/>
+          <rect class="card" style="--wd:4.30s" x="938" y="444" width="212" height="54" rx="10" fill="var(--driven)" fill-opacity=".10" stroke="var(--driven)" stroke-width="1.6"/>
           <text class="t-title" x="1044" y="467" text-anchor="middle">Content bank</text>
           <text class="t-sub"   x="1044" y="485" text-anchor="middle">fixtures / DB</text>
         </g>
+        <!-- The systole lands at 45%->50% of the beat = 2.70s..3.00s.  These four
+             --wd delays (2.75..3.05s) sit exactly inside it: the squeeze is
+             literally what fires them, and the 100ms stagger fans them out. -->
         <path d="M814,240 L934,177" fill="none" stroke="var(--driven)" stroke-width="2" marker-end="url(#ah-driven)"/>
+        <path class="wave wave--driven" style="--wd:2.75s" d="M814,240 L934,177"/>
         <path d="M814,300 L934,275" fill="none" stroke="var(--driven)" stroke-width="2" marker-end="url(#ah-driven)"/>
+        <path class="wave wave--driven" style="--wd:2.85s" d="M814,300 L934,275"/>
         <path d="M814,375 L934,373" fill="none" stroke="var(--driven)" stroke-width="2" marker-end="url(#ah-driven)"/>
+        <path class="wave wave--driven" style="--wd:2.95s" d="M814,375 L934,373"/>
         <path d="M814,440 L934,471" fill="none" stroke="var(--driven)" stroke-width="2" marker-end="url(#ah-driven)"/>
+        <path class="wave wave--driven" style="--wd:3.05s" d="M814,440 L934,471"/>
 
         <!-- ===== subject plugins (bottom, dependency inversion) ===== -->
         <g>
@@ -492,15 +610,14 @@
           <text class="t-sub"   x="758" y="697" text-anchor="middle">K-maps · truth tables</text>
           <text class="t-sub"   x="758" y="712" text-anchor="middle">build.py orchestrator</text>
         </g>
-        <!-- dependency-inversion links: engine loads plugin; plugin registers checks -->
-        <path class="flowdash" d="M516,533 L486,646" fill="none" stroke="var(--subject)" stroke-width="1.8"
-              stroke-dasharray="5 6" marker-start="url(#ah-sub)" marker-end="url(#ah-sub)">
-          <animate attributeName="stroke-dashoffset" values="0;-22" dur="1.1s" repeatCount="indefinite"/>
-        </path>
-        <path class="flowdash" d="M684,533 L742,646" fill="none" stroke="var(--subject)" stroke-width="1.8"
-              stroke-dasharray="5 6" marker-start="url(#ah-sub)" marker-end="url(#ah-sub)">
-          <animate attributeName="stroke-dashoffset" values="0;-22" dur="1.1s" repeatCount="indefinite"/>
-        </path>
+        <!-- Dependency-inversion links.  These arrows are double-ENDED — the engine
+             loads the plugin AND the plugin registers checks back — so nothing
+             flows one way and the dashes must SWING, not stream.  0.1 Hz (10s),
+             out of phase with each other so the pair never marches in lockstep. -->
+        <path class="flowdash" style="--wd:0s" d="M516,533 L486,646" fill="none" stroke="var(--subject)" stroke-width="1.8"
+              stroke-dasharray="5 6" marker-start="url(#ah-sub)" marker-end="url(#ah-sub)"/>
+        <path class="flowdash" style="--wd:-3.4s" d="M684,533 L742,646" fill="none" stroke="var(--subject)" stroke-width="1.8"
+              stroke-dasharray="5 6" marker-start="url(#ah-sub)" marker-end="url(#ah-sub)"/>
         <text class="t-tiny" x="600" y="628" text-anchor="middle" fill="var(--subject)">importlib load  ⇄  register_check()</text>
 
         <!-- ports label -->
