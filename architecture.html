@@ -933,29 +933,29 @@
          along each edge, and sin(0) = sin(pi) = 0.  Each edge bulges at its
          midpoint, so a swollen hexagon blooms into a six-lobed flower.
 
-         The amplitude is the hexagon's own growth:
+         AND IT OSCILLATES IN TIME.  That is what makes it a WAVE.
 
-             A = gain * (scale - 1)
+         The amplitude A(t) is not the body's displacement -- it is the
+         perimeter's OWN flexural mode: a lightly damped oscillator (1.5 Hz)
+         pumped by the body's motion.  Driving A straight off (scale - 1), as
+         this first did, never crosses neutral: the edges bulge and relax and
+         that is a static distortion that GROWS, not a standing wave.  A real
+         standing wave swings THROUGH zero -- crest becomes trough becomes crest.
+         This one crosses zero ~22 times a beat.
 
-         which has three consequences worth having, all of them free:
-           * at rest (scale == 1) the amplitude is EXACTLY zero -- a clean,
-             sharp hexagon.  The wave appears only when the body moves.
-           * L1 is motionless until the wavefront strikes it, so its perimeter
-             is flat until the strike and blooms ON impact.  We do not have to
-             time that; it is already true.
-           * when a hexagon COMPRESSES, scale-1 goes negative, so the bulges
-             invert into DIMPLES.  A struck bell does exactly this.
+         It also RINGS ON after the body has stopped.  The membrane is still
+         waving while the adapters discharge (22% of peak through that window),
+         decaying to 5% by the end of the beat.  And L1's perimeter is set going
+         by the WAVEFRONT'S BLOW -- strike a membrane and its edge rings.
 
-         WHY IT READS THE RENDERED SCALE, AND DOES NOT RE-DERIVE IT
-         ---------------------------------------------------------
-         getComputedStyle gives us the scale the browser is ACTUALLY painting,
-         which is the CSS spring the generator produced.  Re-implementing that
-         curve here would mean two models of the same motion, free to drift
-         apart on the next retune.  There is one model; this reads it.
-
-         It also means this is slaved to the CSS clock for free: pause the CSS
-         animations and the perimeter freezes with them, which is what lets the
-         verification harness step through the beat.
+         WHY A TABLE AND NOT AN ODE INTEGRATED HERE
+         ------------------------------------------
+         Two hard reasons.  The verification harness PINS the CSS clock and jumps
+         around inside the beat; a real-time integrator would ignore that and
+         happily keep integrating, so nothing could be stepped or frozen.  And
+         steady state -- which is what makes A(0) == A(BEAT), so the loop does not
+         jump -- only exists in the precomputed solution.  The generator owns the
+         physics; this file looks the answer up by the clock.
 
          CSS cannot do this -- a polygon's points are not interpolable -- so it
          is the one piece of the diagram that needs script.  Everything degrades
@@ -964,6 +964,18 @@
          drawing it always was.
          ====================================================================== */
       (function () {
+        /* >>> GENERATED RING TABLE -- gen_core_springs.py -- DO NOT HAND-EDIT */
+        /* GENERATED -- the perimeter's flexural ring, T_n=0.66s (1.5 Hz) zeta=0.04.
+           One steady-state beat of  q'' + 2*zf*wf*q' + wf^2*q = wf^2*(scale-1).
+           A TABLE, not an ODE integrated live, for two reasons: the harness
+           PINS the CSS clock and jumps around in it, which a real-time
+           integrator would ignore; and steady state is what makes the loop
+           close exactly.  Look it up by the clock; never integrate here. */
+        var RING_BEAT = 9;
+        var RING_L2 = [-0.806,-0.843,-0.842,-0.802,-0.727,-0.619,-0.486,-0.333,-0.167,0.003,0.170,0.327,0.466,0.582,0.670,0.725,0.747,0.735,0.689,0.613,0.511,0.387,0.248,0.099,-0.051,-0.196,-0.330,-0.447,-0.541,-0.609,-0.649,-0.658,-0.638,-0.589,-0.514,-0.417,-0.303,-0.177,-0.045,0.087,0.212,0.326,0.423,0.499,0.551,0.578,0.578,0.551,0.500,0.428,0.337,0.232,0.119,0.002,-0.113,-0.221,-0.317,-0.397,-0.457,-0.496,-0.512,-0.504,-0.474,-0.422,-0.351,-0.265,-0.166,-0.058,0.054,0.166,0.276,0.379,0.473,0.555,0.624,0.680,0.723,0.753,0.772,0.783,0.788,0.790,0.793,0.799,0.812,0.834,0.867,0.914,0.974,1.049,1.138,1.240,1.353,1.475,1.602,1.733,1.862,1.988,2.107,2.216,2.313,2.395,2.461,2.510,2.542,2.557,2.558,2.545,2.520,2.487,2.449,2.407,2.366,2.328,2.296,2.271,2.257,2.253,2.261,2.280,2.310,2.351,2.399,2.454,2.513,2.573,2.632,2.687,2.737,2.778,2.811,2.836,2.857,2.879,2.905,2.937,2.976,3.023,3.077,3.136,3.197,3.258,3.316,3.367,3.409,3.435,3.442,3.424,3.373,3.278,3.113,2.828,2.400,1.833,1.147,0.367,-0.474,-1.340,-2.194,-2.998,-3.719,-4.320,-4.759,-4.998,-5.016,-4.803,-4.367,-3.724,-2.904,-1.944,-0.888,0.217,1.321,2.374,3.330,4.148,4.793,5.239,5.469,5.474,5.256,4.825,4.201,3.409,2.486,1.470,0.405,-0.663,-1.690,-2.632,-3.450,-4.112,-4.591,-4.870,-4.940,-4.804,-4.470,-3.957,-3.292,-2.507,-1.639,-0.748,0.167,1.044,1.847,2.543,3.104,3.507,3.740,3.796,3.676,3.389,2.952,2.388,1.725,0.995,0.232,-0.528,-1.252,-1.904,-2.456,-2.880,-3.157,-3.271,-3.216,-2.993,-2.609,-2.083,-1.435,-0.696,0.103,0.926,1.738,2.503,3.189,3.768,4.215,4.514,4.653,4.630,4.449,4.120,3.660,3.091,2.437,1.723,0.975,0.219,-0.517,-1.208,-1.828,-2.354,-2.766,-3.050,-3.196,-3.202,-3.069,-2.807,-2.430,-1.955,-1.408,-0.812,-0.196,0.414,0.989,1.506,1.942,2.281,2.508,2.616,2.603,2.471,2.229,1.889,1.470,0.991,0.475,-0.053,-0.570,-1.053,-1.480,-1.832,-2.095,-2.259,-2.318,-2.270,-2.121,-1.878,-1.554,-1.165,-0.730,-0.269,0.196,0.644,1.056,1.412,1.699,1.904,2.019,2.041,1.969,1.810,1.571,1.266,0.908,0.515,0.105,-0.302,-0.689,-1.038,-1.334,-1.565,-1.720,-1.795,-1.788,-1.700,-1.536,-1.305,-1.019,-0.692,-0.339,0.024,0.379,0.711,1.005,1.249,1.431,1.546,1.589,1.559,1.459,1.295,1.074,0.809,0.512,0.196,-0.123,-0.431,-0.715,-0.961,-1.159,-1.302,-1.383,-1.400,-1.353,-1.246,-1.084,-0.876,-0.632,-0.363,-0.082,0.198,0.464,0.704,0.908,1.068,1.177,1.230,1.227,1.168,1.058,0.901,0.706,0.483,0.241,-0.008,-0.251,-0.480,-0.683,-0.851,-0.978,-1.058,-1.089,-1.071,-1.004,-0.892,-0.743,-0.562,-0.358,-0.142,0.077,0.288,0.483,0.653,0.791,0.890,0.947,0.960,0.930,0.858,0.748,0.606,0.439,0.255,0.063,-0.129,-0.312,-0.477,-0.618,-0.729];
+        var RING_L1 = [0.293,0.249,0.194,0.131,0.063,-0.007,-0.075,-0.138,-0.195,-0.241,-0.276,-0.297,-0.305,-0.299,-0.279,-0.247,-0.205,-0.154,-0.096,-0.036,0.026,0.085,0.139,0.186,0.224,0.250,0.266,0.269,0.259,0.238,0.207,0.167,0.120,0.068,0.014,-0.040,-0.091,-0.136,-0.175,-0.206,-0.226,-0.236,-0.235,-0.224,-0.202,-0.172,-0.134,-0.091,-0.045,0.003,0.050,0.093,0.132,0.164,0.188,0.203,0.209,0.205,0.192,0.170,0.141,0.107,0.067,0.026,-0.016,-0.057,-0.094,-0.126,-0.152,-0.171,-0.182,-0.184,-0.178,-0.164,-0.143,-0.115,-0.083,-0.048,-0.011,0.026,0.061,0.093,0.119,0.141,0.155,0.162,0.162,0.154,0.139,0.119,0.093,0.064,0.032,-0.001,-0.033,-0.063,-0.090,-0.112,-0.129,-0.139,-0.143,-0.141,-0.132,-0.117,-0.098,-0.074,-0.047,-0.019,0.010,0.038,0.064,0.086,0.104,0.117,0.125,0.126,0.122,0.113,0.098,0.080,0.058,0.034,0.008,-0.017,-0.041,-0.063,-0.081,-0.096,-0.106,-0.111,-0.111,-0.106,-0.096,-0.082,-0.064,-0.044,-0.023,-0.000,0.022,0.043,0.061,0.076,0.088,0.095,0.098,0.097,0.091,0.081,0.068,0.051,0.033,0.014,-0.006,-0.025,-0.043,-0.058,-0.071,-0.080,-0.085,-0.087,-0.084,-0.078,-0.068,-0.055,-0.040,-0.024,-0.006,0.011,0.028,0.043,0.055,0.065,0.072,0.076,0.076,0.073,0.066,0.057,0.047,0.060,0.122,0.244,0.425,0.659,0.931,1.223,1.518,1.796,2.037,2.227,2.351,2.399,2.368,2.254,2.061,1.796,1.469,1.094,0.687,0.264,-0.156,-0.546,-0.909,-1.221,-1.468,-1.641,-1.734,-1.745,-1.675,-1.529,-1.315,-1.044,-0.730,-0.387,-0.032,0.319,0.650,0.946,1.195,1.385,1.509,1.564,1.546,1.459,1.307,1.099,0.844,0.556,0.247,-0.068,-0.374,-0.658,-0.907,-1.111,-1.261,-1.352,-1.379,-1.344,-1.248,-1.098,-0.900,-0.665,-0.403,-0.128,0.148,0.413,0.655,0.863,1.028,1.144,1.206,1.212,1.164,1.063,0.916,0.730,0.514,0.278,0.034,-0.207,-0.436,-0.640,-0.812,-0.944,-1.032,-1.071,-1.061,-1.003,-0.900,-0.759,-0.585,-0.388,-0.177,0.039,0.249,0.445,0.617,0.758,0.862,0.926,0.946,0.923,0.859,0.757,0.622,0.462,0.283,0.095,-0.095,-0.277,-0.444,-0.587,-0.702,-0.782,-0.826,-0.832,-0.800,-0.732,-0.632,-0.506,-0.358,-0.197,-0.029,0.137,0.293,0.434,0.553,0.645,0.706,0.734,0.728,0.689,0.620,0.524,0.406,0.271,0.126,-0.022,-0.166,-0.301,-0.419,-0.517,-0.589,-0.634,-0.649,-0.634,-0.591,-0.522,-0.430,-0.321,-0.199,-0.069,0.061,0.186,0.300,0.399,0.479,0.535,0.566,0.571,0.550,0.504,0.436,0.350,0.249,0.139,0.024,-0.090,-0.198,-0.295,-0.377,-0.440,-0.483,-0.503,-0.500,-0.474,-0.427,-0.362,-0.281,-0.189,-0.090,0.011,0.110,0.203,0.285,0.352,0.403,0.434,0.445,0.436,0.407,0.360,0.298,0.223,0.139,0.051,-0.038,-0.124,-0.203,-0.272,-0.327,-0.366,-0.388,-0.392,-0.378,-0.347,-0.301,-0.242,-0.173,-0.098,-0.019,0.059,0.133,0.200,0.257,0.301,0.330,0.345,0.343,0.326];
+        /* <<< END GENERATED RING TABLE */
+
         var CX = 600, CY = 340;          // the hexagons' shared centre
         var SEG = 24;                    // samples per edge; mode 3 needs the resolution
 
@@ -1005,10 +1017,10 @@
 
         var BODIES = [
           { pts: [[600,100],[807.85,220],[807.85,460],[600,580],[392.15,460],[392.15,220]],
-            group: '.corebody',  gain: 137 * WAVE, mode: 3,  // => 5.5 units; flat depth 32
+            ring: RING_L2, mode: 3,          // peaks at 5.5 units; flat depth 32
             targets: ['#wv-glow', '#wv-rim', '#wv-l2'] },
           { pts: [[600,230],[695.26,285],[695.26,395],[600,450],[504.74,395],[504.74,285]],
-            group: '.coreinner', gain: 44 * WAVE,  mode: 3,  // => 2.4 units; flat depth 15
+            ring: RING_L1, mode: 3,          // peaks at 2.4 units; flat depth 15
             targets: ['#wv-l1'] }
         ];
         var TAPER = 0.12;      // see CLAMPED, below
@@ -1055,12 +1067,22 @@
           return d + 'Z';
         }
 
-        function scaleOf(sel) {
-          var el = document.querySelector(sel);
-          if (!el) return 1;
-          var t = getComputedStyle(el).transform;
-          if (!t || t === 'none') return 1;
-          try { return new DOMMatrix(t).a; } catch (e) { return 1; }
+        /* The beat's current time, taken from the CSS animation itself -- so the
+           perimeter is slaved to exactly the clock everything else runs on, and
+           pinning that clock pins the perimeter too. */
+        function beatTime() {
+          var el = document.querySelector('.corebody');
+          if (!el || !el.getAnimations) return 0;
+          var a = el.getAnimations()[0];
+          if (!a || a.currentTime == null) return 0;
+          return (a.currentTime / 1000) % RING_BEAT;
+        }
+
+        function ringAt(table, t) {
+          var x = t / RING_BEAT * table.length;
+          var i = Math.floor(x) % table.length;
+          var j = (i + 1) % table.length;
+          return table[i] + (table[j] - table[i]) * (x - Math.floor(x));
         }
 
         var nodes = BODIES.map(function (b) {
@@ -1069,11 +1091,10 @@
         });
 
         function frame() {
-          // READ every scale first, THEN write every path -- interleaving them
-          // would force a style recalc per element, every frame.
-          var amps = BODIES.map(function (b) { return b.gain * (scaleOf(b.group) - 1); });
+          var t = beatTime();
           for (var i = 0; i < BODIES.length; i++) {
-            var d = wavyPath(BODIES[i].pts, amps[i], BODIES[i].mode);
+            var amp = WAVE * ringAt(BODIES[i].ring, t);
+            var d = wavyPath(BODIES[i].pts, amp, BODIES[i].mode);
             for (var j = 0; j < nodes[i].length; j++) nodes[i][j].setAttribute('d', d);
           }
           requestAnimationFrame(frame);
