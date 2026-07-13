@@ -4,7 +4,7 @@
   <!-- showcase-generated:systems_showcase_deepdive_v2 -->
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex, nofollow">
-  <title>The engine room — how a wrong answer never ships</title>
+  <title>The lab — the collaboration experiments on itself</title>
   <style>
     /* ---------- palette (echoes docs/architecture/hexagonal_engine_v1.html) ---------- */
     :root{
@@ -326,62 +326,38 @@
    a standalone .footer keeps its own. */
 .arch-fade + .footer{margin-top:0;}
 
-  .lede{margin:22px 0 0;font-size:15px;color:var(--muted);max-width:66ch;}
+  section{margin-top:56px;}
+  .exhibit{background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:22px 24px;box-shadow:var(--shadow);}
+  .exhibit + .exhibit{margin-top:22px;}
+  .exhibit .kicker{font-family:var(--mono);font-size:11px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--core);font-weight:700;}
+  .exhibit .head{display:flex;align-items:baseline;justify-content:space-between;
+    gap:14px;flex-wrap:wrap;margin:6px 0 10px;}
+  .exhibit h2{font-size:20px;font-weight:780;margin:0;}
+  .exhibit h2 .tname{font-family:var(--mono);font-size:17px;color:var(--core);}
+  .exhibit p{margin:0 0 14px;color:var(--muted);font-size:14.5px;line-height:1.65;max-width:76ch;}
+  .exhibit p b{color:var(--text);}
 
-  section{margin-top:64px;}
-  section > h2{font-size:13px;font-family:var(--mono);letter-spacing:.16em;
-    text-transform:uppercase;color:var(--muted);margin:0 0 6px;font-weight:600;}
-  .section-dek{color:var(--muted);max-width:64ch;margin:0 0 24px;font-size:15px;}
+  /* status badges (gate a: the pending one must render, visibly) */
+  .status{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.06em;
+    text-transform:uppercase;padding:.3em .65em;border-radius:6px;white-space:nowrap;}
+  .status--shipped{color:var(--drive);background:color-mix(in srgb,var(--drive) 15%, transparent);}
+  .status--pending{color:var(--gate);background:color-mix(in srgb,var(--gate) 18%, transparent);}
 
-  /* ---------- gauntlet headline ---------- */
-  .headline{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;
-    margin:6px 0 26px;}
-  .headline .big{font-size:clamp(34px,6vw,60px);font-weight:840;letter-spacing:-.02em;
-    line-height:1;color:var(--text);font-family:var(--mono);}
-  .headline .big .approx{color:var(--muted);}
-  .headline .cap{font-size:16px;color:var(--muted);max-width:34ch;}
-
-  /* ---------- rejection capture ---------- */
-  figure.capture{margin:0 0 40px;background:var(--card);border:1px solid var(--line);
-    border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;}
-  figure.capture img{display:block;width:100%;height:auto;}
-  figure.capture figcaption{padding:12px 18px;font-family:var(--mono);font-size:12.5px;
-    color:var(--muted);border-top:1px solid var(--line);}
-  figure.capture figcaption b{color:var(--subject);font-weight:700;}
-
-  /* ---------- tier groups + cards ---------- */
-  .tier{margin-top:30px;}
-  .tier__head{display:flex;align-items:center;gap:12px;margin:0 0 14px;}
-  .tier__name{font-weight:730;font-size:16px;}
-  .tier__count{font-family:var(--mono);font-size:12.5px;color:var(--muted);}
-  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(272px,1fr));gap:12px;}
-  .card{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--gate);
-    border-radius:10px;padding:13px 15px;}
-  .card .name{font-family:var(--mono);font-size:12.5px;font-weight:700;color:var(--text);}
-  .card .blocks{color:var(--muted);font-size:13px;margin-top:6px;line-height:1.5;}
-  .card .blocks::before{content:"blocks ";font-family:var(--mono);font-size:10.5px;
-    letter-spacing:.1em;text-transform:uppercase;color:var(--subject);opacity:.85;}
-  .tier--data-validation .card{border-left-color:var(--drive);}
-  .tier--git-hook .card{border-left-color:var(--mech);}
-  .tier--static-lint .card{border-left-color:var(--driven);}
-
-  /* ---------- the pointer at the answer-verification exhibit (N1) ----------
-     The weld/FV CSS that used to sit here went WITH the exhibit, to
-     verification.html.j2. Leaving it behind would be dead rules on every build. */
-  .fv-pointer{margin:0;}
-  .fv-pointer a{display:flex;align-items:center;justify-content:space-between;gap:16px;
-    background:var(--card);border:1px solid var(--line);border-left:3px solid var(--core);
-    border-radius:12px;padding:18px 20px;box-shadow:var(--shadow);
-    color:var(--text);font-size:16px;font-weight:660;text-decoration:none;}
-  .fv-pointer a:hover{border-left-color:var(--drive);text-decoration:none;}
-  .fv-pointer .go{font-family:var(--mono);color:var(--core);font-weight:700;}
+  /* stat strip */
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;}
+  .cell{border:1px solid var(--line);border-left:3px solid var(--mech);border-radius:10px;
+    padding:12px 14px;background:color-mix(in srgb,var(--card) 60%, transparent);}
+  .cell .n{font-family:var(--mono);font-size:19px;font-weight:800;color:var(--text);}
+  .cell .l{margin-top:4px;color:var(--muted);font-size:12.5px;line-height:1.5;}
   </style>
 </head>
-<body class="engine">
+<body class="lab">
 <aside class="siterail" aria-label="Site navigation">
   <div class="siterail__inner">
     <a class="siterail__mark" href="../index.html"><span>Brendan</span><span>Wischweh</span></a>    <nav class="siterail__zone siterail__zone--site" aria-label="The site">
-      <p class="siterail__title">The site</p>      <a class="rail-page" href="../index.html">Home</a>      <a class="rail-page" href="../architecture.html">Architecture</a>      <a class="rail-page" href="code.html">Code</a>      <a class="rail-page" href="verification.html">Formal&nbsp;Verification</a>      <a class="rail-page" href="lab.html">The&nbsp;Lab</a>      <a class="rail-page" href="meta.html">Meta&nbsp;Tools</a>      <a class="rail-page" href="engine.html" aria-current="page">Engine&nbsp;Room</a>      <a class="rail-page" href="systems.html">Systems&nbsp;Atlas</a>      <a class="rail-page" href="sims.html">Sims</a>      <a class="rail-page" href="gallery.html">Gallery</a>      <a class="rail-page" href="../videos.html">Videos</a>    </nav>
+      <p class="siterail__title">The site</p>      <a class="rail-page" href="../index.html">Home</a>      <a class="rail-page" href="../architecture.html">Architecture</a>      <a class="rail-page" href="code.html">Code</a>      <a class="rail-page" href="verification.html">Formal&nbsp;Verification</a>      <a class="rail-page" href="lab.html" aria-current="page">The&nbsp;Lab</a>      <a class="rail-page" href="meta.html">Meta&nbsp;Tools</a>      <a class="rail-page" href="engine.html">Engine&nbsp;Room</a>      <a class="rail-page" href="systems.html">Systems&nbsp;Atlas</a>      <a class="rail-page" href="sims.html">Sims</a>      <a class="rail-page" href="gallery.html">Gallery</a>      <a class="rail-page" href="../videos.html">Videos</a>    </nav>
   </div>
 </aside><script>
 (function () {
@@ -419,266 +395,142 @@
 })();
 </script>
 <main class="wrap">
-  <p class="eyebrow">The correctness machinery</p>
-  <h1>How a wrong answer never ships</h1>
-  <p class="dek">Between a draft problem and a student's page stands a gauntlet of
-    build-blocking gates. Not one of them is advisory: each blocks a commit or a
-    build, and a real refusal looks like the capture below.</p>
+  <p class="eyebrow">The lab</p>
+  <h1>The collaboration experiments on itself</h1>
+  <p class="dek">Every other page shows machinery that keeps the <em>work</em>
+    honest. This page turns the instruments around: the collaboration is the
+    specimen &mdash; its habits measured under controlled conditions, its own
+    configuration put on trial, its tests audited for wishful thinking, even
+    its conversation medium rebuilt. Verdicts render as what they are &mdash;
+    including the ones still pending.</p>
 
-  <!-- ============ 1. the gate gauntlet ============ -->
-  <section aria-labelledby="gauntlet-h">
-    <h2 id="gauntlet-h">The gauntlet</h2>
-    <div class="headline">
-      <span class="big"><span class="approx">~</span><span class="stat" data-source="tools/showcase/gate_registry.yaml (HAND-CURATED census); count == len(gates) after the drift-check (check_gate_registry_consistency)" data-verified="2026-07-13" data-provenance="verified" title="source: tools/showcase/gate_registry.yaml (HAND-CURATED census); count == len(gates) after the drift-check (check_gate_registry_consistency) · verified 2026-07-13">43</span></span>
-      <span class="cap">distinct, build-blocking gates stand between a draft and a
-        shippable page — counted live from the registry, never by hand.</span>
+  <!-- ============ 1. /explore — the collaborator's modes, measured ============ -->
+  <section class="exhibit" data-status="shipped" aria-labelledby="explore-h">
+    <div class="kicker">Is prompting folklore measurable?</div>
+    <div class="head">
+      <h2 id="explore-h"><span class="tname">/explore</span> &mdash; the
+        collaborator&rsquo;s modes, under controlled conditions</h2>
+      <span class="status status--shipped">Shipped as a skill</span>
     </div>
-
-    <figure class="capture">
-      <img src="assets/engine/gate_rejection.png"
-           alt="A terminal capture of the authored-versus-simulation gate refusing
-           a seeded bad answer key: the authored horizontal range disagrees with
-           the simulated range far beyond the fail band, so the build is blocked.">
-      <figcaption>A real, sanitized refusal &mdash; the authored key claimed a range
-        the simulation would not corroborate, so the build was <b>BLOCKED</b>. One
-        capture, reused across the showcase; the gate that produced it is one of the
-        three welds, explained on the Formal Verification page.</figcaption>
-    </figure>
-
-    <div class="tier tier--data-validation">
-      <div class="tier__head">
-        <span class="tier__name">Data validators</span>
-        <span class="tier__count"><span class="stat" data-source="tools/showcase/gate_registry.yaml (HAND-CURATED census) — tier==data-validation" data-verified="2026-07-13" data-provenance="verified" title="source: tools/showcase/gate_registry.yaml (HAND-CURATED census) — tier==data-validation · verified 2026-07-13">25</span> gates</span>
-      </div>
-      <div class="cards">
-        <div class="card">
-          <div class="name">compat-mode validator</div>
-          <div class="blocks">a Document() caller that never sets Word compatibility mode</div>
-        </div>
-        <div class="card">
-          <div class="name">data integrity validator</div>
-          <div class="blocks">problem/solution data files with integrity violations</div>
-        </div>
-        <div class="card">
-          <div class="name">diagram validator</div>
-          <div class="blocks">diagram functions that violate placement/helper conventions</div>
-        </div>
-        <div class="card">
-          <div class="name">grader-reference validator</div>
-          <div class="blocks">an incomplete grader reference directory</div>
-        </div>
-        <div class="card">
-          <div class="name">MC validation runner</div>
-          <div class="blocks">multiple-choice content failing the unified MC check set</div>
-        </div>
-        <div class="card">
-          <div class="name">MC database validator</div>
-          <div class="blocks">an MC database file that fails the CI-side database checks</div>
-        </div>
-        <div class="card">
-          <div class="name">MC schema validator</div>
-          <div class="blocks">MC records missing status/last_reviewed/teacher_notes schema fields</div>
-        </div>
-        <div class="card">
-          <div class="name">physics validator</div>
-          <div class="blocks">a problem whose physics fails a computed check (the first build gate)</div>
-        </div>
-        <div class="card">
-          <div class="name">plan validator</div>
-          <div class="blocks">a plan/sketch/dispatch doc that violates the plan schema</div>
-        </div>
-        <div class="card">
-          <div class="name">solution-structure validator</div>
-          <div class="blocks">an energy solution not starting with the work-energy theorem</div>
-        </div>
-        <div class="card">
-          <div class="name">problem-physics simulation validator</div>
-          <div class="blocks">authored answers that disagree with the physics simulation</div>
-        </div>
-        <div class="card">
-          <div class="name">sim_scene drift check</div>
-          <div class="blocks">a problem whose pinned sim_scene snapshot has drifted from its live scene re-run</div>
-        </div>
-        <div class="card">
-          <div class="name">scene-band self-check</div>
-          <div class="blocks">a scene whose simulated outputs fall outside its own declared expected bands</div>
-        </div>
-        <div class="card">
-          <div class="name">content-slice validator</div>
-          <div class="blocks">cum-exam student-report prose slices with content violations</div>
-        </div>
-        <div class="card">
-          <div class="name">cum-V population validator</div>
-          <div class="blocks">roster-vs-report population mismatches in Cum V grading</div>
-        </div>
-        <div class="card">
-          <div class="name">data-file validator</div>
-          <div class="blocks">problem/solution files failing the shared data-validation checks</div>
-        </div>
-        <div class="card">
-          <div class="name">DE choice-value validator</div>
-          <div class="blocks">a DE item whose computed_value disagrees with its choices</div>
-        </div>
-        <div class="card">
-          <div class="name">EM field-map validator</div>
-          <div class="blocks">equipotential-map diagrams with static-analysis violations</div>
-        </div>
-        <div class="card">
-          <div class="name">helper-usage validator</div>
-          <div class="blocks">a helper imported but never referenced (partial-revert smell)</div>
-        </div>
-        <div class="card">
-          <div class="name">registry-consistency validator</div>
-          <div class="blocks">cross-registry inconsistencies in the grading pipeline</div>
-        </div>
-        <div class="card">
-          <div class="name">roster validator</div>
-          <div class="blocks">a roster xlsx whose entries/snapshot fail schema validation</div>
-        </div>
-        <div class="card">
-          <div class="name">single-form validator</div>
-          <div class="blocks">single-form scanner-pathway violations</div>
-        </div>
-        <div class="card">
-          <div class="name">surface-tangent validator</div>
-          <div class="blocks">un-smoothed tangent mismatches at Surface junctions</div>
-        </div>
-        <div class="card">
-          <div class="name">uncertainty-box validator</div>
-          <div class="blocks">DE answer-form uncertainty boxes with bad layout</div>
-        </div>
-        <div class="card">
-          <div class="name">validation facade</div>
-          <div class="blocks">(facade) the aggregate validator surface the build imports</div>
-        </div>
-      </div>
-    </div>
-    <div class="tier tier--git-hook">
-      <div class="tier__head">
-        <span class="tier__name">Git-hook gates</span>
-        <span class="tier__count"><span class="stat" data-source="tools/showcase/gate_registry.yaml (HAND-CURATED census) — tier==git-hook" data-verified="2026-07-13" data-provenance="verified" title="source: tools/showcase/gate_registry.yaml (HAND-CURATED census) — tier==git-hook · verified 2026-07-13">12</span> gates</span>
-      </div>
-      <div class="cards">
-        <div class="card">
-          <div class="name">helper-reversion guard</div>
-          <div class="blocks">silent reversion of a shared helper back to an inlined workaround</div>
-        </div>
-        <div class="card">
-          <div class="name">compat-mode guard</div>
-          <div class="blocks">committing a .docx path that skips Word compatibilityMode=15</div>
-        </div>
-        <div class="card">
-          <div class="name">engine-universality guard</div>
-          <div class="blocks">sim-engine changes that break the universality invariant</div>
-        </div>
-        <div class="card">
-          <div class="name">plan-prune-invariants guard</div>
-          <div class="blocks">pruning a plan/state file in violation of the plan-prune invariants</div>
-        </div>
-        <div class="card">
-          <div class="name">workflow-render guard</div>
-          <div class="blocks">committing a workflow doc whose rendered output is stale</div>
-        </div>
-        <div class="card">
-          <div class="name">bridge-prefix guard</div>
-          <div class="blocks">a bridge module committed without its required prefix convention</div>
-        </div>
-        <div class="card">
-          <div class="name">pii-secret guard</div>
-          <div class="blocks">committing student PII or a secret into tracked content</div>
-        </div>
-        <div class="card">
-          <div class="name">plan close-out validator</div>
-          <div class="blocks">closing a plan whose close-out invariants are unmet</div>
-        </div>
-        <div class="card">
-          <div class="name">L1 purity check</div>
-          <div class="blocks">an L1-layer module importing across a forbidden architectural layer</div>
-        </div>
-        <div class="card">
-          <div class="name">move-readiness check</div>
-          <div class="blocks">a content move whose readiness preconditions are not satisfied</div>
-        </div>
-        <div class="card">
-          <div class="name">product anthropic gate</div>
-          <div class="blocks">a metered-Anthropic-API code path entering the product tree</div>
-        </div>
-        <div class="card">
-          <div class="name">smoke registered tests</div>
-          <div class="blocks">pushing when the registered smoke-test set does not pass</div>
-        </div>
-      </div>
-    </div>
-    <div class="tier tier--static-lint">
-      <div class="tier__head">
-        <span class="tier__name">Static lints</span>
-        <span class="tier__count"><span class="stat" data-source="tools/showcase/gate_registry.yaml (HAND-CURATED census) — tier==static-lint" data-verified="2026-07-13" data-provenance="verified" title="source: tools/showcase/gate_registry.yaml (HAND-CURATED census) — tier==static-lint · verified 2026-07-13">6</span> gates</span>
-      </div>
-      <div class="cards">
-        <div class="card">
-          <div class="name">dispatcher-cardinality lint</div>
-          <div class="blocks">more than one hooks dispatcher or a non-conforming hooks.d entry</div>
-        </div>
-        <div class="card">
-          <div class="name">dispatcher-purity lint</div>
-          <div class="blocks">the SC7 dispatcher breaking its architectural-purity promises</div>
-        </div>
-        <div class="card">
-          <div class="name">E-at-consumer-access lint</div>
-          <div class="blocks">an E-value accessed outside its sanctioned consumer boundary</div>
-        </div>
-        <div class="card">
-          <div class="name">path-validation SSOT lint</div>
-          <div class="blocks">an inline path-field check that bypasses the path-validation SSOT</div>
-        </div>
-        <div class="card">
-          <div class="name">schema-framework lint</div>
-          <div class="blocks">a new data/_schemas class that is not a Pydantic v2 BaseModel</div>
-        </div>
-        <div class="card">
-          <div class="name">stage-schema-consistency lint</div>
-          <div class="blocks">a TOML [[stages]] chain that is not schema-compatible end to end</div>
-        </div>
-      </div>
+    <p>Ask an assistant for ideas and it hedges &mdash; fluent, agreeable, and
+      quietly useless where honesty matters most. Instead of accepting that as
+      temperament, the collaboration ran <b>controlled experiments on
+      itself</b>: same task, repeated runs, one cue varied at a time, scored by
+      fixed measures. Two levers survived every ablation &mdash; explicit
+      <b>tolerance for weak ideas</b> and <b>altitude</b> &mdash; and a short
+      named cue reproduces the full effect across models. The winning cue now
+      ships as a skill that logs each invocation, so the lab result keeps
+      getting re-tested by ordinary use.</p>
+    <div class="strip">
+      <div class="cell"><div class="n"><span class="stat" data-source="tools/mode_experiments/results.jsonl — status==&#39;completed&#39; rows" data-verified="2026-07-13" data-provenance="verified" title="source: tools/mode_experiments/results.jsonl — status==&#39;completed&#39; rows · verified 2026-07-13">86</span></div>
+        <div class="l">completed headless runs in the experiment log.</div></div>
+      <div class="cell"><div class="n"><span class="stat" data-source="tools/mode_experiments/specs/e*.yaml excluding *smoke* (E1, E2, E4, E5, E6)" data-verified="2026-07-13" data-provenance="verified" title="source: tools/mode_experiments/specs/e*.yaml excluding *smoke* (E1, E2, E4, E5, E6) · verified 2026-07-13">5</span></div>
+        <div class="l">designed experiments &mdash; ablations, pilots, a
+          power run, a cross-model check.</div></div>
+      <div class="cell"><div class="n"><span class="stat stat--pinned" data-source="hand-pinned from tools/mode_experiments/specs/e5_hedging_maxcontrast_power.yaml (E5 header: Cohen&#39;s d on hedges/100w) + the /explore skill&#39;s validated-findings note; no machine-readable effect-size artifact located (probe 2026-07-13)" data-verified="2026-07-13" data-provenance="hand-pinned" title="source: hand-pinned from tools/mode_experiments/specs/e5_hedging_maxcontrast_power.yaml (E5 header: Cohen&#39;s d on hedges/100w) + the /explore skill&#39;s validated-findings note; no machine-readable effect-size artifact located (probe 2026-07-13) · verified 2026-07-13 (hand-pinned)">-5.28<span class="stat__pin" aria-hidden="true">†</span></span></div>
+        <div class="l">effect size (Cohen&rsquo;s d) of the tolerance lever on
+          hedging &mdash; large, and in the honest direction.</div></div>
+      <div class="cell"><div class="n"><span class="stat stat--pinned" data-source="hand-pinned from tools/mode_experiments/specs/e5_hedging_maxcontrast_power.yaml (E5 header: Cohen&#39;s d on hedges/100w) + the /explore skill&#39;s validated-findings note; no machine-readable effect-size artifact located (probe 2026-07-13)" data-verified="2026-07-13" data-provenance="hand-pinned" title="source: hand-pinned from tools/mode_experiments/specs/e5_hedging_maxcontrast_power.yaml (E5 header: Cohen&#39;s d on hedges/100w) + the /explore skill&#39;s validated-findings note; no machine-readable effect-size artifact located (probe 2026-07-13) · verified 2026-07-13 (hand-pinned)">-2.26<span class="stat__pin" aria-hidden="true">†</span></span></div>
+        <div class="l">effect size of the altitude lever &mdash; the second
+          keeper.</div></div>
     </div>
   </section>
 
-  <!-- ============ 2. the pointer at the answer-verification exhibit ============
-       The weld gates + the FV triangulation table LIVED here until review item 10
-       gave them their own page. The pointer's sentence, its data-fv-pointer marker
-       and its href are fv_exhibit's constants — the same strings this page's
-       build-time gate checks for. Reword the prose around it freely; do not drop
-       the marker, the sentence, or the link. -->
-  <section aria-labelledby="fv-pointer-h">
-    <h2 id="fv-pointer-h">Is the answer key even right?</h2>
-    <p class="section-dek">A gate that blocks bad work is only as good as its idea
-      of "right". Three welds pin every problem to a running simulation, and a
-      three-way triangulation reconciles the authored answer key against physics
-      computed two independent ways &mdash; one of them checked against a Lean
-      proof. That machinery has its own room.</p>
-    <p class="fv-pointer" data-fv-pointer="verification">
-      <a href="verification.html">
-        <span>Answer verification lives on the Formal Verification page</span>
-        <span class="go" aria-hidden="true">&rarr;</span>
-      </a>
-    </p>
+  <!-- ============ 2. real_gate_check — tests that test nothing ============ -->
+  <section class="exhibit" data-status="shipped" aria-labelledby="gates-h">
+    <div class="kicker">Who audits the tests?</div>
+    <div class="head">
+      <h2 id="gates-h"><span class="tname">real_gate_check</span> &mdash;
+        finding the tests that test nothing</h2>
+      <span class="status status--shipped">Shipped, warn-tier</span>
+    </div>
+    <p>A quality gate&rsquo;s test suite can stay green forever while proving
+      nothing: every test feeds the gate a doctored fixture, and the gate&rsquo;s
+      <b>real default path never runs</b>. That failure is invisible precisely
+      because everything is passing. This detector reads each gate&rsquo;s tests
+      statically and asks one question per call-site &mdash; does any test ever
+      exercise the gate as it actually runs in production? A gate whose every
+      test injects overrides gets flagged. Deliberately precision-first: it
+      would rather miss a case than cry wolf.</p>
+    <div class="strip">
+      <div class="cell"><div class="n"><span class="stat" data-source="tools/real_gate_check/runs.jsonl — latest run (2026-07-07, target_set frq_promote_gates_v1)" data-verified="2026-07-13" data-provenance="verified" title="source: tools/real_gate_check/runs.jsonl — latest run (2026-07-07, target_set frq_promote_gates_v1) · verified 2026-07-13">7</span></div>
+        <div class="l">gates audited in the first target set.</div></div>
+      <div class="cell"><div class="n"><span class="stat" data-source="tools/real_gate_check/runs.jsonl — latest run (2026-07-07, target_set frq_promote_gates_v1) — counts.flagged" data-verified="2026-07-13" data-provenance="verified" title="source: tools/real_gate_check/runs.jsonl — latest run (2026-07-07, target_set frq_promote_gates_v1) — counts.flagged · verified 2026-07-13">2</span></div>
+        <div class="l">flagged &mdash; tested only ever through fixture
+          overrides.</div></div>
+      <div class="cell"><div class="n"><span class="stat" data-source="tools/real_gate_check/runs.jsonl — latest run (2026-07-07, target_set frq_promote_gates_v1) — counts.ok" data-verified="2026-07-13" data-provenance="verified" title="source: tools/real_gate_check/runs.jsonl — latest run (2026-07-07, target_set frq_promote_gates_v1) — counts.ok · verified 2026-07-13">3</span></div>
+        <div class="l">exercise their real default path.</div></div>
+      <div class="cell"><div class="n"><span class="stat" data-source="tools/real_gate_check/runs.jsonl — latest run (2026-07-07, target_set frq_promote_gates_v1) — counts.untested" data-verified="2026-07-13" data-provenance="verified" title="source: tools/real_gate_check/runs.jsonl — latest run (2026-07-07, target_set frq_promote_gates_v1) — counts.untested · verified 2026-07-13">2</span></div>
+        <div class="l">had no test call-sites at all &mdash; a different
+          problem, named separately.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ 4. /inline-chat — the document IS the conversation ============ -->
+  <section class="exhibit" data-status="shipped" aria-labelledby="inline-h">
+    <div class="kicker">What if the medium is the problem?</div>
+    <div class="head">
+      <h2 id="inline-h"><span class="tname">/inline-chat</span> &mdash; the
+        conversation that lives in the document</h2>
+      <span class="status status--shipped">Shipped as a skill</span>
+    </div>
+    <p>Long design threads die in chat: the reasoning scrolls away, and none of
+      it is searchable where the work lives. So the medium was rebuilt.
+      The assistant writes its analysis <b>into a versioned document</b> with
+      reply boxes; the teacher answers inside the document, in Word, on his own
+      time; the assistant diffs the returned copy against its pristine
+      snapshot, folds the answers in, and issues the next version. The
+      conversation has no transcript because <b>the document trail is the
+      conversation</b> &mdash; versioned, greppable, resumable weeks later.</p>
+    <div class="strip">
+      <div class="cell"><div class="n"><span class="stat" data-source="InlineChats/zz_registry.json — threads[] count (content plane)" data-verified="2026-07-13" data-provenance="verified" title="source: InlineChats/zz_registry.json — threads[] count (content plane) · verified 2026-07-13">4</span></div>
+        <div class="l">registered threads, each addressed by a human alias,
+          never a filename.</div></div>
+      <div class="cell"><div class="n"><span class="stat" data-source="tools/org_doc/snapshots/physics_org_design_v*.docx — versioned snapshot count" data-verified="2026-07-13" data-provenance="verified" title="source: tools/org_doc/snapshots/physics_org_design_v*.docx — versioned snapshot count · verified 2026-07-13">12</span></div>
+        <div class="l">versioned rounds on the flagship thread &mdash; a
+          whole design negotiated inside one document.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ 4. config_experiment — the config on trial (pending, LAST) ============ -->
+  <section class="exhibit" data-status="pending" aria-labelledby="config-h">
+    <div class="kicker">Does the standing configuration earn its keep?</div>
+    <div class="head">
+      <h2 id="config-h"><span class="tname">config_experiment</span> &mdash;
+        the collaboration&rsquo;s own rulebook, on trial</h2>
+      <span class="status status--pending">Verdict pending</span>
+    </div>
+    <p>Months of accumulated instructions, memory files, hooks and skills ride
+      along on every single prompt &mdash; and almost nobody ever asks whether
+      that standing configuration actually helps. This harness asks: the same
+      assistant booted three ways &mdash; the full configuration, a bare
+      vanilla one, and one stripped to a single load-bearing rule &mdash; each
+      in a fully <b>isolated profile</b>, run against the same tasks. The
+      profiles are staged and the launcher works; the comparison itself has
+      not run. That is the honest status, and this page is built to say so
+      rather than imply a conclusion.</p>
+    <div class="strip">
+      <div class="cell"><div class="n"><span class="stat" data-source="tools/config_experiment/profiles — profile dirs (a-vanilla, b-lightweight)" data-verified="2026-07-13" data-provenance="verified" title="source: tools/config_experiment/profiles — profile dirs (a-vanilla, b-lightweight) · verified 2026-07-13">2</span></div>
+        <div class="l">isolated configuration profiles staged on disk,
+          bootable on demand.</div></div>
+    </div>
   </section>
 
   <footer class="foot">
-    <span class="rule">Correctness is built in, not bolted on.</span>
-    Every gate above blocks a commit or a build &mdash; a draft that cannot satisfy
-    them does not become a page.
-    <br>Explore <a href="verification.html">&rarr; how we know the answer is right</a> &middot;
-    <a href="../index.html#story">&rarr; one problem's life</a> &middot;
-    <a href="systems.html">&rarr; the systems atlas</a> &middot;
-    <a href="sims.html">&rarr; the sim exhibit</a> &middot;
-    <a href="../architecture.html">&rarr; the engine, as a hexagon</a>.
+    <span class="rule">The instruments point both ways.</span>
+    A collaboration confident enough to grade its own memory, put its own
+    rulebook on trial, and audit its own tests is one whose claims elsewhere
+    can be taken seriously. The pending verdict on this page is rendered by a
+    build gate, not by good intentions.
+    <br>Explore <a href="meta.html">&rarr; the machinery that stays correct</a> &middot;
+    <a href="engine.html">&rarr; how a wrong answer never ships</a> &middot;
+    <a href="../index.html#story">&rarr; one problem's life</a>.
   </footer>
 </main>
-  <a class="nextbar nextband" href="systems.html">
+  <a class="nextbar nextband" href="meta.html">
     <span class="nextbar__text">
       <span class="nextbar__eyebrow">Next</span>
-      <span class="nextbar__dest nextband__label">Systems&nbsp;Atlas</span>
+      <span class="nextbar__dest nextband__label">Meta&nbsp;Tools</span>
     </span>
     <span class="nextbar__arrow nextband__arrow" aria-hidden="true">&rarr;</span>
   </a>

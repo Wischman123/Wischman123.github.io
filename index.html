@@ -623,7 +623,7 @@
   <div class="siterail__inner">
     <a class="siterail__mark" href="index.html"><span>Brendan</span><span>Wischweh</span></a>    <nav class="siterail__zone siterail__zone--page" aria-label="On this page">
       <p class="siterail__title">On this page</p>      <a class="rail-anchor" href="#what">What it is</a>      <a class="rail-anchor" href="#story">One problem&rsquo;s life</a>      <a class="rail-anchor" href="#numbers">The numbers</a>      <a class="rail-anchor" href="#built">How it&rsquo;s built</a>      <a class="rail-anchor" href="#contact">Contact</a>    </nav>    <nav class="siterail__zone siterail__zone--site" aria-label="The site">
-      <p class="siterail__title">The site</p>      <a class="rail-page" href="index.html" aria-current="page">Home</a>      <a class="rail-page" href="architecture.html">Architecture</a>      <a class="rail-page" href="deep/code.html">Code</a>      <a class="rail-page" href="deep/verification.html">Formal&nbsp;Verification</a>      <a class="rail-page" href="deep/engine.html">Engine&nbsp;Room</a>      <a class="rail-page" href="deep/systems.html">Systems&nbsp;Atlas</a>      <a class="rail-page" href="deep/meta.html">Meta&nbsp;Tools</a>      <a class="rail-page" href="deep/sims.html">Sims</a>      <a class="rail-page" href="deep/gallery.html">Gallery</a>      <a class="rail-page" href="videos.html">Videos</a>    </nav>
+      <p class="siterail__title">The site</p>      <a class="rail-page" href="index.html" aria-current="page">Home</a>      <a class="rail-page" href="architecture.html">Architecture</a>      <a class="rail-page" href="deep/code.html">Code</a>      <a class="rail-page" href="deep/verification.html">Formal&nbsp;Verification</a>      <a class="rail-page" href="deep/lab.html">The&nbsp;Lab</a>      <a class="rail-page" href="deep/meta.html">Meta&nbsp;Tools</a>      <a class="rail-page" href="deep/engine.html">Engine&nbsp;Room</a>      <a class="rail-page" href="deep/systems.html">Systems&nbsp;Atlas</a>      <a class="rail-page" href="deep/sims.html">Sims</a>      <a class="rail-page" href="deep/gallery.html">Gallery</a>      <a class="rail-page" href="videos.html">Videos</a>    </nav>
   </div>
 </aside><script>
 (function () {
@@ -989,9 +989,7 @@
                alt="The generated scene diagram: a ball at rest at the top of a track that descends to a large circular hill, with the drop height and the hill's radius marked.">
         </div>
         <figcaption class="frame__cap">The diagram engine &mdash; one shared library, every scene</figcaption>
-      </figure>
-
-      <figure class="frame frame--sim" data-frame="alive">
+      </figure><figure class="frame frame--sim" data-frame="alive">
         <div class="fill">
           <div class="ex__stage js-embed" data-autostart
                data-embed-src="sim/index.html?scene=k015_eulers_hilltop_full&amp;embed=1&amp;theme=worksheet"
@@ -1136,8 +1134,8 @@
           the live simulation, and formal verification of the engine itself. The physics is the
           <em>first</em> gate, not an afterthought.</p>
         <p class="muted">It is one small addition to a repository grown across
-          <span class="stat" data-source="git rev-list --count HEAD (physics repo)" data-verified="2026-07-13" data-provenance="verified" title="source: git rev-list --count HEAD (physics repo) · verified 2026-07-13">1,690</span> commits since <span class="stat" data-source="git log --reverse --format=%cI (physics repo)" data-verified="2026-07-13" data-provenance="verified" title="source: git log --reverse --format=%cI (physics repo) · verified 2026-07-13">2026-03-19</span> &mdash;
-          <span class="stat" data-source="tools/loc_history/history.json (latest entry)" data-verified="2026-07-13" data-provenance="verified" title="source: tools/loc_history/history.json (latest entry) · verified 2026-07-13">1,575,643</span> lines of first-party code.</p>
+          <span class="stat" data-source="git rev-list --count HEAD (physics repo)" data-verified="2026-07-13" data-provenance="verified" title="source: git rev-list --count HEAD (physics repo) · verified 2026-07-13">1,705</span> commits since <span class="stat" data-source="git log --reverse --format=%cI (physics repo)" data-verified="2026-07-13" data-provenance="verified" title="source: git log --reverse --format=%cI (physics repo) · verified 2026-07-13">2026-03-19</span> &mdash;
+          <span class="stat" data-source="tools/loc_history/history.json (latest entry)" data-verified="2026-07-13" data-provenance="verified" title="source: tools/loc_history/history.json (latest entry) · verified 2026-07-13">1,617,947</span> lines of first-party code.</p>
       </li>
 
       <li class="beat" data-frame="gauntlet" id="beat-gauntlet">
@@ -1157,8 +1155,8 @@
         <p>Clear the gauntlet and the diagram engine takes over &mdash; the shared library
           that draws the track, the curved crest, the height bar, the velocity arrow. Fix a
           label once and the next forty problems inherit the fix.</p>
-        <p class="muted">It is one node in an import graph of <span class="stat" data-source="tools/showcase/out/import_graph.json (import_graph_dump.py)" data-verified="2026-07-13" data-provenance="verified" title="source: tools/showcase/out/import_graph.json (import_graph_dump.py) · verified 2026-07-13">422</span>
-          modules wired by <span class="stat" data-source="tools/showcase/out/import_graph.json (import_graph_dump.py)" data-verified="2026-07-13" data-provenance="verified" title="source: tools/showcase/out/import_graph.json (import_graph_dump.py) · verified 2026-07-13">1,129</span> edges, <span class="stat" data-source="data/catalog_manifest.json (regenerated this run) — nodes[kind==lib]" data-verified="2026-07-13" data-provenance="verified" title="source: data/catalog_manifest.json (regenerated this run) — nodes[kind==lib] · verified 2026-07-13">76</span> of them
+        <p class="muted">It is one node in an import graph of <span class="stat" data-source="tools/showcase/out/import_graph.json (import_graph_dump.py)" data-verified="2026-07-13" data-provenance="verified" title="source: tools/showcase/out/import_graph.json (import_graph_dump.py) · verified 2026-07-13">433</span>
+          modules wired by <span class="stat" data-source="tools/showcase/out/import_graph.json (import_graph_dump.py)" data-verified="2026-07-13" data-provenance="verified" title="source: tools/showcase/out/import_graph.json (import_graph_dump.py) · verified 2026-07-13">1,144</span> edges, <span class="stat" data-source="data/catalog_manifest.json (regenerated this run) — nodes[kind==lib]" data-verified="2026-07-13" data-provenance="verified" title="source: data/catalog_manifest.json (regenerated this run) — nodes[kind==lib] · verified 2026-07-13">76</span> of them
           shared library files.</p>
       </li>
 
@@ -1247,9 +1245,7 @@
     </ol>
   </div><div class="lightbox" id="story-lightbox" role="dialog" aria-modal="true"
        aria-label="Enlarged figure" tabindex="-1">
-    <!-- src is set by JS on open and REMOVED on close, so this target is empty
-         at rest; `data-js-src` declares that to the QA gate. -->
-    <img alt="Enlarged figure" data-js-src="story-lightbox">
+    <img alt="Enlarged figure">
   </div>
 </section>
 

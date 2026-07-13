@@ -4,7 +4,7 @@
   <!-- showcase-generated:systems_showcase_deepdive_v2 -->
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex, nofollow">
-  <title>The engine, drawn as a landscape — systems showcase</title>
+  <title>The whole machine, on one map — systems showcase</title>
   <style>
     /* ---------- palette (echoes docs/architecture/hexagonal_engine_v1.html) ---------- */
     :root{
@@ -326,34 +326,49 @@
    a standalone .footer keeps its own. */
 .arch-fade + .footer{margin-top:0;}
 
-  .lede{margin:22px 0 0;font-size:14px;color:var(--muted);max-width:64ch;}
+  .lede{margin:22px 0 0;font-size:14px;color:var(--muted);max-width:70ch;}
   .lede .stat{font-size:.92em;}
 
-  /* ---------- diagram card (echoes the hexagon board) ---------- */
+  /* ---------- map card (echoes the hexagon board) ---------- */
   .board{margin:34px 0 8px;background:var(--card);border:1px solid var(--line);
     border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;}
   .board__scroll{overflow-x:auto;padding:10px;}
-  svg.atlas{display:block;width:100%;min-width:940px;height:auto;}
+  svg.atlas{display:block;width:100%;min-width:980px;height:auto;}
 
   .atlas text{fill:var(--text);}
-  .a-title{font-family:var(--sans);font-weight:730;font-size:15px;}
-  .a-sub{font-family:var(--mono);font-size:11px;fill:var(--muted);}
+  .a-region{font-family:var(--mono);font-weight:700;font-size:11.5px;letter-spacing:.14em;}
+  .a-label{font-family:var(--sans);font-weight:730;font-size:13.5px;}
+  .a-sub{font-family:var(--mono);font-size:10.5px;fill:var(--muted);}
+  .a-link{font-family:var(--mono);font-weight:600;font-size:10px;fill:var(--core);}
+  .a-edgelabel{font-family:var(--mono);font-weight:600;font-size:10.5px;fill:var(--muted);
+    paint-order:stroke;stroke:var(--card);stroke-width:3px;}
+  .a-moat{font-family:var(--mono);font-weight:600;font-size:10px;fill:var(--edge);
+    paint-order:stroke;stroke:var(--card);stroke-width:3px;}
+  .a-annot{font-family:var(--mono);font-weight:600;font-size:10.5px;fill:var(--muted);
+    paint-order:stroke;stroke:var(--card);stroke-width:3px;}
 
-  .a-node rect{transition:filter .2s ease;}
-  .a-node:hover rect, .a-node:focus rect{filter:brightness(1.06);}
-  .a-edge{fill:none;stroke-width:2;opacity:.72;transition:opacity .2s ease;}
+  .a-node rect, .a-node polygon{transition:filter .2s ease;}
+  .a-node:hover rect, .a-node:focus rect,
+  .a-node:hover polygon, .a-node:focus polygon{filter:brightness(1.06);}
+  a.a-nodelink:focus-visible{outline:2px solid var(--core);outline-offset:2px;}
+  .a-edge{fill:none;transition:opacity .2s ease;opacity:.78;}
   .a-edge.dim{opacity:.12;}
-  .a-edge.hot{opacity:1;stroke-width:2.6;}
+  .a-edge.hot{opacity:1;}
 
-  /* ---------- legend ---------- */
-  .legend{display:flex;flex-wrap:wrap;gap:8px 20px;margin:20px 2px 0;padding:0;list-style:none;
-    font-family:var(--mono);font-size:12.5px;color:var(--muted);}
-  .legend li{display:flex;align-items:center;gap:8px;}
-  .swatch{width:13px;height:13px;border-radius:4px;flex:none;border:1px solid rgba(0,0,0,.12);}
+  /* ---------- reading the map ---------- */
+  .mapkey{margin:20px 2px 0;padding:0;list-style:none;display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px 24px;
+    font-size:13.5px;color:var(--muted);}
+  .mapkey li{padding-left:26px;position:relative;line-height:1.5;}
+  .mapkey .k{position:absolute;left:0;top:.45em;width:18px;}
+  .k-solid{border-top:3px solid var(--mech);}
+  .k-dotted{border-top:2px dotted var(--core);}
+  .k-moat{border:1.5px dashed var(--edge);height:10px;border-radius:4px;top:.25em;}
+  .k-link{border-top:0;color:var(--core);font-family:var(--mono);font-size:11px;top:.1em;}
 
   /* ---------- the proof (edges are evidence) ---------- */
   .proof{margin-top:56px;}
-  .proof h2, .islands h2{font-size:13px;font-family:var(--mono);letter-spacing:.16em;
+  .proof h2, .moat h2{font-size:13px;font-family:var(--mono);letter-spacing:.16em;
     text-transform:uppercase;color:var(--muted);margin:0 0 16px;font-weight:600;}
   table.edges{width:100%;border-collapse:collapse;font-size:14px;}
   table.edges thead th{font-family:var(--mono);font-size:11px;letter-spacing:.12em;
@@ -362,29 +377,19 @@
   table.edges tbody td{padding:12px 14px 12px 0;border-bottom:1px solid var(--line);vertical-align:top;}
   table.edges tbody tr:last-child td{border-bottom:0;}
   .flow-from{font-weight:660;white-space:nowrap;}
-  .flow-arrow{color:var(--muted);padding:0 .4em;}
   .flow-to{font-weight:660;white-space:nowrap;}
   .rel{color:var(--muted);}
 
-  /* ---------- isolated planes (islands) ---------- */
-  .islands{margin-top:56px;}
-  .islands .cap{color:var(--muted);max-width:64ch;margin:0 0 18px;font-size:15px;}
-  .chips{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;}
-  .chip{display:block;background:var(--card);border:1px dashed var(--line);border-radius:12px;
-    padding:14px 16px;color:inherit;}
-  a.chip:hover{border-color:var(--core);text-decoration:none;}
-  .chip .name{font-weight:700;font-size:15px;}
-  .chip .path{font-family:var(--mono);font-size:11.5px;color:var(--core);margin-top:2px;}
-  .chip .desc{color:var(--muted);font-size:13px;margin-top:8px;line-height:1.5;}
-  .chip .go{font-family:var(--mono);font-size:12px;color:var(--core);margin-top:10px;display:inline-block;}
-  .chip .go::after{content:"  →";}
+  /* ---------- the moat, gated ---------- */
+  .moat{margin-top:56px;}
+  .moat .cap{color:var(--muted);max-width:70ch;margin:0 0 8px;font-size:15px;}
   </style>
 </head>
 <body class="atlas">
 <aside class="siterail" aria-label="Site navigation">
   <div class="siterail__inner">
     <a class="siterail__mark" href="../index.html"><span>Brendan</span><span>Wischweh</span></a>    <nav class="siterail__zone siterail__zone--site" aria-label="The site">
-      <p class="siterail__title">The site</p>      <a class="rail-page" href="../index.html">Home</a>      <a class="rail-page" href="../architecture.html">Architecture</a>      <a class="rail-page" href="code.html">Code</a>      <a class="rail-page" href="verification.html">Formal&nbsp;Verification</a>      <a class="rail-page" href="engine.html">Engine&nbsp;Room</a>      <a class="rail-page" href="systems.html" aria-current="page">Systems&nbsp;Atlas</a>      <a class="rail-page" href="meta.html">Meta&nbsp;Tools</a>      <a class="rail-page" href="sims.html">Sims</a>      <a class="rail-page" href="gallery.html">Gallery</a>      <a class="rail-page" href="../videos.html">Videos</a>    </nav>
+      <p class="siterail__title">The site</p>      <a class="rail-page" href="../index.html">Home</a>      <a class="rail-page" href="../architecture.html">Architecture</a>      <a class="rail-page" href="code.html">Code</a>      <a class="rail-page" href="verification.html">Formal&nbsp;Verification</a>      <a class="rail-page" href="lab.html">The&nbsp;Lab</a>      <a class="rail-page" href="meta.html">Meta&nbsp;Tools</a>      <a class="rail-page" href="engine.html">Engine&nbsp;Room</a>      <a class="rail-page" href="systems.html" aria-current="page">Systems&nbsp;Atlas</a>      <a class="rail-page" href="sims.html">Sims</a>      <a class="rail-page" href="gallery.html">Gallery</a>      <a class="rail-page" href="../videos.html">Videos</a>    </nav>
   </div>
 </aside><script>
 (function () {
@@ -422,189 +427,355 @@
 })();
 </script>
 <main class="wrap">
-  <p class="eyebrow">Zoom out from the hexagon</p>
-  <h1>The engine, drawn as a landscape</h1>
-  <p class="dek">The assessment hexagon is one region of a larger machine: the meta-cognitive fabric that builds, checks, and keeps the curriculum honest. Positions and captions here are curated for reading; every drawn edge is a real import, recomputed from the two node groups against the harvested module graph. A hand-declared edge with no underlying import fails the drift gate.</p>
-  <p class="lede">Every arrow below is one of the <span class="stat" data-source="tools/showcase/out/import_graph.json (import_graph_dump.py)" data-verified="2026-07-13" data-provenance="verified" title="source: tools/showcase/out/import_graph.json (import_graph_dump.py) · verified 2026-07-13">1,142</span> imports
-    across a <span class="stat" data-source="tools/showcase/out/import_graph.json (import_graph_dump.py)" data-verified="2026-07-13" data-provenance="verified" title="source: tools/showcase/out/import_graph.json (import_graph_dump.py) · verified 2026-07-13">431</span>-module graph, recomputed from the two node
-    groups it joins — <span class="stat" data-source="atlas_layout.json (curated layout; every entry proven by gate m)" data-verified="2026-07-13" data-provenance="verified" title="source: atlas_layout.json (curated layout; every entry proven by gate m) · verified 2026-07-13">13</span> proven edges across
-    <span class="stat" data-source="atlas_layout.json (curated layout)" data-verified="2026-07-13" data-provenance="verified" title="source: atlas_layout.json (curated layout) · verified 2026-07-13">10</span> subsystems. Node GROUPS are dotted module names in the ONE canonical witness source (import_graph.json). Every listed module must exist in that graph&#39;s node set (presence gate); every edge&#39;s witness is the NON-EMPTY set of module-pair imports between the two groups (drift gate). catalog_manifest.json is NOT a second witness source.</p>
+  <p class="eyebrow">Zoom all the way out</p>
+  <h1>The whole machine, on one map</h1>
+  <p class="dek">One map, four bands: the curriculum loop a problem travels, the subject-free engine it runs on, the meta-cognitive fabric that keeps the work honest, and the Claude Code substrate under all of it. Positions and captions are curated for reading; the connections are held to evidence.</p>
+  <p class="lede">Every solid arrow below is a bundle of real imports — the
+    <span class="stat" data-source="tools/showcase/out/import_graph.json (import_graph_dump.py)" data-verified="2026-07-13" data-provenance="verified" title="source: tools/showcase/out/import_graph.json (import_graph_dump.py) · verified 2026-07-13">1,144</span>-import, <span class="stat" data-source="tools/showcase/out/import_graph.json (import_graph_dump.py)" data-verified="2026-07-13" data-provenance="verified" title="source: tools/showcase/out/import_graph.json (import_graph_dump.py) · verified 2026-07-13">433</span>-module graph
+    recomputed into <span class="stat" data-source="atlas_layout.json kind=&#39;import&#39; edges (each re-proven by gate m)" data-verified="2026-07-13" data-provenance="verified" title="source: atlas_layout.json kind=&#39;import&#39; edges (each re-proven by gate m) · verified 2026-07-13">4</span> proven region-to-region edges,
+    each stroke weighted by its count. Every dotted arrow is one of
+    <span class="stat" data-source="atlas_layout.json kind=&#39;flow&#39; edges (artifact-evidenced, unwitnessable by imports)" data-verified="2026-07-13" data-provenance="verified" title="source: atlas_layout.json kind=&#39;flow&#39; edges (artifact-evidenced, unwitnessable by imports) · verified 2026-07-13">10</span> pipeline flows whose evidence is the artifacts on
+    the page its box links to. The dashed ring is the moat:
+    <span class="stat" data-source="import_graph.json: recomputed island-to-fabric module pairs, both directions, every pair (verify_deep_dive.py gate m ISOLATION check)" data-verified="2026-07-13" data-provenance="verified" title="source: import_graph.json: recomputed island-to-fabric module pairs, both directions, every pair (verify_deep_dive.py gate m ISOLATION check) · verified 2026-07-13">0 imports</span> cross it, in either direction, re-proven on every
+    build. SOLID arrows are imports: each is recomputed from the two node groups against the ONE canonical witness source (import_graph.json), and a hand-declared edge with no underlying module-pair import fails gate (m). DOTTED arrows are pipeline flows whose evidence is the artifacts on the page each box links to — the gate refuses a dotted edge wherever import evidence exists. The moat around the engine is itself gated: zero imports may cross it, in either direction.</p>
 
   <div class="board">
     <div class="board__scroll">
-      <svg class="atlas" viewBox="0 0 1200 780" role="img"
-           aria-label="A landscape of the meta-cognitive engine: subsystems drawn as
-           boxes with arrows for real imports between them. Governance and memory on
-           the left feed a learning loop on the right; adjudication and plan-quality
-           subsystems sit between.">
+      <svg class="atlas" viewBox="0 0 1200 700" role="img"
+           aria-label="The whole machine on one map: the curriculum loop a
+           problem travels across the top; beneath it the subject-free
+           assessment engine behind its moat and the meta-cognitive fabric that
+           keeps the work honest; under everything, the Claude Code
+           collaboration substrate. Solid arrows are proven imports, dotted
+           arrows are pipeline flows.">
         <defs>
-          <marker id="ah-core" viewBox="0 0 10 10" refX="9" refY="5"
-                  markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <marker id="ah-core" viewBox="0 0 10 10" refX="8.5" refY="5"
+                  markerWidth="11.0" markerHeight="11.0"
+                  markerUnits="userSpaceOnUse" orient="auto-start-reverse">
             <path d="M0,0 L10,5 L0,10 z" fill="var(--core)"/>
           </marker>
-          <marker id="ah-drive" viewBox="0 0 10 10" refX="9" refY="5"
-                  markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <marker id="ah-drive" viewBox="0 0 10 10" refX="8.5" refY="5"
+                  markerWidth="11.0" markerHeight="11.0"
+                  markerUnits="userSpaceOnUse" orient="auto-start-reverse">
             <path d="M0,0 L10,5 L0,10 z" fill="var(--drive)"/>
           </marker>
-          <marker id="ah-driven" viewBox="0 0 10 10" refX="9" refY="5"
-                  markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <marker id="ah-driven" viewBox="0 0 10 10" refX="8.5" refY="5"
+                  markerWidth="11.0" markerHeight="11.0"
+                  markerUnits="userSpaceOnUse" orient="auto-start-reverse">
             <path d="M0,0 L10,5 L0,10 z" fill="var(--driven)"/>
           </marker>
-          <marker id="ah-gate" viewBox="0 0 10 10" refX="9" refY="5"
-                  markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <marker id="ah-edge" viewBox="0 0 10 10" refX="8.5" refY="5"
+                  markerWidth="11.0" markerHeight="11.0"
+                  markerUnits="userSpaceOnUse" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--edge)"/>
+          </marker>
+          <marker id="ah-gate" viewBox="0 0 10 10" refX="8.5" refY="5"
+                  markerWidth="11.0" markerHeight="11.0"
+                  markerUnits="userSpaceOnUse" orient="auto-start-reverse">
             <path d="M0,0 L10,5 L0,10 z" fill="var(--gate)"/>
           </marker>
-          <marker id="ah-mech" viewBox="0 0 10 10" refX="9" refY="5"
-                  markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <marker id="ah-mech" viewBox="0 0 10 10" refX="8.5" refY="5"
+                  markerWidth="11.0" markerHeight="11.0"
+                  markerUnits="userSpaceOnUse" orient="auto-start-reverse">
             <path d="M0,0 L10,5 L0,10 z" fill="var(--mech)"/>
           </marker>
-          <marker id="ah-subject" viewBox="0 0 10 10" refX="9" refY="5"
-                  markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <marker id="ah-subject" viewBox="0 0 10 10" refX="8.5" refY="5"
+                  markerWidth="11.0" markerHeight="11.0"
+                  markerUnits="userSpaceOnUse" orient="auto-start-reverse">
             <path d="M0,0 L10,5 L0,10 z" fill="var(--subject)"/>
           </marker>
         </defs>
 
-        <!-- edges first, so nodes sit on top -->
-        <g class="a-edges">
-          <path class="a-edge" data-src="caretaker" data-dst="metacognition"
-                d="M180.0,174.0 Q165.3,220.0 180.0,266.0" stroke="var(--core)"
-                marker-end="url(#ah-core)"/>
-          <path class="a-edge" data-src="metacognition" data-dst="caretaker"
-                d="M180.0,266.0 Q194.7,220.0 180.0,174.0" stroke="var(--mech)"
-                marker-end="url(#ah-mech)"/>
-          <path class="a-edge" data-src="caretaker" data-dst="retro"
-                d="M258.3,174.0 Q538.5,354.5 861.7,436.0" stroke="var(--core)"
-                marker-end="url(#ah-core)"/>
-          <path class="a-edge" data-src="metacognition" data-dst="retro"
-                d="M280.0,322.4 Q548.2,437.7 840.0,447.6" stroke="var(--mech)"
-                marker-end="url(#ah-mech)"/>
-          <path class="a-edge" data-src="verdicts" data-dst="retro"
-                d="M280.0,470.0 Q560.0,524.0 840.0,470.0" stroke="var(--drive)"
-                marker-end="url(#ah-drive)"/>
-          <path class="a-edge" data-src="verdicts" data-dst="mode_experiments"
-                d="M279.4,436.0 Q379.9,434.0 460.6,374.0" stroke="var(--drive)"
-                marker-end="url(#ah-drive)"/>
-          <path class="a-edge" data-src="mode_experiments" data-dst="retro"
-                d="M659.4,374.0 Q740.1,434.0 840.6,436.0" stroke="var(--drive)"
-                marker-end="url(#ah-drive)"/>
-          <path class="a-edge" data-src="caretaker" data-dst="plan_doctor"
-                d="M280.0,150.5 Q554.3,233.7 840.0,209.5" stroke="var(--core)"
-                marker-end="url(#ah-core)"/>
-          <path class="a-edge" data-src="metacognition" data-dst="plan_doctor"
-                d="M280.0,289.5 Q565.7,313.7 840.0,230.5" stroke="var(--mech)"
-                marker-end="url(#ah-mech)"/>
-          <path class="a-edge" data-src="caretaker" data-dst="plan_consistency"
-                d="M280.0,140.0 Q370.0,168.8 460.0,140.0" stroke="var(--core)"
-                marker-end="url(#ah-core)"/>
-          <path class="a-edge" data-src="plan_consistency" data-dst="plan_doctor"
-                d="M660.0,161.1 Q743.9,208.8 840.0,198.9" stroke="var(--gate)"
-                marker-end="url(#ah-gate)"/>
-          <path class="a-edge" data-src="verdicts" data-dst="config_experiments"
-                d="M280.0,480.5 Q367.0,518.8 460.0,499.5" stroke="var(--drive)"
-                marker-end="url(#ah-drive)"/>
-          <path class="a-edge" data-src="refine_experiment" data-dst="refine_dogfood"
-                d="M280.0,680.0 Q370.0,708.8 460.0,680.0" stroke="var(--subject)"
-                marker-end="url(#ah-subject)"/>
+        <!-- band hulls first, then edges, then nodes on top -->
+        <g class="a-bands">
+          <rect x="40" y="46" width="1120" height="204" rx="16"
+                fill="var(--core)" fill-opacity="0.055"
+                stroke="var(--core)" stroke-opacity="0.38" stroke-width="1.4"/>
+          <text class="a-region" x="56" y="70"
+                fill="var(--core)">THE CURRICULUM MACHINE — ONE PROBLEM’S LIFE</text>
+          <rect x="40" y="292" width="520" height="218" rx="16"
+                fill="var(--edge)" fill-opacity="0.055"
+                stroke="var(--edge)" stroke-opacity="0.38" stroke-width="1.4"/>
+          <text class="a-region" x="56" y="316"
+                fill="var(--edge)">THE ENGINE — SUBJECT-FREE CORE</text>
+          <text class="a-annot" x="544" y="496"
+                text-anchor="end">dependencies point only inward — proven</text>
+          <rect x="600" y="292" width="560" height="218" rx="16"
+                fill="var(--mech)" fill-opacity="0.055"
+                stroke="var(--mech)" stroke-opacity="0.38" stroke-width="1.4"/>
+          <text class="a-region" x="616" y="316"
+                fill="var(--mech)">THE META-COGNITIVE FABRIC — KEEPS IT HONEST</text>
+          <rect x="40" y="552" width="1120" height="104" rx="16"
+                fill="var(--driven)" fill-opacity="0.055"
+                stroke="var(--driven)" stroke-opacity="0.38" stroke-width="1.4"/>
+          <text class="a-region" x="56" y="576"
+                fill="var(--driven)">THE COLLABORATION SUBSTRATE — CLAUDE CODE, TUNED INTO A POWER TOOL</text>
+          <path d="M300.0,548.0 L300.0,514.0" fill="none" stroke="var(--driven)"
+                stroke-width="1.8" stroke-dasharray="2.5 5" stroke-linecap="round"
+                opacity="0.78" marker-end="url(#ah-driven)"/>
+          <path d="M880.0,548.0 L880.0,514.0" fill="none" stroke="var(--driven)"
+                stroke-width="1.8" stroke-dasharray="2.5 5" stroke-linecap="round"
+                opacity="0.78" marker-end="url(#ah-driven)"/>
         </g>
 
-        <!-- fabric nodes -->
+        <g class="a-edges">
+          <path class="a-edge" data-src="importers" data-dst="bank"
+                d="M216.0,160.0 Q230.5,160.0 245.0,160.0" stroke="var(--core)"
+                stroke-width="1.8"
+stroke-dasharray="2.5 5" stroke-linecap="round"                marker-end="url(#ah-core)"/>
+          <path class="a-edge" data-src="bank" data-dst="generators"
+                d="M401.0,160.0 Q415.5,160.0 430.0,160.0" stroke="var(--core)"
+                stroke-width="1.8"
+stroke-dasharray="2.5 5" stroke-linecap="round"                marker-end="url(#ah-core)"/>
+          <path class="a-edge" data-src="generators" data-dst="gauntlet"
+                d="M586.0,160.0 Q600.0,160.0 614.0,160.0" stroke="var(--core)"
+                stroke-width="1.8"
+stroke-dasharray="2.5 5" stroke-linecap="round"                marker-end="url(#ah-core)"/>
+          <path class="a-edge" data-src="gauntlet" data-dst="artifacts"
+                d="M770.0,160.0 Q784.5,160.0 799.0,160.0" stroke="var(--core)"
+                stroke-width="1.8"
+stroke-dasharray="2.5 5" stroke-linecap="round"                marker-end="url(#ah-core)"/>
+          <path class="a-edge" data-src="artifacts" data-dst="feedback"
+                d="M955.0,160.0 Q969.5,160.0 984.0,160.0" stroke="var(--core)"
+                stroke-width="1.8"
+stroke-dasharray="2.5 5" stroke-linecap="round"                marker-end="url(#ah-core)"/>
+          <path class="a-edge" data-src="feedback" data-dst="bank"
+                d="M1062.0,123.0 Q692.5,38.0 323.0,123.0" stroke="var(--core)"
+                stroke-width="1.8"
+stroke-dasharray="2.5 5" stroke-linecap="round"                marker-end="url(#ah-core)"/>
+          <path class="a-edge" data-src="physics_subject" data-dst="assessment"
+                d="M258.0,364.0 Q230.0,373.3 202.0,382.7" stroke="var(--edge)"
+                stroke-width="1.8"
+stroke-dasharray="2.5 5" stroke-linecap="round"                marker-end="url(#ah-edge)"/>
+          <path class="a-edge" data-src="de_subject" data-dst="assessment"
+                d="M245.0,400.0 Q223.5,400.0 202.0,400.0" stroke="var(--edge)"
+                stroke-width="1.8"
+stroke-dasharray="2.5 5" stroke-linecap="round"                marker-end="url(#ah-edge)"/>
+          <path class="a-edge" data-src="gauntlet" data-dst="assessment"
+                d="M692.0,197.0 Q461.0,326.2 202.0,380.5" stroke="var(--core)"
+                stroke-width="1.8"
+stroke-dasharray="2.5 5" stroke-linecap="round"                marker-end="url(#ah-core)"/>
+          <path class="a-edge" data-src="governance" data-dst="gauntlet"
+                d="M695.0,331.0 Q689.5,259.9 723.2,197.0" stroke="var(--mech)"
+                stroke-width="1.8"
+stroke-dasharray="2.5 5" stroke-linecap="round"                marker-end="url(#ah-mech)"/>
+          <path class="a-edge" data-src="governance" data-dst="plan_qa"
+                d="M780.0,358.0 Q794.0,392.0 808.0,358.0" stroke="var(--mech)"
+                stroke-width="4.07"
+                marker-end="url(#ah-mech)"/>
+          <path class="a-edge" data-src="governance" data-dst="learning"
+                d="M780.0,368.4 Q874.4,430.4 981.0,393.1" stroke="var(--mech)"
+                stroke-width="4.42"
+                marker-end="url(#ah-mech)"/>
+          <path class="a-edge" data-src="adjudication" data-dst="learning"
+                d="M780.0,441.6 Q875.6,389.5 981.0,416.9" stroke="var(--drive)"
+                stroke-width="3.88"
+                marker-end="url(#ah-drive)"/>
+          <path class="a-edge" data-src="adjudication" data-dst="experiments"
+                d="M780.0,452.0 Q794.0,486.0 808.0,452.0" stroke="var(--drive)"
+                stroke-width="3.45"
+                marker-end="url(#ah-drive)"/>
+        </g>
+
+        <g class="a-edgelabels">
+          <text class="a-edgelabel" x="692.5" y="72.5"
+                text-anchor="middle">paper goes back into the pipeline</text>
+          <text class="a-edgelabel" x="429.4" y="310.5"
+                text-anchor="middle">runs on</text>
+          <text class="a-edgelabel" x="710.0" y="262.7"
+                text-anchor="start">audits the loop’s work</text>
+<text class="a-edgelabel stat" data-source="import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py)"
+                data-verified="2026-07-13" data-provenance="verified"
+                x="794.0" y="392.0"
+                text-anchor="middle">8 imports</text>
+<text class="a-edgelabel stat" data-source="import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py)"
+                data-verified="2026-07-13" data-provenance="verified"
+                x="877.5" y="418.6"
+                text-anchor="middle">10 imports</text>
+<text class="a-edgelabel stat" data-source="import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py)"
+                data-verified="2026-07-13" data-provenance="verified"
+                x="902.3" y="398.6"
+                text-anchor="middle">7 imports</text>
+<text class="a-edgelabel stat" data-source="import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py)"
+                data-verified="2026-07-13" data-provenance="verified"
+                x="794.0" y="486.0"
+                text-anchor="middle">5 imports</text>
+        </g>
+
         <g class="a-nodes">
-          <g class="a-node" data-id="caretaker" tabindex="0">
-            <title>Caretaker — the repo steward: arch graph, dead-code, completion checks</title>
-            <rect x="80.0" y="106.0" width="200" height="68" rx="11"
-                  fill="var(--core)" fill-opacity=".10"
-                  stroke="var(--core)" stroke-width="1.6"/>
-            <text class="a-title" x="180" y="136.0" text-anchor="middle">Caretaker</text>
-            <text class="a-sub" x="180" y="155.0" text-anchor="middle">tools/caretaker</text>
+          <g class="a-node" data-id="importers" tabindex="0">
+            <title>Textbook importers — scrape + parse the source texts: where the content pipeline starts</title>
+            <rect x="60.0" y="123.0" width="156" height="74" rx="11"
+                  fill="var(--card)" stroke="var(--core)" stroke-width="1.6"/>
+            <text class="a-label" x="138" y="155.5" text-anchor="middle">Textbook importers</text>
+            <text class="a-sub" x="138" y="172.5" text-anchor="middle">physics/importers</text>
           </g>
-          <g class="a-node" data-id="metacognition" tabindex="0">
-            <title>Metacognition — the invariant registry, recall, and plan-state ledger</title>
-            <rect x="80.0" y="266.0" width="200" height="68" rx="11"
-                  fill="var(--mech)" fill-opacity=".10"
-                  stroke="var(--mech)" stroke-width="1.6"/>
-            <text class="a-title" x="180" y="296.0" text-anchor="middle">Metacognition</text>
-            <text class="a-sub" x="180" y="315.0" text-anchor="middle">tools/metacognition</text>
+<a class="a-nodelink" href="../index.html">          <g class="a-node" data-id="bank" >
+            <title>The problem bank — the vetted problem store the generators draw from and feed</title>
+            <rect x="245.0" y="123.0" width="156" height="74" rx="11"
+                  fill="var(--card)" stroke="var(--core)" stroke-width="1.6"/>
+            <text class="a-label" x="323" y="147.0" text-anchor="middle">The problem bank</text>
+            <text class="a-sub" x="323" y="164.0" text-anchor="middle">curated + generated</text>
+            <text class="a-link" x="323" y="181.0" text-anchor="middle">→ the story</text>
           </g>
-          <g class="a-node" data-id="verdicts" tabindex="0">
-            <title>Verdict engine — claim adjudication, grounding, and cost estimation</title>
-            <rect x="80.0" y="436.0" width="200" height="68" rx="11"
-                  fill="var(--drive)" fill-opacity=".10"
-                  stroke="var(--drive)" stroke-width="1.6"/>
-            <text class="a-title" x="180" y="466.0" text-anchor="middle">Verdict engine</text>
-            <text class="a-sub" x="180" y="485.0" text-anchor="middle">tools/verdicts</text>
+</a><a class="a-nodelink" href="engine.html">          <g class="a-node" data-id="generators" >
+            <title>The generators — physics brief, solution math, diagrams, document build</title>
+            <rect x="430.0" y="123.0" width="156" height="74" rx="11"
+                  fill="var(--card)" stroke="var(--core)" stroke-width="1.6"/>
+            <text class="a-label" x="508" y="147.0" text-anchor="middle">The generators</text>
+            <text class="a-sub" x="508" y="164.0" text-anchor="middle">brief → build → docx</text>
+            <text class="a-link" x="508" y="181.0" text-anchor="middle">→ engine room</text>
           </g>
-          <g class="a-node" data-id="refine_experiment" tabindex="0">
-            <title>Refine experiment — the /refine A/B harness and recall-floor build</title>
-            <rect x="80.0" y="646.0" width="200" height="68" rx="11"
-                  fill="var(--subject)" fill-opacity=".10"
-                  stroke="var(--subject)" stroke-width="1.6"/>
-            <text class="a-title" x="180" y="676.0" text-anchor="middle">Refine experiment</text>
-            <text class="a-sub" x="180" y="695.0" text-anchor="middle">tools/refine_experiment</text>
+</a><a class="a-nodelink" href="verification.html">          <g class="a-node" data-id="gauntlet" >
+            <title>The gauntlet — how a wrong answer never ships: the build-blocking checks</title>
+            <rect x="614.0" y="123.0" width="156" height="74" rx="11"
+                  fill="var(--card)" stroke="var(--core)" stroke-width="1.6"/>
+            <text class="a-label" x="692" y="147.0" text-anchor="middle">The gauntlet</text>
+            <text class="a-sub" x="692" y="164.0" text-anchor="middle">validators &amp; gates</text>
+            <text class="a-link" x="692" y="181.0" text-anchor="middle">→ formal verification</text>
           </g>
-          <g class="a-node" data-id="plan_consistency" tabindex="0">
-            <title>Plan consistency — decision-card coherence and precision measurement</title>
-            <rect x="460.0" y="106.0" width="200" height="68" rx="11"
-                  fill="var(--gate)" fill-opacity=".10"
-                  stroke="var(--gate)" stroke-width="1.6"/>
-            <text class="a-title" x="560" y="136.0" text-anchor="middle">Plan consistency</text>
-            <text class="a-sub" x="560" y="155.0" text-anchor="middle">tools/plan_consistency</text>
+</a><a class="a-nodelink" href="gallery.html">          <g class="a-node" data-id="artifacts" >
+            <title>Classroom artifacts — what lands on a desk: problem sets, solution guides, live sims</title>
+            <rect x="799.0" y="123.0" width="156" height="74" rx="11"
+                  fill="var(--card)" stroke="var(--core)" stroke-width="1.6"/>
+            <text class="a-label" x="877" y="147.0" text-anchor="middle">Classroom artifacts</text>
+            <text class="a-sub" x="877" y="164.0" text-anchor="middle">docx · sims · videos</text>
+            <text class="a-link" x="877" y="181.0" text-anchor="middle">→ the gallery</text>
           </g>
-          <g class="a-node" data-id="mode_experiments" tabindex="0">
-            <title>Mode experiments — the engaged-mode harness the verdict engine drives</title>
-            <rect x="460.0" y="306.0" width="200" height="68" rx="11"
-                  fill="var(--drive)" fill-opacity=".10"
-                  stroke="var(--drive)" stroke-width="1.6"/>
-            <text class="a-title" x="560" y="336.0" text-anchor="middle">Mode experiments</text>
-            <text class="a-sub" x="560" y="355.0" text-anchor="middle">tools/mode_experiments</text>
+</a><a class="a-nodelink" href="../index.html">          <g class="a-node" data-id="feedback" >
+            <title>Grade &amp; feedback — graded scans come back; students get narrative feedback, not points</title>
+            <rect x="984.0" y="123.0" width="156" height="74" rx="11"
+                  fill="var(--card)" stroke="var(--core)" stroke-width="1.6"/>
+            <text class="a-label" x="1062" y="147.0" text-anchor="middle">Grade &amp; feedback</text>
+            <text class="a-sub" x="1062" y="164.0" text-anchor="middle">scan → narrative report</text>
+            <text class="a-link" x="1062" y="181.0" text-anchor="middle">→ the story</text>
           </g>
-          <g class="a-node" data-id="config_experiments" tabindex="0">
-            <title>Config experiments — the hybrid cost-estimator the verdict engine tunes</title>
-            <rect x="460.0" y="476.0" width="200" height="68" rx="11"
-                  fill="var(--subject)" fill-opacity=".10"
-                  stroke="var(--subject)" stroke-width="1.6"/>
-            <text class="a-title" x="560" y="506.0" text-anchor="middle">Config experiments</text>
-            <text class="a-sub" x="560" y="525.0" text-anchor="middle">tools/config_experiment</text>
+</a>          <rect x="76.0" y="326.0"
+                width="148.0" height="148.0" rx="14"
+                fill="none" stroke="var(--edge)" stroke-width="1.3"
+                stroke-dasharray="6 5" opacity="0.75"/>
+          <text class="a-moat" x="150" y="490.0"
+                text-anchor="middle">the moat — no imports in or out, proven</text>
+<a class="a-nodelink" href="../architecture.html">          <g class="a-node" data-id="assessment" >
+            <title>Assessment — the subject-free hexagon core — open the hexagon deep-dive</title>
+            <polygon points="150.0,348.0 195.0,374.0 195.0,426.0 150.0,452.0 105.0,426.0 105.0,374.0"
+                     fill="var(--edge)" fill-opacity=".10"
+                     stroke="var(--edge)" stroke-width="2"/>
+            <text class="a-label" x="150" y="398" text-anchor="middle">Assessment</text>
+            <text class="a-sub" x="150" y="415" text-anchor="middle">engine</text>
           </g>
-          <g class="a-node" data-id="refine_dogfood" tabindex="0">
-            <title>Refine dogfood — the dogfood outcome tracker the experiment feeds</title>
-            <rect x="460.0" y="646.0" width="200" height="68" rx="11"
-                  fill="var(--subject)" fill-opacity=".10"
-                  stroke="var(--subject)" stroke-width="1.6"/>
-            <text class="a-title" x="560" y="676.0" text-anchor="middle">Refine dogfood</text>
-            <text class="a-sub" x="560" y="695.0" text-anchor="middle">tools/refine_dogfood</text>
+</a>          <g class="a-node" data-id="physics_subject" tabindex="0">
+            <title>Physics — the curriculum the engine was born serving</title>
+            <rect x="245.0" y="316.0" width="170" height="48" rx="11"
+                  fill="var(--card)" stroke="var(--edge)" stroke-width="1.6"/>
+            <text class="a-label" x="330" y="335.5" text-anchor="middle">Physics</text>
+            <text class="a-sub" x="330" y="352.5" text-anchor="middle">the first subject</text>
           </g>
-          <g class="a-node" data-id="plan_doctor" tabindex="0">
-            <title>Plan doctor — the plan-quality dashboard and decision-point checks</title>
-            <rect x="840.0" y="186.0" width="200" height="68" rx="11"
-                  fill="var(--gate)" fill-opacity=".10"
-                  stroke="var(--gate)" stroke-width="1.6"/>
-            <text class="a-title" x="940" y="216.0" text-anchor="middle">Plan doctor</text>
-            <text class="a-sub" x="940" y="235.0" text-anchor="middle">tools/plan_doctor</text>
+          <g class="a-node" data-id="de_subject" tabindex="0">
+            <title>Digital Electronics — a second subject running on the same core — the invariant, exercised</title>
+            <rect x="245.0" y="376.0" width="170" height="48" rx="11"
+                  fill="var(--card)" stroke="var(--edge)" stroke-width="1.6"/>
+            <text class="a-label" x="330" y="395.5" text-anchor="middle">Digital Electronics</text>
+            <text class="a-sub" x="330" y="412.5" text-anchor="middle">proof it’s subject-free</text>
           </g>
-          <g class="a-node" data-id="retro" tabindex="0">
-            <title>Retro — the learning loop: signals, grounding, and spot-checks</title>
-            <rect x="840.0" y="436.0" width="200" height="68" rx="11"
-                  fill="var(--driven)" fill-opacity=".10"
-                  stroke="var(--driven)" stroke-width="1.6"/>
-            <text class="a-title" x="940" y="466.0" text-anchor="middle">Retro</text>
-            <text class="a-sub" x="940" y="485.0" text-anchor="middle">tools/retro</text>
+          <g class="a-node" data-id="product" tabindex="0">
+            <title>Product plane — the teacher UI adapter: no imports in either direction, by design</title>
+            <rect x="245.0" y="436.0" width="170" height="48" rx="11"
+                  fill="var(--card)" stroke="var(--edge)" stroke-width="1.6"/>
+            <text class="a-label" x="330" y="455.5" text-anchor="middle">Product plane</text>
+            <text class="a-sub" x="330" y="472.5" text-anchor="middle">drives it over HTTP only</text>
+          </g>
+          <g class="a-node" data-id="governance" tabindex="0">
+            <title>Governance &amp; memory — the repo steward + the invariant registry, recall, and plan-state ledger</title>
+            <rect x="610.0" y="331.0" width="170" height="54" rx="11"
+                  fill="var(--card)" stroke="var(--mech)" stroke-width="1.6"/>
+            <text class="a-label" x="695" y="353.5" text-anchor="middle">Governance &amp; memory</text>
+            <text class="a-sub" x="695" y="370.5" text-anchor="middle">caretaker · metacognition</text>
+          </g>
+          <g class="a-node" data-id="plan_qa" tabindex="0">
+            <title>Plan QA — plan-quality dashboard, decision-point checks, precision measurement</title>
+            <rect x="808.0" y="331.0" width="170" height="54" rx="11"
+                  fill="var(--card)" stroke="var(--gate)" stroke-width="1.6"/>
+            <text class="a-label" x="893" y="353.5" text-anchor="middle">Plan QA</text>
+            <text class="a-sub" x="893" y="370.5" text-anchor="middle">doctor · consistency</text>
+          </g>
+          <g class="a-node" data-id="adjudication" tabindex="0">
+            <title>Adjudication — claim adjudication, grounding, and the engaged-mode experiment harness</title>
+            <rect x="610.0" y="425.0" width="170" height="54" rx="11"
+                  fill="var(--card)" stroke="var(--drive)" stroke-width="1.6"/>
+            <text class="a-label" x="695" y="447.5" text-anchor="middle">Adjudication</text>
+            <text class="a-sub" x="695" y="464.5" text-anchor="middle">verdicts · mode harness</text>
+          </g>
+          <g class="a-node" data-id="experiments" tabindex="0">
+            <title>Tuning experiments — the cost-estimator tuner and the /refine A/B + dogfood trackers</title>
+            <rect x="808.0" y="425.0" width="170" height="54" rx="11"
+                  fill="var(--card)" stroke="var(--subject)" stroke-width="1.6"/>
+            <text class="a-label" x="893" y="447.5" text-anchor="middle">Tuning experiments</text>
+            <text class="a-sub" x="893" y="464.5" text-anchor="middle">config · refine A/B</text>
+          </g>
+          <g class="a-node" data-id="learning" tabindex="0">
+            <title>Learning loop — the retrospective miner every other subsystem feeds</title>
+            <rect x="981.0" y="378.0" width="170" height="54" rx="11"
+                  fill="var(--card)" stroke="var(--driven)" stroke-width="1.6"/>
+            <text class="a-label" x="1066" y="400.5" text-anchor="middle">Learning loop</text>
+            <text class="a-sub" x="1066" y="417.5" text-anchor="middle">tools/retro</text>
+          </g>
+          <g class="a-node" data-id="skills" tabindex="0">
+            <title>Custom skills — the slash-command toolkit the whole practice runs on</title>
+            <rect x="60.0" y="587.0" width="196" height="50" rx="11"
+                  fill="var(--card)" stroke="var(--driven)" stroke-width="1.6"/>
+            <text class="a-label" x="158" y="607.5" text-anchor="middle">Custom skills</text>
+            <text class="a-sub" x="158" y="624.5" text-anchor="middle">/refine · /retro · /hunt …</text>
+          </g>
+<a class="a-nodelink" href="meta.html">          <g class="a-node" data-id="hooks" >
+            <title>Hook immune system — pre/post tool-call guards + the permission analyzer</title>
+            <rect x="281.0" y="587.0" width="196" height="50" rx="11"
+                  fill="var(--card)" stroke="var(--driven)" stroke-width="1.6"/>
+            <text class="a-label" x="379" y="599.0" text-anchor="middle">Hook immune system</text>
+            <text class="a-sub" x="379" y="616.0" text-anchor="middle">guards on every tool call</text>
+            <text class="a-link" x="379" y="633.0" text-anchor="middle">→ meta tools</text>
+          </g>
+</a><a class="a-nodelink" href="meta.html">          <g class="a-node" data-id="recall_inv" >
+            <title>Recall + invariants — the recall index and the invariant registry, injected mid-session</title>
+            <rect x="502.0" y="587.0" width="196" height="50" rx="11"
+                  fill="var(--card)" stroke="var(--driven)" stroke-width="1.6"/>
+            <text class="a-label" x="600" y="599.0" text-anchor="middle">Recall + invariants</text>
+            <text class="a-sub" x="600" y="616.0" text-anchor="middle">memory that arrives on time</text>
+            <text class="a-link" x="600" y="633.0" text-anchor="middle">→ meta tools</text>
+          </g>
+</a><a class="a-nodelink" href="meta.html">          <g class="a-node" data-id="retro_fly" >
+            <title>Retro flywheel — transcript mining that ships interventions and measures them</title>
+            <rect x="723.0" y="587.0" width="196" height="50" rx="11"
+                  fill="var(--card)" stroke="var(--driven)" stroke-width="1.6"/>
+            <text class="a-label" x="821" y="599.0" text-anchor="middle">Retro flywheel</text>
+            <text class="a-sub" x="821" y="616.0" text-anchor="middle">mine → ship → measure</text>
+            <text class="a-link" x="821" y="633.0" text-anchor="middle">→ meta tools</text>
+          </g>
+</a>          <g class="a-node" data-id="fleets" tabindex="0">
+            <title>Agent fleets — parallel sub-agent execution and the transcript embedding index</title>
+            <rect x="944.0" y="587.0" width="196" height="50" rx="11"
+                  fill="var(--card)" stroke="var(--driven)" stroke-width="1.6"/>
+            <text class="a-label" x="1042" y="607.5" text-anchor="middle">Agent fleets</text>
+            <text class="a-sub" x="1042" y="624.5" text-anchor="middle">drones · embedding platform</text>
           </g>
         </g>
       </svg>
     </div>
   </div>
 
-  <ul class="legend" aria-label="Legend">
-    <li><span class="swatch" style="background:var(--core)"></span>Governance &amp; memory</li>
-    <li><span class="swatch" style="background:var(--drive)"></span>Adjudication</li>
-    <li><span class="swatch" style="background:var(--subject)"></span>Tuning experiments</li>
-    <li><span class="swatch" style="background:var(--gate)"></span>Plan QA</li>
-    <li><span class="swatch" style="background:var(--driven)"></span>Learning loop</li>
-    <li><span class="swatch" style="background:var(--edge)"></span>Adapter &amp; subject planes</li>
+  <ul class="mapkey" aria-label="Reading the map">
+    <li><span class="k k-solid"></span><strong>Solid, weighted</strong> — proven
+      imports; the stroke scales with the recomputed count beside it.</li>
+    <li><span class="k k-dotted"></span><strong>Dotted</strong> — a pipeline
+      flow; its evidence is the artifacts on the page its box links to.</li>
+    <li><span class="k k-moat"></span><strong>Dashed ring</strong> — the moat:
+      the engine exchanges no imports with anything above it.</li>
+    <li><span class="k k-link">→</span><strong>Blue arrows in a box</strong> —
+      that part of the machine has its own page; the box is a link.</li>
   </ul>
 
   <section class="proof" aria-labelledby="proof-h">
-    <h2 id="proof-h">Every edge is proven</h2>
+    <h2 id="proof-h">Every solid edge is proven</h2>
     <table class="edges">
       <thead><tr>
         <th scope="col">From</th><th scope="col">To</th>
@@ -612,137 +783,62 @@
       </tr></thead>
       <tbody>
         <tr>
-          <td class="flow-from" style="color:var(--core)">Caretaker</td>
-          <td class="flow-to">Metacognition</td>
-          <td class="rel">reads the invariant registry</td>
-          <td><span class="stat" data-source="import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py)" data-verified="2026-07-13" data-provenance="verified" title="source: import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py) · verified 2026-07-13">16 imports</span></td>
+          <td class="flow-from" style="color:var(--mech)">Governance &amp; memory</td>
+          <td class="flow-to">Plan QA</td>
+          <td class="rel">runs the plan doctor; measures decision-card precision</td>
+          <td><span class="stat" data-source="import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py)" data-verified="2026-07-13" data-provenance="verified" title="source: import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py) · verified 2026-07-13">8 imports</span></td>
         </tr>
         <tr>
-          <td class="flow-from" style="color:var(--mech)">Metacognition</td>
-          <td class="flow-to">Caretaker</td>
-          <td class="rel">recall checks claim liveness</td>
-          <td><span class="stat" data-source="import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py)" data-verified="2026-07-13" data-provenance="verified" title="source: import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py) · verified 2026-07-13">2 imports</span></td>
+          <td class="flow-from" style="color:var(--mech)">Governance &amp; memory</td>
+          <td class="flow-to">Learning loop</td>
+          <td class="rel">feeds rework + failure-mode signals into retro</td>
+          <td><span class="stat" data-source="import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py)" data-verified="2026-07-13" data-provenance="verified" title="source: import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py) · verified 2026-07-13">10 imports</span></td>
         </tr>
         <tr>
-          <td class="flow-from" style="color:var(--core)">Caretaker</td>
-          <td class="flow-to">Retro</td>
-          <td class="rel">feeds rework signals</td>
-          <td><span class="stat" data-source="import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py)" data-verified="2026-07-13" data-provenance="verified" title="source: import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py) · verified 2026-07-13">6 imports</span></td>
+          <td class="flow-from" style="color:var(--drive)">Adjudication</td>
+          <td class="flow-to">Learning loop</td>
+          <td class="rel">spot-checks grounding; aggregates the mode harness into retro</td>
+          <td><span class="stat" data-source="import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py)" data-verified="2026-07-13" data-provenance="verified" title="source: import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py) · verified 2026-07-13">7 imports</span></td>
         </tr>
         <tr>
-          <td class="flow-from" style="color:var(--mech)">Metacognition</td>
-          <td class="flow-to">Retro</td>
-          <td class="rel">grounds failure-mode checks</td>
-          <td><span class="stat" data-source="import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py)" data-verified="2026-07-13" data-provenance="verified" title="source: import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py) · verified 2026-07-13">4 imports</span></td>
-        </tr>
-        <tr>
-          <td class="flow-from" style="color:var(--drive)">Verdict engine</td>
-          <td class="flow-to">Retro</td>
-          <td class="rel">spot-checks its grounding</td>
+          <td class="flow-from" style="color:var(--drive)">Adjudication</td>
+          <td class="flow-to">Tuning experiments</td>
+          <td class="rel">tunes the hybrid cost estimator</td>
           <td><span class="stat" data-source="import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py)" data-verified="2026-07-13" data-provenance="verified" title="source: import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py) · verified 2026-07-13">5 imports</span></td>
-        </tr>
-        <tr>
-          <td class="flow-from" style="color:var(--drive)">Verdict engine</td>
-          <td class="flow-to">Mode experiments</td>
-          <td class="rel">drives the mode harness</td>
-          <td><span class="stat" data-source="import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py)" data-verified="2026-07-13" data-provenance="verified" title="source: import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py) · verified 2026-07-13">17 imports</span></td>
-        </tr>
-        <tr>
-          <td class="flow-from" style="color:var(--drive)">Mode experiments</td>
-          <td class="flow-to">Retro</td>
-          <td class="rel">aggregates into spot-check</td>
-          <td><span class="stat" data-source="import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py)" data-verified="2026-07-13" data-provenance="verified" title="source: import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py) · verified 2026-07-13">2 imports</span></td>
-        </tr>
-        <tr>
-          <td class="flow-from" style="color:var(--core)">Caretaker</td>
-          <td class="flow-to">Plan doctor</td>
-          <td class="rel">runs the plan doctor</td>
-          <td><span class="stat" data-source="import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py)" data-verified="2026-07-13" data-provenance="verified" title="source: import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py) · verified 2026-07-13">6 imports</span></td>
-        </tr>
-        <tr>
-          <td class="flow-from" style="color:var(--mech)">Metacognition</td>
-          <td class="flow-to">Plan doctor</td>
-          <td class="rel">validates decision points</td>
-          <td><span class="stat" data-source="import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py)" data-verified="2026-07-13" data-provenance="verified" title="source: import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py) · verified 2026-07-13">1 imports</span></td>
-        </tr>
-        <tr>
-          <td class="flow-from" style="color:var(--core)">Caretaker</td>
-          <td class="flow-to">Plan consistency</td>
-          <td class="rel">measures precision</td>
-          <td><span class="stat" data-source="import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py)" data-verified="2026-07-13" data-provenance="verified" title="source: import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py) · verified 2026-07-13">1 imports</span></td>
-        </tr>
-        <tr>
-          <td class="flow-from" style="color:var(--gate)">Plan consistency</td>
-          <td class="flow-to">Plan doctor</td>
-          <td class="rel">probes manifest coherence</td>
-          <td><span class="stat" data-source="import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py)" data-verified="2026-07-13" data-provenance="verified" title="source: import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py) · verified 2026-07-13">1 imports</span></td>
-        </tr>
-        <tr>
-          <td class="flow-from" style="color:var(--drive)">Verdict engine</td>
-          <td class="flow-to">Config experiments</td>
-          <td class="rel">tunes the estimator</td>
-          <td><span class="stat" data-source="import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py)" data-verified="2026-07-13" data-provenance="verified" title="source: import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py) · verified 2026-07-13">5 imports</span></td>
-        </tr>
-        <tr>
-          <td class="flow-from" style="color:var(--subject)">Refine experiment</td>
-          <td class="flow-to">Refine dogfood</td>
-          <td class="rel">feeds the dogfood tracker</td>
-          <td><span class="stat" data-source="import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py)" data-verified="2026-07-13" data-provenance="verified" title="source: import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py) · verified 2026-07-13">4 imports</span></td>
         </tr>
       </tbody>
     </table>
   </section>
 
-  <section class="islands" aria-labelledby="islands-h">
-    <h2 id="islands-h">Isolated by design</h2>
-    <p class="cap">The assessment core and its adapters have no outgoing edges in
-      this graph — dependencies point only inward, so the subject-free engine
-      imports nothing above it. That absence is the ports-and-adapters invariant,
-      proven here by the very graph the landscape draws.</p>
-    <div class="chips">
-      <a class="chip" href="../architecture.html">
-        <div class="name">Assessment engine</div>
-        <div class="path">tools/claude_tools</div>
-        <div class="desc">the subject-free hexagon core: pure mechanism wrapped by a subject-free engine. Imports nothing outward -- an island by design.</div>
-        <span class="go">Open the hexagon deep-dive</span>
-      </a>
-      <div class="chip">
-        <div class="name">Product plane</div>
-        <div class="path">tools/product</div>
-        <div class="desc">the thin API driving adapter (UI over HTTP only)</div>
-      </div>
-      <div class="chip">
-        <div class="name">Drone fabric</div>
-        <div class="path">tools/drones</div>
-        <div class="desc">the parallel sub-agent execution family</div>
-      </div>
-      <div class="chip">
-        <div class="name">Embedding platform</div>
-        <div class="path">tools/embedding_platform</div>
-        <div class="desc">the recall/transcript embedding index and cache</div>
-      </div>
-      <div class="chip">
-        <div class="name">Permissions plane</div>
-        <div class="path">tools/permissions</div>
-        <div class="desc">the permission analyzer, classifier, and safety rules</div>
-      </div>
-    </div>
+  <section class="moat" aria-labelledby="moat-h">
+    <h2 id="moat-h">The moat, gated</h2>
+    <p class="cap">The assessment engine and the product plane —
+      <span class="stat" data-source="atlas_layout.json kind=&#39;island&#39; nodes" data-verified="2026-07-13" data-provenance="verified" title="source: atlas_layout.json kind=&#39;island&#39; nodes · verified 2026-07-13">2</span> island planes in this map — exchange
+      <span class="stat" data-source="import_graph.json: recomputed island-to-fabric module pairs, both directions, every pair (verify_deep_dive.py gate m ISOLATION check)" data-verified="2026-07-13" data-provenance="verified" title="source: import_graph.json: recomputed island-to-fabric module pairs, both directions, every pair (verify_deep_dive.py gate m ISOLATION check) · verified 2026-07-13">0 imports</span> with the <span class="stat" data-source="atlas_layout.json (curated layout)" data-verified="2026-07-13" data-provenance="verified" title="source: atlas_layout.json (curated layout) · verified 2026-07-13">5</span> fabric
+      regions, in either direction. That absence is the ports-and-adapters
+      invariant: dependencies point only inward, so the subject-free core never
+      reaches up into the machinery that builds, checks, and tunes the
+      curriculum. It is re-proven against the harvested graph on every build —
+      a drawn moat with a failing gate behind it, not a caption.</p>
+    <p class="cap">The hexagon has its own page:
+      <a href="../architecture.html">the engine, drawn as a hexagon</a>.</p>
   </section>
 
   <footer class="foot">
-    <span class="rule">Curated layout, proven wiring.</span>
-    The map is arranged by hand for reading; the connections are not. Every arrow is
-    recomputed from the harvested import graph, and a hand-declared edge without a
-    witnessing import fails the build.
+    <span class="rule">Curated layout, proven wiring — now typed.</span>
+    The map is arranged by hand for reading; the connections are not. Solid
+    edges are recomputed from the harvested import graph and fail the build
+    without a witnessing import; dotted edges are refused wherever import
+    evidence exists; the moat fails the build if anything ever crosses it.
     <br>Explore <a href="../index.html#story">→ one problem's life</a> ·
     <a href="sims.html">→ the sim exhibit</a> ·
     <a href="../architecture.html">→ the engine, as a hexagon</a>.
   </footer>
 </main>
-  <a class="nextbar nextband" href="meta.html">
+  <a class="nextbar nextband" href="sims.html">
     <span class="nextbar__text">
       <span class="nextbar__eyebrow">Next</span>
-      <span class="nextbar__dest nextband__label">Meta&nbsp;Tools</span>
+      <span class="nextbar__dest nextband__label">Sims</span>
     </span>
     <span class="nextbar__arrow nextband__arrow" aria-hidden="true">&rarr;</span>
   </a>

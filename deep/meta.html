@@ -408,13 +408,22 @@
   .recall .big{font-size:clamp(30px,5vw,52px);font-weight:840;letter-spacing:-.02em;
     line-height:1;color:var(--text);font-family:var(--mono);}
   .recall .cap{font-size:15px;color:var(--muted);max-width:48ch;}
+
+  /* ---------- memory receipts (the audit strip) ---------- */
+  .receipts{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:12px;margin:16px 0 0;}
+  .receipt{background:var(--card);border:1px solid var(--line);
+    border-left:3px solid var(--core);border-radius:10px;padding:14px 16px;}
+  .receipt.floor{border-left-color:var(--drive);}
+  .receipt .rnum{font-family:var(--mono);font-size:21px;font-weight:800;color:var(--text);}
+  .receipt .rlab{margin-top:5px;color:var(--muted);font-size:13px;line-height:1.55;}
   </style>
 </head>
 <body class="meta">
 <aside class="siterail" aria-label="Site navigation">
   <div class="siterail__inner">
     <a class="siterail__mark" href="../index.html"><span>Brendan</span><span>Wischweh</span></a>    <nav class="siterail__zone siterail__zone--site" aria-label="The site">
-      <p class="siterail__title">The site</p>      <a class="rail-page" href="../index.html">Home</a>      <a class="rail-page" href="../architecture.html">Architecture</a>      <a class="rail-page" href="code.html">Code</a>      <a class="rail-page" href="verification.html">Formal&nbsp;Verification</a>      <a class="rail-page" href="engine.html">Engine&nbsp;Room</a>      <a class="rail-page" href="systems.html">Systems&nbsp;Atlas</a>      <a class="rail-page" href="meta.html" aria-current="page">Meta&nbsp;Tools</a>      <a class="rail-page" href="sims.html">Sims</a>      <a class="rail-page" href="gallery.html">Gallery</a>      <a class="rail-page" href="../videos.html">Videos</a>    </nav>
+      <p class="siterail__title">The site</p>      <a class="rail-page" href="../index.html">Home</a>      <a class="rail-page" href="../architecture.html">Architecture</a>      <a class="rail-page" href="code.html">Code</a>      <a class="rail-page" href="verification.html">Formal&nbsp;Verification</a>      <a class="rail-page" href="lab.html">The&nbsp;Lab</a>      <a class="rail-page" href="meta.html" aria-current="page">Meta&nbsp;Tools</a>      <a class="rail-page" href="engine.html">Engine&nbsp;Room</a>      <a class="rail-page" href="systems.html">Systems&nbsp;Atlas</a>      <a class="rail-page" href="sims.html">Sims</a>      <a class="rail-page" href="gallery.html">Gallery</a>      <a class="rail-page" href="../videos.html">Videos</a>    </nav>
   </div>
 </aside><script>
 (function () {
@@ -636,17 +645,59 @@
     </div>
   </section>
 
-  <!-- ============ 4. recall's memory scale ============ -->
+  <!-- ============ 4. recall — the memory that audits itself ============ -->
   <section aria-labelledby="recall-h">
     <h2 id="recall-h">Recall &mdash; the memory that arrives on time</h2>
     <p class="section-dek">The hardest failure to catch is forgetting what was
-      already built or already decided. Recall indexes the work into an inventory
-      and surfaces the relevant piece at the moment a prompt lands &mdash; so a
-      past decision shows up before it is re-litigated, not after.</p>
+      already built or already decided. The built-in session memory was not
+      enough for that &mdash; so the collaboration grew its own layer on top: an
+      inventory of everything the work has produced, pushed into the
+      conversation at the moment a prompt lands, so a past decision shows up
+      before it is re-litigated, not after. And because an unmeasured memory
+      would just be more noise, the layer audits its own usefulness.</p>
     <div class="recall">
-      <span class="big"><span class="stat" data-source="tools/recall/inventory/inventory.json (asset_count)" data-verified="2026-07-13" data-provenance="verified" title="source: tools/recall/inventory/inventory.json (asset_count) · verified 2026-07-13">2965</span></span>
+      <span class="big"><span class="stat" data-source="tools/recall/inventory/inventory.json (asset_count)" data-verified="2026-07-13" data-provenance="verified" title="source: tools/recall/inventory/inventory.json (asset_count) · verified 2026-07-13">3157</span></span>
       <span class="cap">assets in the recall inventory, reachable at prompt time
         &mdash; counted live from the inventory, never estimated.</span>
+    </div>
+
+    <div class="receipts">
+      <div class="receipt">
+        <div class="rnum"><span class="stat" data-source="tools/recall/analysis/out/use_rate_summary.json (generated 2026-07-13) — scale.instrumentation_rows" data-verified="2026-07-13" data-provenance="verified" title="source: tools/recall/analysis/out/use_rate_summary.json (generated 2026-07-13) — scale.instrumentation_rows · verified 2026-07-13">4725</span></div>
+        <div class="rlab">prompts answered with memory, across
+          <span class="stat" data-source="tools/recall/analysis/out/use_rate_summary.json (generated 2026-07-13) — scale.sessions" data-verified="2026-07-13" data-provenance="verified" title="source: tools/recall/analysis/out/use_rate_summary.json (generated 2026-07-13) — scale.sessions · verified 2026-07-13">1656</span> working sessions &mdash; every firing
+          logged by the layer itself, in <span class="stat" data-source="tools/recall/analysis/out/use_rate_summary.json (generated 2026-07-13) — criterion1.hook_latency_s (one real hook call, full staleness walk)" data-verified="2026-07-13" data-provenance="verified" title="source: tools/recall/analysis/out/use_rate_summary.json (generated 2026-07-13) — criterion1.hook_latency_s (one real hook call, full staleness walk) · verified 2026-07-13">0.8</span>
+          seconds at prompt time.</div>
+      </div>
+      <div class="receipt">
+        <div class="rnum"><span class="stat" data-source="tools/recall/analysis/out/use_rate_summary.json (generated 2026-07-13) — criterion1: 31/34 labeled task-start prompts surfaced the hand-labeled correct prior asset" data-verified="2026-07-13" data-provenance="verified" title="source: tools/recall/analysis/out/use_rate_summary.json (generated 2026-07-13) — criterion1: 31/34 labeled task-start prompts surfaced the hand-labeled correct prior asset · verified 2026-07-13">91%</span></div>
+        <div class="rlab">of labeled task-start prompts surfaced the
+          hand-labeled correct prior work &mdash; the retrieval side, scored
+          against a frozen answer key.</div>
+      </div>
+      <div class="receipt floor">
+        <div class="rnum"><span class="stat" data-source="tools/recall/analysis/out/use_rate_summary.json (generated 2026-07-13) — consultation.overall_rate (consulted/surfacings; the pinned is_used predicate: a later file touch or citation — a conservative floor)" data-verified="2026-07-13" data-provenance="verified" title="source: tools/recall/analysis/out/use_rate_summary.json (generated 2026-07-13) — consultation.overall_rate (consulted/surfacings; the pinned is_used predicate: a later file touch or citation — a conservative floor) · verified 2026-07-13">4.6%</span></div>
+        <div class="rlab">of surfaced memories were demonstrably consulted
+          afterward &mdash; a deliberately conservative floor: only a later
+          file touch or an explicit citation counts.</div>
+      </div>
+      <div class="receipt">
+        <div class="rnum"><span class="stat" data-source="tools/recall/analysis/out/use_rate_summary.json (generated 2026-07-13) — buckets.prune" data-verified="2026-07-13" data-provenance="verified" title="source: tools/recall/analysis/out/use_rate_summary.json (generated 2026-07-13) — buckets.prune · verified 2026-07-13">47</span>&nbsp;+&nbsp;<span class="stat" data-source="tools/recall/analysis/out/use_rate_summary.json (generated 2026-07-13) — buckets.down_rank" data-verified="2026-07-13" data-provenance="verified" title="source: tools/recall/analysis/out/use_rate_summary.json (generated 2026-07-13) — buckets.down_rank · verified 2026-07-13">19</span></div>
+        <div class="rlab">frequently-surfaced entries pruned + down-ranked by
+          the layer's own miner &mdash; noise retired on evidence, not on
+          impression.</div>
+      </div>
+    </div>
+
+    <div class="honesty">
+      <span class="lbl">Why the low number renders</span>
+      <p>Every injection is joined back to its session's transcript and asked
+        one question: <b>was this actually consulted?</b> Only a demonstrable
+        touch counts, so advice that was simply read in place scores zero
+        &mdash; the rate is a floor, not a grade. What matters is that the
+        memory acts on its own audit: entries that keep surfacing without ever
+        being used are pruned or down-ranked automatically. A memory that only
+        praised itself would be worthless here.</p>
     </div>
   </section>
 
@@ -662,10 +713,10 @@
     <a href="../architecture.html">&rarr; the engine, as a hexagon</a>.
   </footer>
 </main>
-  <a class="nextbar nextband" href="sims.html">
+  <a class="nextbar nextband" href="engine.html">
     <span class="nextbar__text">
       <span class="nextbar__eyebrow">Next</span>
-      <span class="nextbar__dest nextband__label">Sims</span>
+      <span class="nextbar__dest nextband__label">Engine&nbsp;Room</span>
     </span>
     <span class="nextbar__arrow nextband__arrow" aria-hidden="true">&rarr;</span>
   </a>

@@ -470,10 +470,40 @@
     font-family:var(--mono);font-size:13px;color:var(--muted);}
   .counts b{color:var(--text);}
 
-  /* masonry: mixed-aspect artifacts (portrait pages + wide crops) pack tightly
-     with no stretch-holes; collapses to one column on narrow viewports */
-  .grid{columns:3 300px;column-gap:22px;margin-top:34px;}
-  figure.card{break-inside:avoid;margin:0 0 22px;background:var(--card);
+  /* ROW-MAJOR, one grid per ROW GROUP (render_gallery._GROUP_ORDER).
+
+     This was CSS multi-column masonry (`columns:3`) until 2026-07-13. Masonry
+     fills COLUMN BY COLUMN, so with the worked example split into four page
+     cards, page one headed column one and page FOUR headed column two: the one
+     problem read ACROSS the top of the wall instead of down it, and no ordering
+     of the source list could have fixed it, because column-major CSS is what was
+     deciding the layout. A grid fills row by row, so source order is what you see.
+
+     One grid PER GROUP, rather than one grid with the groups laid out inside it:
+     a group must begin on a fresh row at EVERY column count, and a single grid
+     can only be made to do that at one specific window width. Separate grids get
+     it for free at three columns, at two, and at one.
+
+     The column count is explicit, never `auto-fit`: the row structure IS the
+     content here (three pages across, then the fourth beside the sim; the three
+     sliders as exactly one row), and auto-fit would silently re-flow it on a wide
+     monitor. `align-items:start` keeps each card at its natural height — these
+     artifacts are deliberately mixed-aspect (portrait pages, wide terminal
+     captures), and stretching them to a common row height would only pad the
+     short ones with dead space. */
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;
+    align-items:start;margin-top:34px;}
+  .grid + .grid{margin-top:22px;}
+  @media (max-width:980px){.grid{grid-template-columns:repeat(2,1fr);}}
+  @media (max-width:640px){.grid{grid-template-columns:1fr;}}
+
+  /* A RESERVED cell: it holds a space and draws NOTHING. The live sim welded to
+     the worked example lands here (render_gallery: the `dawn_sim` placard). No
+     border, no "coming soon" — this page is public, and scaffolding meant for the
+     people building the site is not content for the people visiting it. */
+  .slot-reserved{display:block;}
+
+  figure.card{margin:0;background:var(--card);
     border:1px solid var(--line);border-radius:var(--radius);
     box-shadow:var(--shadow);overflow:hidden;}
   figure.card .frame{background:color-mix(in srgb,var(--paper) 60%, var(--card));
@@ -502,7 +532,7 @@
 <aside class="siterail" aria-label="Site navigation">
   <div class="siterail__inner">
     <a class="siterail__mark" href="../index.html"><span>Brendan</span><span>Wischweh</span></a>    <nav class="siterail__zone siterail__zone--site" aria-label="The site">
-      <p class="siterail__title">The site</p>      <a class="rail-page" href="../index.html">Home</a>      <a class="rail-page" href="../architecture.html">Architecture</a>      <a class="rail-page" href="code.html">Code</a>      <a class="rail-page" href="verification.html">Formal&nbsp;Verification</a>      <a class="rail-page" href="engine.html">Engine&nbsp;Room</a>      <a class="rail-page" href="systems.html">Systems&nbsp;Atlas</a>      <a class="rail-page" href="meta.html">Meta&nbsp;Tools</a>      <a class="rail-page" href="sims.html">Sims</a>      <a class="rail-page" href="gallery.html" aria-current="page">Gallery</a>      <a class="rail-page" href="../videos.html">Videos</a>    </nav>
+      <p class="siterail__title">The site</p>      <a class="rail-page" href="../index.html">Home</a>      <a class="rail-page" href="../architecture.html">Architecture</a>      <a class="rail-page" href="code.html">Code</a>      <a class="rail-page" href="verification.html">Formal&nbsp;Verification</a>      <a class="rail-page" href="lab.html">The&nbsp;Lab</a>      <a class="rail-page" href="meta.html">Meta&nbsp;Tools</a>      <a class="rail-page" href="engine.html">Engine&nbsp;Room</a>      <a class="rail-page" href="systems.html">Systems&nbsp;Atlas</a>      <a class="rail-page" href="sims.html">Sims</a>      <a class="rail-page" href="gallery.html" aria-current="page">Gallery</a>      <a class="rail-page" href="../videos.html">Videos</a>    </nav>
   </div>
 </aside><script>
 (function () {
@@ -557,9 +587,7 @@
       <span class="stat" data-source="legend" data-verified="2026-07-13" data-provenance="verified">highlighted box</span>
       is harvested live from the repository with a source and a verified date &mdash;
       hover to read them.</p>
-  </header>
-
-  <div class="grid">
+  </header>  <div class="grid" data-group="dawn">
     <figure class="card">
 <div class="frame">
         <img src="assets/gallery/dawn_p1.png" alt="The problem page of a generated physics worked example, Dawn&#39;s Last Burn: a spacecraft in a circular orbit around the dwarf planet Ceres fires one tangential burn and later collides with debris. A computed orbit diagram shows Ceres, the burn point, the high point of the new orbit, the exhaust, and the debris; a Given box closes the page." loading="lazy" data-zoomable>
@@ -592,25 +620,9 @@
         <p class="t">The collision, and the scientist</p>
         <p class="c">The closing parts, and the beat the whole page is built toward: a deaf schoolteacher who worked out the rocket equation with a pen, decades before anyone flew one. Every problem ends with the person behind the physics.</p>      </figcaption>
     </figure>
-    <figure class="card">
-<div class="frame">
-        <div class="wipe" data-wipe
-             data-before="assets/gallery/era_compare_before.png"
-             data-after="assets/gallery/era_compare_after.png"
-             data-before-alt="A typed friction test from a generation ago: text only, no diagrams — every figure was drawn on the board by hand."
-             data-after-alt="A generated physics page (energy-K015) with a computed hill-and-track diagram and energy bar charts."
-             data-before-label="A generation ago"
-             data-after-label="Today">
-          <noscript>
-            <img src="assets/gallery/era_compare_before.png" alt="A typed friction test from a generation ago: text only, no diagrams — every figure was drawn on the board by hand." loading="lazy">
-            <img src="assets/gallery/era_compare_after.png" alt="A generated physics page (energy-K015) with a computed hill-and-track diagram and energy bar charts." loading="lazy">
-          </noscript>
-        </div>
-      </div>
-      <figcaption>
-        <p class="t">A quarter century of the same course</p>
-        <p class="c">A friction test the teacher typed a generation ago — text only, every diagram drawn by hand — and a page the engine generates today from code, diagram and energy scaffolds and all. Drag the divider.</p>      </figcaption>
-    </figure>
+<div class="slot-reserved" data-reserved="dawn_sim" aria-hidden="true"></div>
+  </div>
+  <div class="grid" data-group="compare">
     <figure class="card">
 <div class="frame">
         <div class="wipe" data-wipe
@@ -633,11 +645,22 @@
     </figure>
     <figure class="card">
 <div class="frame">
-        <img src="assets/gallery/gate_rejection.png" alt="A terminal capture of a correctness gate rejecting a seeded-bad physics problem." loading="lazy" data-zoomable>
+        <div class="wipe" data-wipe
+             data-before="assets/gallery/era_compare_before.png"
+             data-after="assets/gallery/era_compare_after.png"
+             data-before-alt="A typed friction test from a generation ago: text only, no diagrams — every figure was drawn on the board by hand."
+             data-after-alt="A generated physics page (energy-K015) with a computed hill-and-track diagram and energy bar charts."
+             data-before-label="A generation ago"
+             data-after-label="Today">
+          <noscript>
+            <img src="assets/gallery/era_compare_before.png" alt="A typed friction test from a generation ago: text only, no diagrams — every figure was drawn on the board by hand." loading="lazy">
+            <img src="assets/gallery/era_compare_after.png" alt="A generated physics page (energy-K015) with a computed hill-and-track diagram and energy bar charts." loading="lazy">
+          </noscript>
+        </div>
       </div>
       <figcaption>
-        <p class="t">A gate refusing a bad problem</p>
-        <p class="c">A correctness gate refusing a deliberately broken problem — the machinery catches it, so the teacher&#39;s judgment is spent elsewhere.</p>      </figcaption>
+        <p class="t">A quarter century of the same course</p>
+        <p class="c">A friction test the teacher typed a generation ago — text only, every diagram drawn by hand — and a page the engine generates today from code, diagram and energy scaffolds and all. Drag the divider.</p>      </figcaption>
     </figure>
     <figure class="card">
 <div class="frame">
@@ -657,6 +680,16 @@
       <figcaption>
         <p class="t">Caught in review, then regenerated</p>
         <p class="c">An earlier render with flawed ground geometry, and the page re-derived from corrected drawing code. The fix lands in the code and the page is regenerated — never patched by hand. Drag the divider to watch the ground heal.</p>      </figcaption>
+    </figure>
+  </div>
+  <div class="grid" data-group="machinery">
+    <figure class="card">
+<div class="frame">
+        <img src="assets/gallery/gate_rejection.png" alt="A terminal capture of a correctness gate rejecting a seeded-bad physics problem." loading="lazy" data-zoomable>
+      </div>
+      <figcaption>
+        <p class="t">A gate refusing a bad problem</p>
+        <p class="c">A correctness gate refusing a deliberately broken problem — the machinery catches it, so the teacher&#39;s judgment is spent elsewhere.</p>      </figcaption>
     </figure>
     <figure class="card">
 <div class="frame">
