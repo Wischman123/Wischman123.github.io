@@ -77,21 +77,44 @@
   .foot .paths{display:block;margin-top:8px;word-break:break-word;}
 
   /* ===========================================================================
-     THE DIAGRAM BREATHES.  ONE clock -- --beat (6s) -- drives the whole organism.
+     THE DIAGRAM BREATHES.  ONE clock -- --beat -- drives the whole organism, and
+     one causal chain runs end to end.  Nothing fires "because it is time"; every
+     stage fires because the previous one reached it.
 
-     The peristaltic wave: Teacher UI fires -> the API relays -> the core INHALES
-     until it is visibly distended -> it clamps down (systole) -> and that squeeze
-     is what discharges the four driven ports.  Every green/yellow element is the
-     SAME 6s animation sampled at a different --wd delay; the delay IS the ripple.
-     A rest phase closes the beat, so it reads as a creature, not a conveyor belt.
+       0.00s  the Teacher UI fires.  The ask travels UI -> API -> core.
+       1.20s  the membrane (L2) begins to INFLATE, its rim glowing brighter as it
+              fills.  It is CHARGING -- the glow is stored energy.
+       2.80s  full.  The instant it BEGINS TO SHRINK it discharges that glow as a
+              compression wave, launched inward across the annulus.
+       3.64s  the wave STRIKES L1 -- and THAT is what makes L1 grow.  Mind the
+              sign: a CONTRACTION wave makes the inner body BULGE, the way
+              squeezing a shell of incompressible fluid pushes its middle out.
+              L1 does not follow the membrane; it is KICKED by the wave and rings.
+       4.48s  L1's answer -- a reverse wave -- arrives back at the membrane...
+       4.50s  ...and THAT is what opens the ports and discharges the adapters.
+       6.80s  quiet.  The beat rests, and refills.
 
-     Nothing has an independent clock.  The membrane (L2) is the sole driver; the
-     inner hexagon (L1) and the subject arrows are damped springs hanging off it,
-     each lagging, overshooting and ringing on its own time constant.  Change
-     --beat and the entire creature -- wave, breath, springs, wavefronts -- slows
-     or quickens together, staying in phase.
+     Every delay below is a FRACTION of --beat, never an absolute time, so the
+     whole creature -- wave, breath, springs, wavefronts, ports -- slows or
+     quickens together and stays in phase.  Change --beat, change everything.
+     (An earlier version wrote these as bare seconds and quietly broke that
+     promise: retiming the beat left the choreography behind.)
+
+     The two springs (L1, and the subject arrows) are NOT hand-keyframed -- see
+     the GENERATED block below.
      =========================================================================== */
-  .diagram{ --beat:6s; }
+  .diagram{
+    --beat:8s;
+    /* the choreography, as fractions of one beat */
+    --t-api:      .100;   /* the ask reaches the API                  0.80s */
+    --t-apicard:  .138;   /*   ...and lights it up                    1.10s */
+    --t-inport:   .144;   /* the driving port opens                   1.15s */
+    --t-emit:     .350;   /* the membrane discharges its wave INWARD  2.80s */
+    --t-strike:   .455;   /* the wave lands on L1; L1 replies         3.64s */
+    --t-ports:    .556;   /* the reply reaches the membrane; ports open 4.45s */
+    --t-out:      .563;   /* the adapters are discharged              4.50s */
+    --t-outcard:  .713;   /* the beads land                           5.70s */
+  }
 
   /* --- the beads ARE the wire ---------------------------------------------
      The solid arrow lines are gone (only their heads remain), so these beads
@@ -107,49 +130,72 @@
   .wave--drive{stroke:var(--drive);}
   .wave--driven{stroke:var(--driven);}
 
-  /* Piecewise-linear offsets, so the SPEED is explicit: idle drift (7 px/s)
-     -> surge (71) -> cruise (57) -> decay, then idle again.  Total travel is
-     130 = 10 whole bead-periods, so the 6s loop wraps seamlessly. */
+  /* Piecewise-linear offsets, so the SPEED is explicit: idle drift -> surge
+     (~65 px/s) -> cruise -> decay, then idle again.  The active flight is 25% of
+     an 8s beat = 2.0s, the same absolute bead speed as before; the beat is
+     longer only because there is MORE STORY, not because anything slowed down.
+     Total travel is 130 = 10 whole bead-periods, so the loop wraps seamlessly. */
   @keyframes wave-travel{
     0%   {stroke-dashoffset:0;    opacity:.55; stroke-width:2.2;}  /* idle */
-    5%   {stroke-dashoffset:-8;   opacity:1;   stroke-width:3.4;}  /* front arrives */
-    12%  {stroke-dashoffset:-38;               stroke-width:3.4;}  /* surge */
-    22%  {stroke-dashoffset:-72;  opacity:1;   stroke-width:3.2;}  /* cruise */
-    28%  {stroke-dashoffset:-92;               stroke-width:2.8;}
-    34%  {stroke-dashoffset:-104; opacity:.55; stroke-width:2.2;}  /* tail passes */
+    4%   {stroke-dashoffset:-8;   opacity:1;   stroke-width:3.4;}  /* front arrives */
+    9%   {stroke-dashoffset:-38;               stroke-width:3.4;}  /* surge */
+    16%  {stroke-dashoffset:-72;  opacity:1;   stroke-width:3.2;}  /* cruise */
+    21%  {stroke-dashoffset:-92;               stroke-width:2.8;}
+    25%  {stroke-dashoffset:-104; opacity:.55; stroke-width:2.2;}  /* tail passes */
     100% {stroke-dashoffset:-130; opacity:.55; stroke-width:2.2;}  /* idle drift */
   }
 
-  /* --- the core: inhale, hold, SNAP, ring down, rest ----------------------- */
+  /* --- the membrane: charge, hold, DISCHARGE, ring, take the reply, rest ---- */
   .corebody{
     transform-box:view-box;
     transform-origin:600px 340px;      /* the hexagon's centre, in viewBox units */
     animation:core-breathe var(--beat) linear infinite both;
   }
   @keyframes core-breathe{
-    0%,20%  {transform:scale(1);     animation-timing-function:cubic-bezier(.4,0,.5,1);}
-    40%     {transform:scale(1.032); animation-timing-function:cubic-bezier(.3,0,.3,1);}
-    45%     {transform:scale(1.040); animation-timing-function:cubic-bezier(.85,0,.1,1);} /* hold... */
-    50%     {transform:scale(0.982); animation-timing-function:cubic-bezier(.2,.8,.3,1);} /* ...SNAP */
-    55%     {transform:scale(1.011); animation-timing-function:cubic-bezier(.3,0,.4,1);}  /* recoil */
-    62%     {transform:scale(0.997); animation-timing-function:cubic-bezier(.4,0,.4,1);}  /* ring-down */
-    70%,100%{transform:scale(1);}                                                          /* diastole */
+    0%,15%  {transform:scale(1);     animation-timing-function:cubic-bezier(.35,0,.4,1);}
+    32%     {transform:scale(1.032); animation-timing-function:cubic-bezier(.3,0,.3,1);}  /* inflating */
+    35%     {transform:scale(1.040); animation-timing-function:cubic-bezier(.85,0,.1,1);} /* FULL — hold... */
+    40%     {transform:scale(0.982); animation-timing-function:cubic-bezier(.2,.8,.3,1);} /* ...DISCHARGE */
+    44%     {transform:scale(1.008); animation-timing-function:cubic-bezier(.3,0,.4,1);}  /* recoil */
+    49%     {transform:scale(0.995); animation-timing-function:cubic-bezier(.4,0,.4,1);}
+    54%     {transform:scale(1.000); animation-timing-function:cubic-bezier(.3,0,.3,1);}
+    57%     {transform:scale(1.014); animation-timing-function:cubic-bezier(.4,0,.3,1);}  /* L1's REPLY lands */
+    61%     {transform:scale(0.998); animation-timing-function:cubic-bezier(.4,0,.4,1);}
+    66%,100%{transform:scale(1);}                                                          /* rest */
+  }
+
+  /* The RIM CHARGES.  A wide soft stroke on the membrane that brightens and
+     thickens all through the inflation -- stored energy, visibly accumulating --
+     and is spent at the discharge.  The glow does not fade; it LEAVES, as the
+     wave.  (Stroke, not a filter: a blur here would re-rasterise every frame.) */
+  .rim{
+    fill:none; stroke:var(--core); stroke-linejoin:round; opacity:0;
+    animation:rim-charge var(--beat) linear infinite both;
+  }
+  @keyframes rim-charge{
+    0%,15%  {opacity:0;   stroke-width:6;}
+    25%     {opacity:.18; stroke-width:10;}
+    32%     {opacity:.34; stroke-width:14;}
+    35%     {opacity:.52; stroke-width:17;}   /* FULL — about to discharge */
+    39%     {opacity:.10; stroke-width:7;}    /* spent into the wave */
+    41%,100%{opacity:0;   stroke-width:5;}
   }
   .pulse{animation:core-glow var(--beat) ease-in-out infinite both;}
   @keyframes core-glow{
-    0%,20%  {opacity:.05;}
-    45%     {opacity:.24;}   /* brightest at full inflation */
-    52%     {opacity:.06;}   /* the squeeze drives it out through the ports */
-    70%,100%{opacity:.05;}
+    0%,15%  {opacity:.05;}
+    32%     {opacity:.20;}
+    35%     {opacity:.26;}   /* brightest at full charge */
+    41%     {opacity:.06;}   /* driven out as the wave */
+    55%,100%{opacity:.05;}
   }
 
   /* --- a card lights as the pulse lands in it ------------------------------ */
   .card{animation:card-hit var(--beat) ease-out infinite both; animation-delay:var(--wd,0s);}
   @keyframes card-hit{
     0%   {fill-opacity:.10;}
-    6%   {fill-opacity:.34;}
-    9%   {fill-opacity:.26;}   /* two-stage flicker, not a clean fade */
-    22%  {fill-opacity:.10;}
+    4.5% {fill-opacity:.34;}
+    7%   {fill-opacity:.26;}   /* two-stage flicker, not a clean fade */
+    17%  {fill-opacity:.10;}
     100% {fill-opacity:.10;}
   }
 
@@ -157,8 +203,8 @@
   .port{opacity:.55; animation:port-open var(--beat) ease-out infinite both; animation-delay:var(--wd,0s);}
   @keyframes port-open{
     0%   {opacity:.55;}
-    5%   {opacity:1;}
-    30%  {opacity:.55;}
+    4%   {opacity:1;}
+    23%  {opacity:.55;}
     100% {opacity:.55;}
   }
 
@@ -209,132 +255,136 @@
   .ripple--in {fill:url(#wavefront-in);  animation-name:wave-in;}
   .ripple--out{fill:url(#wavefront-out); animation-name:wave-out;}
 
-  @keyframes wave-in{                                    /* L2 pushes inward */
-    0%   {transform:scale(1.02);   opacity:0;}
-    2%   {transform:scale(0.95);   opacity:.75;}
-    9%   {transform:scale(0.68);   opacity:.95;}
-    13%  {transform:scale(0.50);   opacity:1;}
-    14%  {transform:scale(0.4583); opacity:.4;}          /* strikes L1 at 0.84s */
-    15%  {transform:scale(0.44);   opacity:0;}           /* absorbed */
-    100% {transform:scale(0.44);   opacity:0;}
+  /* 10.5% of an 8s beat = 0.84s of flight, each way.  These percentages are what
+     TIE the picture to the physics: the inward front's 0.84s flight is exactly
+     the delay the generator uses for L1's kick, so what you SEE arriving is what
+     MAKES L1 move.  Change one and you must change the other (T_STRIKE). */
+  @keyframes wave-in{                                    /* L2 discharges inward */
+    0%    {transform:scale(1.02);   opacity:0;}
+    1.5%  {transform:scale(0.95);   opacity:.75;}
+    7%    {transform:scale(0.68);   opacity:.95;}
+    10%   {transform:scale(0.50);   opacity:1;}
+    10.5% {transform:scale(0.4583); opacity:.4;}         /* STRIKES L1 at 0.84s */
+    11.5% {transform:scale(0.44);   opacity:0;}          /* absorbed */
+    100%  {transform:scale(0.44);   opacity:0;}
   }
   @keyframes wave-out{                                   /* L1 answers outward */
-    0%   {transform:scale(0.4583); opacity:0;}
-    1%   {transform:scale(0.49);   opacity:.85;}
-    8%   {transform:scale(0.63);   opacity:.6;}
-    16%  {transform:scale(0.82);   opacity:.35;}
-    22%  {transform:scale(1.02);   opacity:0;}           /* reabsorbed at the membrane */
-    100% {transform:scale(1.02);   opacity:0;}
+    0%    {transform:scale(0.4583); opacity:0;}
+    1%    {transform:scale(0.49);   opacity:.85;}
+    5%    {transform:scale(0.63);   opacity:.65;}
+    9%    {transform:scale(0.82);   opacity:.4;}
+    10.5% {transform:scale(1.02);   opacity:0;}          /* reaches the membrane */
+    100%  {transform:scale(1.02);   opacity:0;}
   }
 
   /* >>> GENERATED by tools/showcase_anim/gen_core_springs.py -- DO NOT HAND-EDIT */
-  /* L1 inner hexagon -- driven spring, T_n=2.0s zeta=0.1, lags the membrane by 0.85s */
+  /* L1 -- IMPULSE-KICKED spring (T_n=1.6s zeta=0.26). Quiet until the wave lands at 3.64s, then it GROWS and rings. */
   @keyframes core-inner{
-    0%{transform:scale(0.9847);}
-    2%{transform:scale(0.9880);}
-    4%{transform:scale(0.9927);}
-    6%{transform:scale(0.9981);}
-    8%{transform:scale(1.0033);}
-    10%{transform:scale(1.0077);}
-    12%{transform:scale(1.0107);}
-    14%{transform:scale(1.0121);}
-    16%{transform:scale(1.0117);}
-    18%{transform:scale(1.0098);}
-    20%{transform:scale(1.0067);}
-    22%{transform:scale(1.0029);}
-    24%{transform:scale(0.9991);}
-    26%{transform:scale(0.9960);}
-    28%{transform:scale(0.9945);}
-    30%{transform:scale(0.9953);}
-    32%{transform:scale(0.9987);}
-    34%{transform:scale(1.0046);}
-    36%{transform:scale(1.0125);}
-    38%{transform:scale(1.0215);}
-    40%{transform:scale(1.0305);}
-    42%{transform:scale(1.0383);}
-    44%{transform:scale(1.0445);}
-    46%{transform:scale(1.0486);}
-    48%{transform:scale(1.0498);}
-    50%{transform:scale(1.0440);}
-    52%{transform:scale(1.0315);}
-    54%{transform:scale(1.0162);}
-    56%{transform:scale(1.0010);}
-    58%{transform:scale(0.9878);}
-    60%{transform:scale(0.9776);}
-    62%{transform:scale(0.9710);}
-    64%{transform:scale(0.9685);}
-    66%{transform:scale(0.9701);}
-    68%{transform:scale(0.9756);}
-    70%{transform:scale(0.9839);}
-    72%{transform:scale(0.9938);}
-    74%{transform:scale(1.0038);}
-    76%{transform:scale(1.0126);}
-    78%{transform:scale(1.0190);}
-    80%{transform:scale(1.0224);}
-    82%{transform:scale(1.0225);}
-    84%{transform:scale(1.0196);}
-    86%{transform:scale(1.0142);}
-    88%{transform:scale(1.0073);}
-    90%{transform:scale(0.9999);}
-    92%{transform:scale(0.9930);}
-    94%{transform:scale(0.9876);}
-    96%{transform:scale(0.9843);}
-    98%{transform:scale(0.9833);}
-    100%{transform:scale(0.9847);}
+    0%{transform:scale(1.0000);}
+    2%{transform:scale(0.9994);}
+    4%{transform:scale(0.9992);}
+    6%{transform:scale(0.9993);}
+    8%{transform:scale(0.9996);}
+    10%{transform:scale(1.0000);}
+    12%{transform:scale(1.0002);}
+    14%{transform:scale(1.0003);}
+    16%{transform:scale(1.0003);}
+    18%{transform:scale(1.0002);}
+    20%{transform:scale(1.0000);}
+    22%{transform:scale(0.9999);}
+    24%{transform:scale(0.9999);}
+    26%{transform:scale(0.9999);}
+    28%{transform:scale(0.9999);}
+    30%{transform:scale(1.0000);}
+    32%{transform:scale(1.0000);}
+    34%{transform:scale(1.0001);}
+    36%{transform:scale(1.0001);}
+    38%{transform:scale(1.0000);}
+    40%{transform:scale(1.0000);}
+    42%{transform:scale(1.0000);}
+    44%{transform:scale(1.0000);}
+    46%{transform:scale(1.0003);}
+    48%{transform:scale(1.0163);}
+    50%{transform:scale(1.0421);}
+    52%{transform:scale(1.0548);}
+    54%{transform:scale(1.0485);}
+    56%{transform:scale(1.0288);}
+    58%{transform:scale(1.0054);}
+    60%{transform:scale(0.9867);}
+    62%{transform:scale(0.9777);}
+    64%{transform:scale(0.9784);}
+    66%{transform:scale(0.9859);}
+    68%{transform:scale(0.9960);}
+    70%{transform:scale(1.0045);}
+    72%{transform:scale(1.0092);}
+    74%{transform:scale(1.0096);}
+    76%{transform:scale(1.0067);}
+    78%{transform:scale(1.0025);}
+    80%{transform:scale(0.9986);}
+    82%{transform:scale(0.9963);}
+    84%{transform:scale(0.9958);}
+    86%{transform:scale(0.9968);}
+    88%{transform:scale(0.9986);}
+    90%{transform:scale(1.0003);}
+    92%{transform:scale(1.0015);}
+    94%{transform:scale(1.0018);}
+    96%{transform:scale(1.0015);}
+    98%{transform:scale(1.0007);}
+    100%{transform:scale(1.0000);}
   }
-  /* subject arrows -- driven spring, T_n=2.4s zeta=0.1, lags by 1.14s, still 43% in motion at 5.5s */
+  /* subject arrows -- displacement-driven spring (T_n=2.4s zeta=0.2; damping raised from 0.10, 6 reversals not 6). */
   @keyframes sub-breathe{
-    0%{stroke-dashoffset:9.84;}
-    2%{stroke-dashoffset:15.84;}
-    4%{stroke-dashoffset:20.82;}
-    6%{stroke-dashoffset:24.37;}
-    8%{stroke-dashoffset:26.23;}
-    10%{stroke-dashoffset:26.34;}
-    12%{stroke-dashoffset:24.79;}
-    14%{stroke-dashoffset:21.83;}
-    16%{stroke-dashoffset:17.82;}
-    18%{stroke-dashoffset:13.21;}
-    20%{stroke-dashoffset:8.48;}
-    22%{stroke-dashoffset:4.06;}
-    24%{stroke-dashoffset:0.29;}
-    26%{stroke-dashoffset:-2.78;}
-    28%{stroke-dashoffset:-5.32;}
-    30%{stroke-dashoffset:-7.68;}
-    32%{stroke-dashoffset:-10.27;}
-    34%{stroke-dashoffset:-13.38;}
-    36%{stroke-dashoffset:-17.11;}
-    38%{stroke-dashoffset:-21.35;}
-    40%{stroke-dashoffset:-25.84;}
-    42%{stroke-dashoffset:-30.23;}
-    44%{stroke-dashoffset:-34.55;}
-    46%{stroke-dashoffset:-38.72;}
-    48%{stroke-dashoffset:-41.87;}
-    50%{stroke-dashoffset:-39.86;}
-    52%{stroke-dashoffset:-32.16;}
-    54%{stroke-dashoffset:-21.63;}
-    56%{stroke-dashoffset:-9.98;}
-    58%{stroke-dashoffset:1.77;}
-    60%{stroke-dashoffset:13.13;}
-    62%{stroke-dashoffset:23.56;}
-    64%{stroke-dashoffset:32.27;}
-    66%{stroke-dashoffset:38.49;}
-    68%{stroke-dashoffset:41.65;}
-    70%{stroke-dashoffset:41.54;}
-    72%{stroke-dashoffset:38.34;}
-    74%{stroke-dashoffset:32.54;}
-    76%{stroke-dashoffset:24.86;}
-    78%{stroke-dashoffset:16.13;}
-    80%{stroke-dashoffset:7.25;}
-    82%{stroke-dashoffset:-0.93;}
-    84%{stroke-dashoffset:-7.68;}
-    86%{stroke-dashoffset:-12.45;}
-    88%{stroke-dashoffset:-14.90;}
-    90%{stroke-dashoffset:-14.94;}
-    92%{stroke-dashoffset:-12.71;}
-    94%{stroke-dashoffset:-8.57;}
-    96%{stroke-dashoffset:-3.02;}
-    98%{stroke-dashoffset:3.32;}
-    100%{stroke-dashoffset:9.84;}
+    0%{stroke-dashoffset:8.16;}
+    2%{stroke-dashoffset:9.52;}
+    4%{stroke-dashoffset:11.22;}
+    6%{stroke-dashoffset:12.94;}
+    8%{stroke-dashoffset:14.39;}
+    10%{stroke-dashoffset:15.40;}
+    12%{stroke-dashoffset:15.86;}
+    14%{stroke-dashoffset:15.79;}
+    16%{stroke-dashoffset:15.28;}
+    18%{stroke-dashoffset:14.37;}
+    20%{stroke-dashoffset:12.74;}
+    22%{stroke-dashoffset:9.68;}
+    24%{stroke-dashoffset:4.60;}
+    26%{stroke-dashoffset:-2.55;}
+    28%{stroke-dashoffset:-11.14;}
+    30%{stroke-dashoffset:-20.11;}
+    32%{stroke-dashoffset:-28.25;}
+    34%{stroke-dashoffset:-34.68;}
+    36%{stroke-dashoffset:-39.64;}
+    38%{stroke-dashoffset:-41.91;}
+    40%{stroke-dashoffset:-34.77;}
+    42%{stroke-dashoffset:-19.09;}
+    44%{stroke-dashoffset:-1.62;}
+    46%{stroke-dashoffset:14.14;}
+    48%{stroke-dashoffset:27.04;}
+    50%{stroke-dashoffset:36.45;}
+    52%{stroke-dashoffset:41.41;}
+    54%{stroke-dashoffset:41.34;}
+    56%{stroke-dashoffset:36.41;}
+    58%{stroke-dashoffset:26.45;}
+    60%{stroke-dashoffset:14.17;}
+    62%{stroke-dashoffset:3.64;}
+    64%{stroke-dashoffset:-3.48;}
+    66%{stroke-dashoffset:-6.79;}
+    68%{stroke-dashoffset:-6.44;}
+    70%{stroke-dashoffset:-3.05;}
+    72%{stroke-dashoffset:2.36;}
+    74%{stroke-dashoffset:8.63;}
+    76%{stroke-dashoffset:14.62;}
+    78%{stroke-dashoffset:19.42;}
+    80%{stroke-dashoffset:22.46;}
+    82%{stroke-dashoffset:23.51;}
+    84%{stroke-dashoffset:22.73;}
+    86%{stroke-dashoffset:20.51;}
+    88%{stroke-dashoffset:17.43;}
+    90%{stroke-dashoffset:14.12;}
+    92%{stroke-dashoffset:11.13;}
+    94%{stroke-dashoffset:8.90;}
+    96%{stroke-dashoffset:7.66;}
+    98%{stroke-dashoffset:7.45;}
+    100%{stroke-dashoffset:8.16;}
   }
   /* <<< END GENERATED */
 
@@ -699,17 +749,23 @@
           <!-- soft glow behind the core; brightens as the membrane fills -->
           <polygon class="pulse" points="600,100 807.85,220 807.85,460 600,580 392.15,460 392.15,220"
                    fill="var(--core)" opacity=".07"/>
+          <!-- the CHARGING rim: a wide soft stroke that brightens all through
+               the inflation, then is spent into the wave.  Behind the hex's own
+               outline, so it reads as a halo rather than a fattened line. -->
+          <polygon class="rim" points="600,100 807.85,220 807.85,460 600,580 392.15,460 392.15,220"/>
           <!-- L2 outer hex -->
           <polygon points="600,100 807.85,220 807.85,460 600,580 392.15,460 392.15,220"
                    fill="var(--core)" fill-opacity=".10" stroke="var(--core)" stroke-width="2"/>
 
-          <!-- port notches = valves.  The driving port opens as the wave enters;
-               the four driven ports open on the squeeze that fires them. -->
-          <rect class="port" style="--wd:2.10s" x="386" y="348" width="12" height="26" rx="2" fill="var(--core)"/>
-          <rect class="port" style="--wd:2.65s" x="802" y="228" width="12" height="24" rx="2" fill="var(--core)"/>
-          <rect class="port" style="--wd:2.75s" x="802" y="288" width="12" height="24" rx="2" fill="var(--core)"/>
-          <rect class="port" style="--wd:2.85s" x="802" y="363" width="12" height="24" rx="2" fill="var(--core)"/>
-          <rect class="port" style="--wd:2.95s" x="802" y="428" width="12" height="24" rx="2" fill="var(--core)"/>
+          <!-- port notches = valves.  The driving port opens as the ask enters.
+               The four driven ports open when L1's REPLY reaches the membrane —
+               they are not fired by the squeeze any more, they are fired by the
+               wave coming back out. -->
+          <rect class="port" style="--wd:calc(var(--beat) * var(--t-inport))" x="386" y="348" width="12" height="26" rx="2" fill="var(--core)"/>
+          <rect class="port" style="--wd:calc(var(--beat) * var(--t-ports))"          x="802" y="228" width="12" height="24" rx="2" fill="var(--core)"/>
+          <rect class="port" style="--wd:calc(var(--beat) * (var(--t-ports) + .009))" x="802" y="288" width="12" height="24" rx="2" fill="var(--core)"/>
+          <rect class="port" style="--wd:calc(var(--beat) * (var(--t-ports) + .018))" x="802" y="363" width="12" height="24" rx="2" fill="var(--core)"/>
+          <rect class="port" style="--wd:calc(var(--beat) * (var(--t-ports) + .027))" x="802" y="428" width="12" height="24" rx="2" fill="var(--core)"/>
         </g>
 
         <!-- L1, the SECOND MASS: no longer welded to L2.  It has its own spring
@@ -729,15 +785,16 @@
         <!-- The visible wave in the annulus.  Siblings of the two hexes, NOT
              children -- nesting them would compound the membrane's scale onto
              their own and the front would no longer land on L1.
-             Two round trips per beat, launched by the membrane's two events:
-               inflation onset (1.20s) and the systole (2.70s).
-             Each azure front flies inward for 0.84s, is absorbed at L1, and a
-             violet front leaves L1 in reply 0.84s later. -->
+
+             ONE round trip per beat, and it does NOT start with the beat: the
+             membrane must first GROW and charge.  Only when it begins to shrink
+             (--t-emit) is the stored glow discharged inward.  The azure front
+             flies 0.84s, strikes L1 (--t-strike), and the violet reply leaves in
+             the same instant, arriving back at the membrane 0.84s later — which
+             is what fires the ports. -->
         <g class="ripples">
-          <polygon class="ripple ripple--in"  style="--wd:1.20s" points="600,100 807.85,220 807.85,460 600,580 392.15,460 392.15,220"/>
-          <polygon class="ripple ripple--out" style="--wd:2.04s" points="600,100 807.85,220 807.85,460 600,580 392.15,460 392.15,220"/>
-          <polygon class="ripple ripple--in"  style="--wd:2.70s" points="600,100 807.85,220 807.85,460 600,580 392.15,460 392.15,220"/>
-          <polygon class="ripple ripple--out" style="--wd:3.54s" points="600,100 807.85,220 807.85,460 600,580 392.15,460 392.15,220"/>
+          <polygon class="ripple ripple--in"  style="--wd:calc(var(--beat) * var(--t-emit))"   points="600,100 807.85,220 807.85,460 600,580 392.15,460 392.15,220"/>
+          <polygon class="ripple ripple--out" style="--wd:calc(var(--beat) * var(--t-strike))" points="600,100 807.85,220 807.85,460 600,580 392.15,460 392.15,220"/>
         </g>
 
         <!-- The gate's label card paints AFTER the core, so the hexagon's top
@@ -762,7 +819,7 @@
           <text class="t-title" x="165" y="229" text-anchor="middle">Teacher UI</text>
           <text class="t-sub"   x="165" y="248" text-anchor="middle">tools/product/ui</text>
 
-          <rect class="card" style="--wd:1.25s" x="70" y="330" width="190" height="60" rx="10" fill="var(--drive)" fill-opacity=".10" stroke="var(--drive)" stroke-width="1.6"/>
+          <rect class="card" style="--wd:calc(var(--beat) * var(--t-apicard))" x="70" y="330" width="190" height="60" rx="10" fill="var(--drive)" fill-opacity=".10" stroke="var(--drive)" stroke-width="1.6"/>
           <text class="t-title" x="165" y="355" text-anchor="middle">Thin API · FastAPI</text>
           <text class="t-sub"   x="165" y="374" text-anchor="middle">tools/product/api</text>
         </g>
@@ -777,23 +834,23 @@
         <path class="wave wave--drive" style="--wd:0s" d="M165,264 L165,330"/>
         <text class="t-tiny" x="176" y="300" text-anchor="start">http only</text>
         <path d="M260,360 L384,360" fill="none" stroke="var(--drive)" stroke-width="2" stroke-opacity="0" marker-end="url(#ah-drive)"/>
-        <path class="wave wave--drive" style="--wd:.8s" d="M260,360 L384,360"/>
+        <path class="wave wave--drive" style="--wd:calc(var(--beat) * var(--t-api))" d="M260,360 L384,360"/>
 
         <!-- ===== driven adapters (right, through ports) ===== -->
         <g>
-          <rect class="card" style="--wd:4.00s" x="938" y="150" width="212" height="54" rx="10" fill="var(--driven)" fill-opacity=".10" stroke="var(--driven)" stroke-width="1.6"/>
+          <rect class="card" style="--wd:calc(var(--beat) * var(--t-outcard))" x="938" y="150" width="212" height="54" rx="10" fill="var(--driven)" fill-opacity=".10" stroke="var(--driven)" stroke-width="1.6"/>
           <text class="t-title" x="1044" y="173" text-anchor="middle">LLM Gateway</text>
           <text class="t-sub"   x="1044" y="191" text-anchor="middle">gateway/port.py</text>
 
-          <rect class="card" style="--wd:4.10s" x="938" y="248" width="212" height="54" rx="10" fill="var(--driven)" fill-opacity=".10" stroke="var(--driven)" stroke-width="1.6"/>
+          <rect class="card" style="--wd:calc(var(--beat) * (var(--t-outcard) + .012))" x="938" y="248" width="212" height="54" rx="10" fill="var(--driven)" fill-opacity=".10" stroke="var(--driven)" stroke-width="1.6"/>
           <text class="t-title" x="1044" y="271" text-anchor="middle">Document renderer</text>
           <text class="t-sub"   x="1044" y="289" text-anchor="middle">python-docx</text>
 
-          <rect class="card" style="--wd:4.20s" x="938" y="346" width="212" height="54" rx="10" fill="var(--driven)" fill-opacity=".10" stroke="var(--driven)" stroke-width="1.6"/>
+          <rect class="card" style="--wd:calc(var(--beat) * (var(--t-outcard) + .024))" x="938" y="346" width="212" height="54" rx="10" fill="var(--driven)" fill-opacity=".10" stroke="var(--driven)" stroke-width="1.6"/>
           <text class="t-title" x="1044" y="369" text-anchor="middle">Bubble-sheet scanner</text>
           <text class="t-sub"   x="1044" y="387" text-anchor="middle">bubble_grader</text>
 
-          <rect class="card" style="--wd:4.30s" x="938" y="444" width="212" height="54" rx="10" fill="var(--driven)" fill-opacity=".10" stroke="var(--driven)" stroke-width="1.6"/>
+          <rect class="card" style="--wd:calc(var(--beat) * (var(--t-outcard) + .036))" x="938" y="444" width="212" height="54" rx="10" fill="var(--driven)" fill-opacity=".10" stroke="var(--driven)" stroke-width="1.6"/>
           <text class="t-title" x="1044" y="467" text-anchor="middle">Content bank</text>
           <text class="t-sub"   x="1044" y="485" text-anchor="middle">fixtures / DB</text>
         </g>
@@ -801,13 +858,13 @@
              --wd delays (2.75..3.05s) sit exactly inside it: the squeeze is
              literally what fires them, and the 100ms stagger fans them out. -->
         <path d="M814,240 L934,177" fill="none" stroke="var(--driven)" stroke-width="2" stroke-opacity="0" marker-end="url(#ah-driven)"/>
-        <path class="wave wave--driven" style="--wd:2.75s" d="M814,240 L934,177"/>
+        <path class="wave wave--driven" style="--wd:calc(var(--beat) * var(--t-out))" d="M814,240 L934,177"/>
         <path d="M814,300 L934,275" fill="none" stroke="var(--driven)" stroke-width="2" stroke-opacity="0" marker-end="url(#ah-driven)"/>
-        <path class="wave wave--driven" style="--wd:2.85s" d="M814,300 L934,275"/>
+        <path class="wave wave--driven" style="--wd:calc(var(--beat) * (var(--t-out) + .012))" d="M814,300 L934,275"/>
         <path d="M814,375 L934,373" fill="none" stroke="var(--driven)" stroke-width="2" stroke-opacity="0" marker-end="url(#ah-driven)"/>
-        <path class="wave wave--driven" style="--wd:2.95s" d="M814,375 L934,373"/>
+        <path class="wave wave--driven" style="--wd:calc(var(--beat) * (var(--t-out) + .024))" d="M814,375 L934,373"/>
         <path d="M814,440 L934,471" fill="none" stroke="var(--driven)" stroke-width="2" stroke-opacity="0" marker-end="url(#ah-driven)"/>
-        <path class="wave wave--driven" style="--wd:3.05s" d="M814,440 L934,471"/>
+        <path class="wave wave--driven" style="--wd:calc(var(--beat) * (var(--t-out) + .036))" d="M814,440 L934,471"/>
 
         <!-- ===== subject plugins (bottom, dependency inversion) ===== -->
         <g>
