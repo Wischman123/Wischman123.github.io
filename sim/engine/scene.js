@@ -32,6 +32,7 @@ import { Particle, Charge, MagneticDipole, RotatingDipole, RigidBody } from './b
 import { Gravity, Spring, Drag, Friction, RollingContact, Tension, LorentzForce, Coulomb, DipoleInField, CurrentInFieldForce, TimeVaryingForce, ContactForce, AppliedAcceleration, BodySpring, BuoyantForce } from './forces.js';
 import { Surface, RodConstraint, StringConstraint, BodyRodConstraint } from './constraints.js';
 import { buildField } from './fields.js';
+import { hasImplicitGroundPlane } from './ground_plane.js';
 import { ConservationTracker } from './energy.js';
 import * as circuitProducer from './circuits.js';
 import * as kineticTheoryProducer from './kinetic_theory.js';
@@ -44,6 +45,7 @@ import { linearMomentumTracker, angularMomentumTracker, totalAngularMomentumTrac
 import { runDiagnosticsChecks } from '../validation/diagnostics_validation.js';
 import { runFluidChecks } from '../validation/fluid_validation.js';
 import { PerfectlyInelasticMerge, RestitutionImpulse, BoxWallReflection, ElasticGasCollisions, COLLISION_MODES } from './collisions.js';
+import { ScheduledImpulseBurn } from './maneuvers.js';
 import { runRailLoopChecks } from '../validation/rail_loop_validation.js';
 import { railLoopDeriv, RailInductionForce } from './rail_induction.js';
 import { computeExtent } from './extended_object_geometry.js';
@@ -520,7 +522,13 @@ export function loadScene(json) {
       forces.push(new Gravity({
         applies_to: fj.applies_to,
         g: json.scene_defaults.g,
-        model: json.scene_defaults.gravity_model
+        model: json.scene_defaults.gravity_model,
+        // Datum-source parity, same shape as the g-source parity below: the
+        // U_g zero line is a SCENE-level declaration, so both this explicit
+        // path and the implicit-gravity path below read the one knob. A
+        // per-force datum is unrepresentable by construction — two gravity
+        // forces in one scene cannot disagree about where the ground is.
+        datum_y: json.scene_defaults.gravity_datum_y ?? 0
       }));
     } else if (fj.type === 'buoyancy') {
       // g-source parity (Option A, sim_buoyancy_fluids P3): inject the SAME
@@ -548,7 +556,8 @@ export function loadScene(json) {
       forces.push(new Gravity({
         applies_to: uncovered,
         g: json.scene_defaults.g,
-        model: json.scene_defaults.gravity_model
+        model: json.scene_defaults.gravity_model,
+        datum_y: json.scene_defaults.gravity_datum_y ?? 0
       }));
     }
   }
@@ -723,6 +732,26 @@ export function loadScene(json) {
     }
   }
 
+  // dawn_last_burn_live_sim_v1 D2: scheduled impulsive-Δv burn resolvers. A burn
+  // is a DISCRETE state-mutating event (an impulsive velocity jump at a scheduled
+  // tick), the same category as a collision merge, so it lives in the step-3 slot
+  // in its own `maneuverResolvers` list — sibling of collisionResolvers, distinct
+  // from the observation-only discreteUpdates. Shape (body_id / t_burn_s > 0 /
+  // delta_v_m_per_s / direction) is guarded by the schema + browser validator; the
+  // cross-reference (body_id resolves to a real body) is checked HERE, like the
+  // collision participant check. The constructor re-validates t_burn_s > 0 and the
+  // direction defensively (resolvers run on schema-bypass paths too).
+  const maneuverResolvers = [];
+  for (const mj of json.maneuvers ?? []) {
+    assertParticipantsResolve([mj.body_id], bodies, 'maneuver');
+    maneuverResolvers.push(new ScheduledImpulseBurn({
+      body_id: mj.body_id,
+      t_burn_s: mj.t_burn_s,
+      delta_v_m_per_s: mj.delta_v_m_per_s,
+      direction: mj.direction
+    }));
+  }
+
   // Phase S item S4 / B1 / B3: register a linear-momentum conserved-quantity
   // tracker. The equal-and-opposite contact force (B1) and the v_cm merge (B4)
   // BOTH conserve Σp by construction, so collision/contact scenes auto-register
@@ -746,8 +775,18 @@ export function loadScene(json) {
   // channel there would make the momentum_closure gate FAIL a physically correct
   // gas. So a wall scene opts OUT of the collision-triggered auto-registration
   // (a user who genuinely wants the CoM read-out can still set system_momentum).
+  //
+  // MANEUVER EXCLUSION (dawn_last_burn_live_sim_v1 D3): a scheduled Δv burn
+  // (maneuverResolvers) injects EXTERNAL momentum Δp = m·Δv from unmodeled fuel
+  // — the same category as a wall's external impulse — so a scene combining a
+  // burn WITH a collision (the first is dawn_last_burn) does NOT conserve total
+  // momentum, and auto-registering the closure-asserting p_linear channel would
+  // FAIL a physically correct scene. Mirror the box_wall opt-out. (The energy
+  // book stays honest via addExternalWork; there is no external-impulse ledger,
+  // so the closure is opted out rather than corrected — matching box_wall.) No
+  // existing scene has both a burn and a collision, so this is inert elsewhere.
   const trackSystemMomentum = contactForces.length > 0
-    || (collisionResolvers.length > 0 && !hasBoxWall)
+    || (collisionResolvers.length > 0 && !hasBoxWall && maneuverResolvers.length === 0)
     || json.diagnostics?.system_momentum === true;
   const conservedTrackers = [];
   if (trackSystemMomentum) {
@@ -1105,11 +1144,33 @@ export function loadScene(json) {
     // inside buildRenderGroups (throws naming the first bad id). Empty [] for
     // the vast majority of scenes (no extended objects) → loaded shape unchanged.
     render_groups: buildRenderGroups(json.render_groups, bodies),
+    // k015_worksheet_parity_live_sim_v1 W4: printed-worksheet annotation layer
+    // (A/B labels, h/R measure lines, v₀ = 0). Stashed here (sibling of
+    // render_groups/graph_channels) so the canvas render leg reads it post-hoc;
+    // NEVER enters serializeState (determinism — render-only). Empty [] for
+    // scenes without the block → loaded shape unchanged.
+    annotations: json.annotations ?? [],
+    // Is y = 0 really the GROUND in this scene? ONE decision point
+    // (engine/ground_plane.js), evaluated ONCE here at load and stashed, never
+    // re-derived downstream. Read by render/canvas2d.js::drawImplicitGround for
+    // the cosmetic ground line; main.js::probeScene calls the same predicate on
+    // the raw JSON to arm landing detection.
+    //
+    // Computed at LOAD, not per frame, ON PURPOSE: the predicate's last clause
+    // reads the bodies' INITIAL authored positions. Re-asking it each frame
+    // against CURRENT positions would make the ground line flicker on and off as
+    // a body crosses y = 0. Render-only, like render_groups / graph_channels —
+    // never enters serializeState (determinism).
+    hasImplicitGround: hasImplicitGroundPlane(json),
     discreteUpdates,
     // Phase B item B4: state-mutating discrete collision resolvers (perfectly-
     // inelastic merge), run in the runner AND cli_headless. Separate from the
     // observation-only discreteUpdates above. Empty for non-collision scenes.
     collisionResolvers,
+    // dawn_last_burn_live_sim_v1 D2: state-mutating scheduled-burn resolvers, run
+    // in the runner (inline step-3 loop) AND cli_headless (applyManeuverResolvers).
+    // Sibling of collisionResolvers; empty for non-burn scenes.
+    maneuverResolvers,
     state0, derivState, syncBodies, writebackState, strides, offsets,
     simulation: json.simulation, outputs: json.outputs
   };
@@ -1385,6 +1446,29 @@ export function applyCollisionResolvers(loaded, state, tracker) {
   const resolvers = loaded.collisionResolvers;
   if (!resolvers || resolvers.length === 0) return false;
   loaded.syncBodies(state);
+  for (const r of resolvers) r.resolve(loaded.sceneCtx, tracker);
+  loaded.writebackState(state);
+  return true;
+}
+
+// dawn_last_burn_live_sim_v1 D2 — the maneuver-family sibling of
+// applyCollisionResolvers, for the headless / round-trip loops (cli_headless.js).
+// The step-3 resolver contract is time-BLIND (resolve(sceneCtx, tracker) with no
+// t), and a scheduled burn needs the tick-time window — so this STAMPS
+// sceneCtx.{tPrev, t} before dispatching, keeping the resolver signature
+// unchanged (D1's chosen time-threading: sceneCtx is already the per-tick
+// blackboard). Same sync → resolve → writeback shape as applyCollisionResolvers,
+// so the burn's velocity jump lands in `state` and survives the next unpack.
+// SimRunner._advanceOne keeps its OWN inline maneuver loop (it stamps the window
+// from this.t and brackets the tick with its own syncBodies/writeback) and is the
+// canonical reference. No-op (returns false, no syncBodies) when the scene has no
+// maneuver resolvers, so a non-burn scene is byte-identical.
+export function applyManeuverResolvers(loaded, state, tracker, tPrev, tNow) {
+  const resolvers = loaded.maneuverResolvers;
+  if (!resolvers || resolvers.length === 0) return false;
+  loaded.syncBodies(state);
+  loaded.sceneCtx.tPrev = tPrev;
+  loaded.sceneCtx.t = tNow;
   for (const r of resolvers) r.resolve(loaded.sceneCtx, tracker);
   loaded.writebackState(state);
   return true;

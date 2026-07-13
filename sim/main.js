@@ -9,6 +9,7 @@
 // serializer lives in sim/engine/scene.js and is shared with the CLI.
 
 import { loadScene, serializeState } from './engine/scene.js';
+import { hasImplicitGroundPlane } from './engine/ground_plane.js';
 import { makeIntegrator } from './engine/integrator.js';
 import { SimRunner } from './engine/runner.js';
 import { TrajectoryRecorder, sceneHasAtOutputs } from './engine/output_events.js';
@@ -27,7 +28,7 @@ import { makeInspector } from './ui/inspector.js';
 import { mergeEditsIntoScene } from './ui/inspector_edits.js';
 import { seekTo as timelineSeekTo, shouldEnableSlider } from './ui/timeline_scrub.js';
 import { makeScenarioLoader, SCENARIOS_LIST } from './ui/scenario_loader.js';
-import { resolveBootSceneId, resolveEmbedChrome, installEmbedControls } from './ui/embed_boot.js';
+import { resolveBootSceneId, resolveEmbedChrome, resolveTheme, installEmbedControls, shouldRestartOnCanvasClick } from './ui/embed_boot.js';
 import { makePresetSelector } from './ui/preset_selector.js';
 import { makePredictPanel } from './ui/predict.js';
 import { makeLabNotebook } from './ui/lab_notebook.js';
@@ -68,7 +69,7 @@ const notebookRow = document.getElementById('notebook-row');
 const inspectorRow = document.getElementById('inspector-row');
 
 // --- Wire components ---
-const renderer = new Canvas2DRenderer(canvas);
+const renderer = new Canvas2DRenderer(canvas, resolveTheme(window.location.search));
 let currentScene = null;        // last loaded scene JSON
 let currentLoaded = null;       // engine view of currentScene
 let currentRunner = null;       // SimRunner over currentLoaded
@@ -232,11 +233,23 @@ function refreshScrubEnabled() {
 }
 toolbarRow.appendChild(toolbar.root);
 
-// --- Body picking on canvas click ---
+// --- Body picking on canvas click (standalone) / replay-on-click (embed) ---
 canvas.addEventListener('click', (ev) => {
   // While sketching, a tap lays down no curve and must not select a body — the
   // sketch controller owns the canvas pointer stream.
   if (isSketchActive()) return;
+  // Embed: the whole graphic is the replay affordance — click anywhere to run
+  // the scene again from t=0. embedRestart() is the same full reset-to-t0 path
+  // the wrapper's restart message drives (rebuild the runner → clean tracker →
+  // play), NOT a bare runner.reset() that would carry drift history across the
+  // replay. Body-picking below only feeds the inspector, which embed chrome
+  // hides, so there is nothing to select here anyway.
+  // (`embedChrome` + `embedRestart` are declared further down; both are only
+  // READ here at click time, long after module eval, so neither is a TDZ hazard.)
+  if (shouldRestartOnCanvasClick({ embedded: embedChrome, sketching: false })) {
+    embedRestart();
+    return;
+  }
   if (!currentLoaded) return;
   const rect = canvas.getBoundingClientRect();
   const px = { x: ev.clientX - rect.left, y: ev.clientY - rect.top };
@@ -734,9 +747,14 @@ function loadAndStart(sceneJson, onComplete) {
 // still gets detected. Other scene types respect the JSON duration so
 // pendulums and oscillators don't probe forever.
 function probeScene(sceneJson) {
-  const hasGravity = (sceneJson.forces ?? []).some((f) => f.type === 'gravity');
-  const hasSurfaces = (sceneJson.surfaces ?? []).length > 0;
-  const detectLanding = hasGravity && !hasSurfaces;
+  // Landing detection is armed by exactly ONE decision point, shared with the
+  // renderer's cosmetic ground line: engine/ground_plane.js. The old inline
+  // derivation here (`hasGravity && !hasSurfaces`) was a projectile heuristic
+  // that also fired on orbits (a body crosses y=0 downward every revolution),
+  // on bobbing floats (y=0 is a WATERLINE) and on a pendulum whose bob simply
+  // hangs below the origin — truncating 8 registered scenes in the live app.
+  // Do NOT re-derive it here; that re-opens the bug.
+  const detectLanding = hasImplicitGroundPlane(sceneJson);
 
   const dt = sceneJson.simulation.dt_s;
   const probeMaxT = detectLanding
@@ -1150,7 +1168,14 @@ const bootSceneId = resolveBootSceneId(
 // exist until onLoad runs. Standalone use sets neither, so the full UI and the
 // paused-at-t0 boot are unchanged.
 const embedChrome = resolveEmbedChrome(window.location.search);
-if (embedChrome) document.body.classList.add('sim-embed-minimal');
+if (embedChrome) {
+  document.body.classList.add('sim-embed-minimal');
+  // Click-to-replay affordance: in an embed the canvas restarts the scene, so
+  // it must LOOK clickable. `title` gives the hover hint; the a11y wrapper
+  // (site/assets/sim_embed.js) still owns the keyboard-reachable control.
+  canvas.style.cursor = 'pointer';
+  canvas.title = 'Click to replay from the start';
+}
 scenarioLoader.load(bootSceneId).then((json) => {
   if (json && embedChrome && !prefersReducedMotion()) embedResume();
 });

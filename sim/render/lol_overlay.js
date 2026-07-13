@@ -1,12 +1,16 @@
 // render/lol_overlay.js
 //
 // LOL energy-bar overlay. Renders the system's current energy
-// composition as a stacked vertical bar (K + U_g + U_e + U_thermal +
-// any future contributions) anchored at the top-right of the canvas.
-// A dashed horizontal reference line marks the initial total — the
-// stack visibly tracks against it as the simulation runs, so any
-// conservation drift is read off the gap between stack-top and the
-// reference.
+// composition as one vertical bar per store (K + U_g + U_e + U_thermal +
+// any future contributions) anchored at the BOTTOM-LEFT of the canvas.
+//
+// There is deliberately NO total-energy reference line. An earlier build
+// drew the initial total as a horizontal rule across the bars; on a scene
+// whose datum makes a store negative it floats mid-panel and reads as a
+// stray axis, and it competes with the bars for attention without telling a
+// student anything the bar heights don't. Conservation is still reported —
+// as the `total` and `drift` text readouts under the bars. If a reference
+// line ever comes back it belongs behind a flag, not on the story embed.
 //
 // The overlay is RENDER-LAYER ONLY — it reads `loaded.tracker.current()`
 // (already computed by the runner each step) and draws. Zero engine
@@ -72,13 +76,10 @@ const BAR_W_PX = 28;           // visible bar width
 const BAR_TOP_INSET_PX = 26;   // headroom for the title
 const BAR_BOTTOM_INSET_PX = 62;// footroom for quantity + value labels + total + drift readouts
 const BAR_AREA_H_PX = PANEL_H_PX - BAR_TOP_INSET_PX - BAR_BOTTOM_INSET_PX;
-// ~15% extra vertical headroom above the initial-total line so bars
-// that grow (e.g. accumulated U_thermal) don't clip the top.
+// ~15% extra vertical headroom above the tallest bar so bars that grow
+// (e.g. accumulated U_thermal) don't clip the top.
 const BAR_OVERSCALE = 1.15;
 
-const REF_DASHED_DRIFT_THRESHOLD_PCT = 0.5; // dash the line above this drift
-const REF_LINE_COLOR = '#2d3138';
-const REF_LINE_WIDTH = 1.5;
 const SEGMENT_BORDER = 'rgba(0, 0, 0, 0.18)';
 
 // Compute the stacked-bar entries from `loaded.tracker.current()`.
@@ -149,8 +150,21 @@ function makeBar(key, value) {
 // Map an energy key to its display string. Subscript syntax ("U_g") is
 // mirrored from the FBD overlay's labelling — base + subscript are
 // drawn separately so the subscript renders smaller. K is bare.
+//
+// DISPLAY != DATA KEY. The tracker's key is `U_thermal` (a stable contract the
+// Force classes provide and lol_overlay.test.js pins), but the curriculum's
+// notation — physics/CLAUDE.md, "Physics Notation" — is that thermal energy
+// DISPLAYS as U_th everywhere a student sees it, never a spelled-out subscript.
+// The .docx LOL path already decouples the two through LOL_DISPLAY_LABELS
+// (`Ut -> ('U','th')`); this renderer is the THIRD LOL path and never got the
+// mapping, so it drew "Uthermal" on every scene — including the story block on
+// the front page. Same rule, same place: one display map, keyed by data key.
+const DISPLAY_LABEL = {
+  U_thermal: 'U_th',
+};
+
 function labelFor(key) {
-  return key;
+  return DISPLAY_LABEL[key] || key;
 }
 
 // Compute panel width given N bars. Exported so the render entry can
@@ -161,7 +175,7 @@ export function panelWidthFor(nBars) {
 
 // Render entry called from Canvas2DRenderer.render() after the FBD
 // overlay (so the LOL panel sits on top of any FBD that strays into
-// the top-right corner). The renderer passes itself in for the canvas
+// the bottom-left corner). The renderer passes itself in for the canvas
 // context + dimensions.
 export function drawLolOverlay(renderer, loaded) {
   if (!loaded || !loaded.tracker) return;
@@ -170,12 +184,19 @@ export function drawLolOverlay(renderer, loaded) {
   const composition = computeBars(snapshot);
   if (composition.bars.length === 0) return;
 
-  const panelW = panelWidthFor(composition.bars.length);
-  const anchor = {
-    x: renderer.cssWidth - panelW - PANEL_MARGIN_PX,
-    y: PANEL_MARGIN_PX
+  drawOneLol(ctx, lolPanelAnchor(renderer.cssHeight), composition);
+}
+
+// Panel top-left corner for a BOTTOM-LEFT anchored panel, in CSS pixels.
+// Pure (takes the canvas height, not the renderer) so the placement is
+// unit-testable without a Canvas — the sketch overlay's sketchPanelAnchor
+// uses the same shape. Clamped so a canvas shorter than the panel pins it at
+// the top margin instead of drawing off the top edge.
+export function lolPanelAnchor(cssHeight) {
+  return {
+    x: PANEL_MARGIN_PX,
+    y: Math.max(PANEL_MARGIN_PX, cssHeight - PANEL_H_PX - PANEL_MARGIN_PX)
   };
-  drawOneLol(ctx, anchor, composition);
 }
 
 // Internal: draw the LOL panel at the given anchor (panel top-left in
@@ -183,8 +204,8 @@ export function drawLolOverlay(renderer, loaded) {
 // for unit tests so we can drive it against a stub canvas.
 //
 // Side-by-side layout: each contribution gets its own vertical bar.
-// A dashed horizontal reference line marks the initial-total height
-// across every bar so drift is visible at a glance.
+// Drift is reported in the text readout below the bars, not as a rule
+// across them (see the module header).
 export function drawOneLol(ctx, anchor, composition) {
   const { bars, total, initialTotal, drift_pct } = composition;
   const nBars = bars.length;
@@ -221,9 +242,6 @@ export function drawOneLol(ctx, anchor, composition) {
   const innerLeft = anchor.x + BAR_X_PAD_PX;
   const innerRight = anchor.x + panelW - BAR_X_PAD_PX;
   const slotW = (innerRight - innerLeft) / nBars;
-
-  // Initial-total reference line: spans every bar.
-  const refY = barBottom - (initialTotal / scaleDenom) * BAR_AREA_H_PX;
 
   // --- Draw each bar ---
   // One rect per bar: a colored fill from the baseline up for positive
@@ -265,20 +283,6 @@ export function drawOneLol(ctx, anchor, composition) {
     ctx.textAlign = 'center';
     ctx.fillText(bar.value.toFixed(1), slotCenterX, barBottom + 17);
   }
-
-  // --- Initial-total reference line (drawn after bars so it stays on top) ---
-  ctx.strokeStyle = REF_LINE_COLOR;
-  ctx.lineWidth = REF_LINE_WIDTH;
-  if (Math.abs(drift_pct) > REF_DASHED_DRIFT_THRESHOLD_PCT) {
-    ctx.setLineDash([4, 3]);
-  } else {
-    ctx.setLineDash([]);
-  }
-  ctx.beginPath();
-  ctx.moveTo(innerLeft - 2, refY);
-  ctx.lineTo(innerRight + 2, refY);
-  ctx.stroke();
-  ctx.setLineDash([]);
 
   // --- Drift + total readout below the per-bar labels ---
   // (two separate lines so each can be matched independently). The

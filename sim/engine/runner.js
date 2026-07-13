@@ -197,6 +197,12 @@ export class SimRunner {
         dragHold = { off, stride, slice: this.state.slice(off, off + stride) };
       }
     }
+    // dawn_last_burn_live_sim_v1 D2: capture the PRE-step time now (this.t is the
+    // previous tick's tNow) so the step-3 maneuver slot has the half-open window
+    // (tPrev, tNow] after the `this.t += this.dt` increment below. Captured before
+    // the integrate so a scheduled burn fires on the exact tick that crosses
+    // t_burn (matching the headless applyManeuverResolvers window byte-for-byte).
+    const tPrev = this.t;
     // 1. Integrate. Phase 3.4 (Q2=A): pass per-body strides so siEuler /
     //    verlet can walk variable-length state slices. RK4 ignores it.
     const newState = this.integrator(
@@ -227,6 +233,21 @@ export class SimRunner {
     const resolvers = this.loaded.collisionResolvers;
     if (resolvers) {
       for (const r of resolvers) r.resolve(this.loaded.sceneCtx, this._tracker);
+    }
+    // 3a'. dawn_last_burn_live_sim_v1 D2: scheduled impulsive-Δv burn resolvers,
+    //      right beside the collision loop (same step-3 slot, same syncBodies/
+    //      writeback bracket). The resolver contract is time-blind, so STAMP the
+    //      tick-time window (tPrev captured pre-step, this.t now post-step) onto
+    //      sceneCtx before dispatch — the stateless half-open window (tPrev, t]
+    //      is the burn's only fire condition, so a timeline-scrub replay re-fires
+    //      with no latch. resolve() mutates velocity in place; the writeback (4)
+    //      lands the Δv jump; ΔK_burn is booked to W_external in the same tick.
+    //      Empty ⇒ no-op for non-burn scenes (byte-identical tick to baseline).
+    const maneuvers = this.loaded.maneuverResolvers;
+    if (maneuvers && maneuvers.length > 0) {
+      this.loaded.sceneCtx.tPrev = tPrev;
+      this.loaded.sceneCtx.t = this.t;
+      for (const m of maneuvers) m.resolve(this.loaded.sceneCtx, this._tracker);
     }
     // 3b. Discrete / derived per-tick updates — BEFORE the writeback and
     //    the snapshot (see the invariant above). loaded.discreteUpdates is

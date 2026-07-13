@@ -96,6 +96,36 @@ export function resolveEmbedChrome(search) {
 }
 
 /**
+ * Resolve the RENDER THEME to boot from a URL query string
+ * (k015_worksheet_parity_live_sim_v1 W3).
+ *
+ * `&theme=worksheet` selects the printed-worksheet visual language in the
+ * canvas renderer (tan hill + ground, red ball + velocity, serif-italic
+ * labels); anything else — absent, empty, malformed, or any other value —
+ * resolves to 'default' (today's live look, unchanged). Pure — no DOM — so the
+ * decision is unit-testable without a browser, the same pure-predicate shape as
+ * resolveBootSceneId / resolveEmbedChrome, and deliberately STRICT on the value
+ * (`=== 'worksheet'`) so an unrelated `theme=` query param can never silently
+ * repaint a standalone user's scene.
+ *
+ * @param {string|URLSearchParams|null|undefined} search
+ *        window.location.search (e.g. "?scene=k015_eulers_hilltop_full&theme=worksheet")
+ *        or a URLSearchParams.
+ * @returns {'worksheet'|'default'} a theme id the renderer constructor accepts.
+ */
+export function resolveTheme(search) {
+  let params;
+  try {
+    params = search instanceof URLSearchParams
+      ? search
+      : new URLSearchParams(search || '');
+  } catch {
+    return 'default';
+  }
+  return params.get('theme') === 'worksheet' ? 'worksheet' : 'default';
+}
+
+/**
  * Classify an incoming postMessage `event.data` from the embed wrapper.
  * Pure — no side effects — so the pause/resume routing is unit-testable.
  *
@@ -132,6 +162,29 @@ export function installEmbedControls({ target, onPause, onResume, onRestart }) {
   };
   target.addEventListener('message', handler);
   return () => target.removeEventListener('message', handler);
+}
+
+/**
+ * Should a bare canvas click replay the scene from t=0?
+ *
+ * Only inside an embed. Standalone, the canvas click already MEANS something —
+ * it picks a body for the inspector — and the sketch tool owns the pointer
+ * stream while it is active, so a restart-on-click would either steal the
+ * selection gesture or abort a curve mid-draw. In an embed there is no
+ * inspector and no sketch tool (the chrome is hidden), so the canvas has no
+ * competing job and the whole graphic can be the replay affordance Brendan
+ * asked for.
+ *
+ * Pure — no DOM — so the arbitration is unit-testable without a browser, same
+ * shape as resolveTheme / resolveEmbedChrome / parseEmbedMessage.
+ *
+ * @param {object} opts
+ * @param {boolean} opts.embedded  resolveEmbedChrome(window.location.search)
+ * @param {boolean} opts.sketching is the sketch controller holding the pointer?
+ * @returns {boolean}
+ */
+export function shouldRestartOnCanvasClick({ embedded, sketching } = {}) {
+  return Boolean(embedded) && !sketching;
 }
 
 export const NAME = 'embed_boot';

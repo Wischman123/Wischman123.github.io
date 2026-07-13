@@ -87,13 +87,24 @@ const FRICTION_V_THRESHOLD = 0.01;
 // sum so ConservationTracker's iteration over all bodies recovers the
 // full pair PE once — identical contract to Coulomb. The static
 // Gravity.pairEnergy(a, b) returns the FULL -G m₁m₂/r for audit/test use.
+//
+// ENERGY DATUM (constant_g only): `datum_y` is the height at which U_g = 0 —
+// the "zero line" a worksheet declares before it writes U_g = mgh. Physics is
+// invariant to it (F = -mg ŷ regardless, and every ΔU_g is unchanged), but the
+// REPORTED U_g and total shift by m·g·datum_y, so it is a genuine curriculum
+// choice, not cosmetics. It defaults to 0 — the scene's own y = 0 — which is
+// exactly the prior hardcoded behavior, so every scene that does not declare a
+// datum is bit-identical. A scene whose geometry puts y = 0 somewhere other
+// than the floor (a hilltop origin, say) declares the floor via
+// scene_defaults.gravity_datum_y and gets U_g ≥ 0 everywhere above it.
 export class Gravity extends Force {
-  constructor({ applies_to, g = 9.8, model = 'constant_g', G = GRAVITATIONAL_CONSTANT }) {
+  constructor({ applies_to, g = 9.8, model = 'constant_g', G = GRAVITATIONAL_CONSTANT, datum_y = 0 }) {
     super();
     this.applies_to = applies_to;
     this.g = g;
     this.model = model;
     this.G = G;
+    this.datum_y = datum_y;
     this.energyKey = 'U_g';
   }
   applyTo(body, sceneCtx = {}) {
@@ -125,8 +136,9 @@ export class Gravity extends Force {
   }
   potentialEnergy(body, sceneCtx = {}) {
     if (this.model === 'constant_g') {
-      // U_g = m g y with reference y = 0.
-      return body.mass * this.g * body.position.y;
+      // U_g = m g (y − y_datum): height measured from the DECLARED zero line
+      // (scene_defaults.gravity_datum_y), not from the scene's y = 0 origin.
+      return body.mass * this.g * (body.position.y - this.datum_y);
     }
     if (this.model === 'universal') {
       const bodies = sceneCtx.bodies;
@@ -193,12 +205,17 @@ export class AppliedAcceleration extends Force {
 }
 
 export class Spring extends Force {
-  constructor({ applies_to, k_N_per_m, rest_length_m, anchor }) {
+  constructor({ applies_to, k_N_per_m, rest_length_m, anchor, glyph = 'coil' }) {
     super();
     this.applies_to = applies_to;
     this.k = k_N_per_m;
     this.L0 = rest_length_m;
     this.anchor = anchor;
+    // Render-only: which strand the renderer draws for this spring — a steel
+    // 'coil' (default) or a flexible 'cord' (bungee, elastic rope). The FORCE is
+    // Hooke's law either way; this never touches applyTo. See F3 in
+    // canvas2d.js's connector registry.
+    this.glyph = glyph;
     this.energyKey = 'U_e';
   }
   applyTo(body) {

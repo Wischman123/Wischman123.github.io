@@ -1,0 +1,157 @@
+{
+  "schema_version": "0.1",
+  "id": "dawn_last_burn",
+  "title": "Dawn's Last Burn — circular orbit around Ceres, a scheduled prograde burn reshapes it into an ellipse (Δv/v_A = F001's 0.0802), coast to apoapsis C where a gravity-bound debris fragment sticks (perfectly_inelastic). Scaled canonical frame GM=1, r0=1, v_A=1; welded to the F001 reference (dawn_last_burn_live_sim_v1 D3).",
+  "preset_required": "ap_c",
+  "feature_toggles_required": [],
+  "scene_defaults": {
+    "gravity_model": "universal",
+    "g": 0,
+    "air_resistance": false,
+    "spring_mass": false,
+    "rope_mass": false
+  },
+  "bodies": [
+    {
+      "id": "ceres",
+      "type": "particle",
+      "mass_kg": 14982844642.8839,
+      "position_m": {
+        "x": 0,
+        "y": 0
+      },
+      "velocity_m_per_s": {
+        "x": 0,
+        "y": 0
+      },
+      "radius_m": 0.47
+    },
+    {
+      "id": "dawn",
+      "type": "particle",
+      "mass_kg": 1,
+      "position_m": {
+        "x": 1,
+        "y": 0
+      },
+      "velocity_m_per_s": {
+        "x": 0,
+        "y": 1
+      },
+      "radius_m": 0.012
+    },
+    {
+      "id": "debris",
+      "type": "particle",
+      "mass_kg": 0.005,
+      "radius_m": 0.012,
+      "position_m": {
+        "x": 0.00349909350907281,
+        "y": 1.1486994979177856
+      },
+      "velocity_m_per_s": {
+        "x": 0.973810186359295,
+        "y": -0.05409209684125502
+      }
+    }
+  ],
+  "surfaces": [],
+  "fields": [],
+  "forces": [
+    {
+      "type": "gravity",
+      "applies_to": [
+        "ceres",
+        "dawn",
+        "debris"
+      ]
+    }
+  ],
+  "constraints": [],
+  "simulation": {
+    "duration_s": 5.931587148702239,
+    "integrator": "rk4",
+    "dt_s": 0.000999930402680755,
+    "adaptive_dt": false
+  },
+  "outputs": [
+    {
+      "quantity": "position.x",
+      "body_id": "dawn"
+    },
+    {
+      "quantity": "position.y",
+      "body_id": "dawn"
+    },
+    {
+      "quantity": "velocity.x",
+      "body_id": "dawn"
+    },
+    {
+      "quantity": "velocity.y",
+      "body_id": "dawn"
+    },
+    {
+      "quantity": "position.x",
+      "body_id": "debris"
+    },
+    {
+      "quantity": "position.y",
+      "body_id": "debris"
+    },
+    {
+      "quantity": "velocity.x",
+      "body_id": "debris"
+    },
+    {
+      "quantity": "velocity.y",
+      "body_id": "debris"
+    },
+    {
+      "quantity": "energy.K"
+    },
+    {
+      "quantity": "energy.U_g"
+    },
+    {
+      "quantity": "energy.U_thermal"
+    },
+    {
+      "quantity": "energy.total"
+    }
+  ],
+  "expected": {
+    "tolerance_band": "v1.0",
+    "values": {
+      "dawn:position.x": -0.175244313718875,
+      "dawn:position.y": -1.3597918501952038,
+      "dawn:velocity.x": 0.7828865939751453,
+      "dawn:velocity.y": -0.026766092312033612,
+      "debris:position.x": -0.1559980728220969,
+      "debris:position.y": -1.372148176002697,
+      "debris:velocity.x": 0.7828865939751453,
+      "debris:velocity.y": -0.026766092312033612,
+      "energy.K": 0.30834799103092264,
+      "energy.U_g": -0.7329951300875621,
+      "energy.U_thermal": 0.006130641988876584,
+      "energy.total": -0.5019746477065263
+    }
+  },
+  "maneuvers": [
+    {
+      "body_id": "dawn",
+      "t_burn_s": 1,
+      "delta_v_m_per_s": 0.08023900192389344,
+      "direction": "prograde"
+    }
+  ],
+  "collisions": [
+    {
+      "mode": "perfectly_inelastic",
+      "applies_to": [
+        "dawn",
+        "debris"
+      ]
+    }
+  ]
+}

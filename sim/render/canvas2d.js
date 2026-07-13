@@ -54,6 +54,7 @@ import { drawTraceOverlay } from './trajectory_trace.js';
 import { drawFieldOverlay } from './field_overlay.js';
 import { drawGhostTrails } from './ghost_store.js';
 import { isRenderSuppressed } from './render_suppression.js';
+import { arcSweepCanvas, drawnSurfaceGeometry } from './surface_geometry.js';
 import { flowMarkerPositions, FLOW_DOT_RADIUS_PX } from './current_flow.js';
 import { traceStreamline, drawArrow, drawWorldPolyline, STREAMLINE_EPS, FIELD_GRID_COUNT } from './render_primitives.js';
 // Pure world<->pixel viewport math, shared with sim/render/optics_canvas2d.js so
@@ -73,7 +74,38 @@ import { collectSuppressedIds, extentCenter } from '../engine/extended_object_ge
 // BuoyantForce; it is only excluded from EM sampling — the one shared accessor.
 import { emFields } from '../engine/fields.js';
 
-const STYLE = {
+// ---- Render themes (k015_worksheet_parity_live_sim_v1 W3) ----------------
+// The renderer palette + a few draw-behavior flags, selected ONCE at
+// construction (`new Canvas2DRenderer(canvas, theme)`) and read everywhere via
+// `this.style`. THEME_DEFAULT is the byte-for-byte-unchanged live look — the
+// former module-level `STYLE` const, values verbatim — so any scene booted
+// without `&theme=worksheet` renders EXACTLY as before. THEME_WORKSHEET repaints
+// ONLY the terrain / ball / velocity / label surface into the printed-worksheet
+// visual language (tan hill + ground, red ball + velocity, serif-italic
+// labels); it INHERITS every other color unchanged (fields, circuits, and — via
+// lol_overlay.js's own locked LOL_COLORS, which this file never touches — the
+// energy bars).
+//
+// Palette provenance — SOURCE CONSTANTS, never sampled pixels (cited file:sym):
+//   tan   C8B88A = GRC  tools/claude_tools/diagrams/style.py:GRC  (hill/ground fill)
+//   label 2C3E50 = SC   tools/claude_tools/diagrams/style.py:SC   (shape/label color)
+//   stroke 555555= SFC  tools/claude_tools/diagrams/style.py:SFC  (surface borders) —
+//                       the same '555555' literal problems/units/energy/diagrams/
+//                       diagrams_KAP.py strokes the K015 ramp/structure lines with.
+//   red   E74C3C = RC   tools/claude_tools/diagrams/style.py:RC — the default fill of
+//                       draw_ball (tools/claude_tools/diagrams/blocks.py:draw_ball,
+//                       `fill_color=RC`) AND the K015 launch/velocity-arrow color
+//                       ('E74C3C' in diagrams_KAP.py); used for BOTH ball + velocity.
+//   blue  2980B9 = BLC  tools/claude_tools/diagrams/style.py:BLC — the K015 R-line /
+//                       measurement color ('2980B9' in diagrams_KAP.py). It already
+//                       equals the default charge_neg/bfield blue, so no override.
+//
+// v1 RESTRICTION: the worksheet terrain fill is validated ONLY for
+// single-convex-arc, K015-shaped scenes (one convex `circular_arc`/`curved` hill
+// + flat ground). Multi-arc scenes (e.g. the K020 coaster's several arcs) are
+// OUT OF SCOPE for the worksheet theme in v1 — filling each convex arc's FULL
+// circle is only geometrically valid for a lone hill dome, not a chain of arcs.
+const THEME_DEFAULT = {
   bg:           '#fcfcfd',
   grid:         '#eef0f4',
   gridMajor:    '#dde1ea',
@@ -98,11 +130,55 @@ const STYLE = {
   ckt_node:     '#2563eb',    // A3b — node-voltage label (blue)
   ckt_curr:     '#b8860b',    // A3b — branch-current label + flow arrow (amber)
   flow_electron:'#1d4ed8',    // T7 — electron-flow marker color (blue, reversed)
-  axis:         '#888'
+  axis:         '#888',
+  // Body/glyph label — today's EXACT values (default look unchanged).
+  labelColor:   '#444',
+  labelFont:    '11px system-ui, sans-serif',
+  // Terrain-fill behavior. Default = stroke-only (both flags off = no change).
+  fillConvexArc: false,       // fill a convex circular_arc's full circle (tan)
+  fillFlatBand:  false,       // fill a tan band below a flat surface
+  terrainFill:   '#c8b88a',   // GRC tan — inert while both flags are false
+  // Worksheet annotation layer (k015_worksheet_parity_live_sim_v1 W4). The flag
+  // is the whole "worksheet-only" decision — drawAnnotations early-returns when
+  // it is false, so the sim's own default look draws ZERO annotations (the
+  // anti-target, asserted as a positive condition in the renderer tests). The
+  // colors/fonts live here (inert while the flag is off, like terrainFill) and
+  // are SOURCE CONSTANTS from tools/claude_tools/diagrams/style.py:
+  //   annLabelColor 2C3E50 = SC  (bold-serif position labels A / B; also v₀ = 0)
+  //   annMeasure    333333 = DC  ("default dark line/text" — the h measure line
+  //                               + its T-ticks read as near-black)
+  //   annRadius     2980B9 = BLC (the dashed R construction line — the same K015
+  //                               measurement blue as diagrams_KAP.py)
+  annotationLayer: false,     // draw the worksheet annotation layer (OFF by default)
+  annLabelFont:  'bold 14px "Times New Roman", Times, serif', // A / B — bold serif
+  annLabelColor: '#2c3e50',   // SC  — position-label + v₀ text color
+  annMeasure:    '#333333',   // DC  — h measure line + T-ticks (near-black)
+  annRadius:     '#2980b9'    // BLC — dashed R radius line
+};
+
+const THEME_WORKSHEET = {
+  ...THEME_DEFAULT,
+  // Printed-worksheet visual language (source constants documented above).
+  surface:   '#555555',                 // SFC — ramp / hill / ground outline stroke
+  particle:  '#e74c3c',                 // RC — ball red
+  velocity:  '#e74c3c',                 // RC — velocity-arrow red
+  labelColor:'#2c3e50',                 // SC — label color
+  labelFont: 'italic 11px "Times New Roman", Times, serif',
+  fillConvexArc: true,
+  fillFlatBand:  true,
+  terrainFill:   '#c8b88a',             // GRC — tan hill dome + ground band
+  annotationLayer: true                 // W4 — the worksheet annotation layer draws
 };
 
 const BODY_RADIUS_PX = 10;       // visual size; world size is mass-agnostic
 const VELOCITY_SCALE_PX_PER_M_PER_S = 4;
+// Worksheet annotation layer (k015_worksheet_parity_live_sim_v1 W4). Pixel
+// constants for the static A/B labels, h/R measure lines, and v₀ = 0 text.
+const ANN_LABEL_OFFSET_PX = 14;  // A/B/v₀ text offset from its world anchor (clears the 10px ball)
+const ANN_TICK_HALF_PX = 5;      // T-tick cap half-length, ⊥ the measure line
+const ANN_MEASURE_WIDTH_PX = 1.5;// measure/radius line stroke width
+const ANN_LABEL_PAD_PX = 4;      // gap between a line's label and the line
+const ANN_DASH = [6, 4];         // R radius-line dash pattern (construction line)
 // FIELD_GRID_COUNT now single-sourced in ./render_primitives.js (imported
 // above) so the arrow grid and the F1 overlay share one gridSpacing/rClip.
 const FIELD_E_PX_PER_V_PER_M = 1.5;
@@ -464,15 +540,20 @@ export function slidingRailGeometryForLoop(loaded, loop) {
 //               the engine module, matching drawImplicitGround).
 //   type      — the scene.schema.json constraint/force type string.
 //   source    — which loaded array the object lives in ('constraints'|'forces').
-//   draw      — (renderer, obj, bodyById) => void; bespoke per-connector geometry.
+//   draw      — (renderer, obj, bodyById, loaded) => void; bespoke per-connector
+//               geometry. Body endpoints go through renderer.bodyAnchorPx(body,
+//               loaded), NOT worldToPx(body.position): a body resting on a surface
+//               is drawn lifted by one glyph radius (F2), so a connector anchored
+//               to the raw position would dangle a radius clear of the glyph it
+//               attaches to. `loaded` is threaded through for exactly that.
 const CONNECTOR_RENDER_ENTRIES = [
   {
     className: 'RodConstraint', type: 'rod', source: 'constraints',
-    draw(self, c, bodyById) {
+    draw(self, c, bodyById, loaded) {
       if (!c.anchor) return;
       const body = bodyById.get(c.body_id);
       if (!body) return;
-      self.drawRod(self.worldToPx(c.anchor), self.worldToPx(body.position));
+      self.drawRod(self.worldToPx(c.anchor), self.bodyAnchorPx(body, loaded));
     }
   },
   {
@@ -480,13 +561,13 @@ const CONNECTOR_RENDER_ENTRIES = [
     // (anchor → body), the rope bends OVER the pulley: two segments
     // body_a → pulley → body_b, plus a pulley marker at `.pulley`.
     className: 'StringConstraint', type: 'string', source: 'constraints',
-    draw(self, c, bodyById) {
+    draw(self, c, bodyById, loaded) {
       if (!c.pulley) return;
       const pulleyPx = self.worldToPx(c.pulley);
       const bodyA = bodyById.get(c.body_a);
       const bodyB = bodyById.get(c.body_b);
-      if (bodyA) self.drawRope(pulleyPx, self.worldToPx(bodyA.position));
-      if (bodyB) self.drawRope(pulleyPx, self.worldToPx(bodyB.position));
+      if (bodyA) self.drawRope(pulleyPx, self.bodyAnchorPx(bodyA, loaded));
+      if (bodyB) self.drawRope(pulleyPx, self.bodyAnchorPx(bodyB, loaded));
       self.drawPulley(pulleyPx);
     }
   },
@@ -496,35 +577,45 @@ const CONNECTOR_RENDER_ENTRIES = [
     // the bar runs directly body_a ↔ body_b, drawn with the same rigid-rod
     // primitive as the anchor rod.
     className: 'BodyRodConstraint', type: 'body_rod', source: 'constraints',
-    draw(self, c, bodyById) {
+    draw(self, c, bodyById, loaded) {
       const bodyA = bodyById.get(c.body_a);
       const bodyB = bodyById.get(c.body_b);
       if (!bodyA || !bodyB) return;
-      self.drawRod(self.worldToPx(bodyA.position), self.worldToPx(bodyB.position));
+      self.drawRod(self.bodyAnchorPx(bodyA, loaded), self.bodyAnchorPx(bodyB, loaded));
     }
   },
   {
     // Two-body coupling spring (coupled oscillator — BodySpring). No anchor: the
     // coil runs directly body_a ↔ body_b (the two ids in applies_to).
     className: 'BodySpring', type: 'body_spring', source: 'forces',
-    draw(self, f, bodyById) {
+    draw(self, f, bodyById, loaded) {
       if (!Array.isArray(f.applies_to)) return;
       const bodyA = bodyById.get(f.applies_to[0]);
       const bodyB = bodyById.get(f.applies_to[1]);
       if (!bodyA || !bodyB) return;
-      self.drawSpringCoil(self.worldToPx(bodyA.position), self.worldToPx(bodyB.position));
+      self.drawSpringCoil(self.bodyAnchorPx(bodyA, loaded), self.bodyAnchorPx(bodyB, loaded));
     }
   },
   {
-    // Anchored spring force — zig-zag coil anchor → body + pivot dot.
+    // Anchored spring force — anchor → body + pivot dot.
+    //
+    // F3: the glyph is chosen by the connector's PHYSICAL ROLE, declared on the
+    // scene (`glyph: 'coil' | 'cord'`), not by its force type. A bungee cord is a
+    // Hooke-law spring force — the engine is right to model it as one — but the
+    // renderer drew every spring as a steel zig-zag coil, so C001's bungee jumper
+    // hung from a coil spring. Brendan: "there's no spring in this problem."
+    // Scenes that say nothing keep the coil, so every existing scene is unchanged.
     className: 'Spring', type: 'spring', source: 'forces',
-    draw(self, f, bodyById) {
+    draw(self, f, bodyById, loaded) {
       if (!f.anchor || !Array.isArray(f.applies_to)) return;
       const aPx = self.worldToPx(f.anchor);
+      const drawStrand = f.glyph === 'cord'
+        ? (a, b) => self.drawRope(a, b)
+        : (a, b) => self.drawSpringCoil(a, b);
       for (const id of f.applies_to) {
         const body = bodyById.get(id);
         if (!body) continue;
-        self.drawSpringCoil(aPx, self.worldToPx(body.position));
+        drawStrand(aPx, self.bodyAnchorPx(body, loaded));
         self.drawPivot(aPx);
       }
     }
@@ -532,13 +623,13 @@ const CONNECTOR_RENDER_ENTRIES = [
   {
     // Tension force — flexible rope line anchor → body + pivot dot.
     className: 'Tension', type: 'tension', source: 'forces',
-    draw(self, f, bodyById) {
+    draw(self, f, bodyById, loaded) {
       if (!f.anchor || !Array.isArray(f.applies_to)) return;
       const aPx = self.worldToPx(f.anchor);
       for (const id of f.applies_to) {
         const body = bodyById.get(id);
         if (!body) continue;
-        self.drawRope(aPx, self.worldToPx(body.position));
+        self.drawRope(aPx, self.bodyAnchorPx(body, loaded));
         self.drawPivot(aPx);
       }
     }
@@ -563,9 +654,15 @@ export const DRAWN_CONNECTOR_FORCE_TYPES = new Set(
 );
 
 export class Canvas2DRenderer {
-  constructor(canvas) {
+  constructor(canvas, theme = 'default') {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
+    // Render theme — the ONE indirection the worksheet parity rests on. Every
+    // draw method reads `this.style.<key>`; the object is chosen here and never
+    // mutated, so themes cannot fork the draw functions. Unknown / absent theme
+    // coerces to the default look (the boot resolver only ever passes
+    // 'worksheet' | 'default', but the coercion keeps a typo from wedging it).
+    this.style = theme === 'worksheet' ? THEME_WORKSHEET : THEME_DEFAULT;
     // Transform: pixel = (world - origin) * scale + offset
     // The y-axis is flipped at draw time.
     this.scale = 50;     // pixels per meter (set by autoFit)
@@ -726,7 +823,7 @@ export class Canvas2DRenderer {
     // Phase 2.4 — update camera before any drawing so the grid + axis
     // lines reflect the active view-mode transform.
     this.applyViewMode(loaded);
-    ctx.fillStyle = STYLE.bg;
+    ctx.fillStyle = this.style.bg;
     ctx.fillRect(0, 0, this.cssWidth, this.cssHeight);
     this.drawGrid();
     if (loaded) {
@@ -780,6 +877,12 @@ export class Canvas2DRenderer {
       // BEFORE drawBodies so the live body disk sits on top of its own trace.
       if (this.showTrace) drawTraceOverlay(this, loaded);
       this.drawBodies(loaded);
+      // k015_worksheet_parity_live_sim_v1 W4 — printed-worksheet annotation
+      // layer (A/B labels, h/R measure lines, v₀ = 0). Drawn AFTER the bodies so
+      // the labels sit on top of the ball, and gated ENTIRELY on the worksheet
+      // theme flag inside drawAnnotations (zero draws in the default look — the
+      // sim's own product surface is untouched).
+      this.drawAnnotations(loaded);
       if (this.showFbd) drawFbdOverlay(this, loaded);
       if (this.showLol) drawLolOverlay(this, loaded);
       // Predict-the-graph (sim_predict_graph P4). Sketch mode REPLACES the whole
@@ -832,28 +935,28 @@ export class Canvas2DRenderer {
     });
   }
 
-  // Visual-only ground indicator. Drawn at y=0 when the scene has a
-  // gravity force but no surfaces — e.g. projectile_motion. The line
-  // is purely cosmetic; the engine has no contact constraint here, so
-  // bodies still pass through it (matches existing physics).
+  // Visual-only ground indicator. Drawn at y=0 only when y=0 really IS the
+  // ground — e.g. projectile_motion. The line is purely cosmetic; the engine
+  // has no contact constraint here, so bodies still pass through it (matches
+  // existing physics).
+  //
+  // The decision is NOT made here. `loaded.hasImplicitGround` is computed once
+  // at load by engine/ground_plane.js::hasImplicitGroundPlane — the SAME
+  // predicate that arms main.js::probeScene's landing detection. This leg used
+  // to re-derive it as `hasGravity && surfaces.size === 0`, which painted a
+  // ground line straight through the central body of every orbit and across the
+  // waterline of every bobbing float. Two copies of one decision is the bug;
+  // READ the stashed flag, never re-derive (and never re-ask per frame against
+  // current body positions — the line would flicker as bodies cross y=0).
   drawImplicitGround(loaded) {
-    if (!loaded.forces || !loaded.surfaces) return;
-    if (loaded.surfaces.size > 0) return;
-    let hasGravity = false;
-    for (const f of loaded.forces) {
-      if (f.constructor && f.constructor.name === 'Gravity') {
-        hasGravity = true;
-        break;
-      }
-    }
-    if (!hasGravity) return;
+    if (!loaded.hasImplicitGround) return;
     const ctx = this.ctx;
     const left = 0;
     const right = this.cssWidth;
     const groundPx = this.worldToPx({ x: 0, y: 0 });
     if (groundPx.y < -10 || groundPx.y > this.cssHeight + 10) return;
     // Solid ground line.
-    ctx.strokeStyle = STYLE.surface;
+    ctx.strokeStyle = this.style.surface;
     ctx.lineWidth = 2.5;
     ctx.lineCap = 'round';
     ctx.beginPath();
@@ -862,7 +965,7 @@ export class Canvas2DRenderer {
     ctx.stroke();
     // Hatching below.
     ctx.save();
-    ctx.strokeStyle = STYLE.surface;
+    ctx.strokeStyle = this.style.surface;
     ctx.lineWidth = 1;
     ctx.globalAlpha = 0.55;
     ctx.beginPath();
@@ -890,7 +993,7 @@ export class Canvas2DRenderer {
     const bot = this.originY - this.cssHeight / 2 / this.scale;
     const top = this.originY + this.cssHeight / 2 / this.scale;
     ctx.lineWidth = 1;
-    ctx.strokeStyle = STYLE.grid;
+    ctx.strokeStyle = this.style.grid;
     ctx.beginPath();
     for (let xw = Math.ceil(left / dxWorld) * dxWorld; xw <= right; xw += dxWorld) {
       const p = this.worldToPx({ x: xw, y: 0 });
@@ -904,7 +1007,7 @@ export class Canvas2DRenderer {
     }
     ctx.stroke();
     // Axis lines (x=0, y=0).
-    ctx.strokeStyle = STYLE.gridMajor;
+    ctx.strokeStyle = this.style.gridMajor;
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     const ox = this.worldToPx({ x: 0, y: 0 });
@@ -912,7 +1015,7 @@ export class Canvas2DRenderer {
     ctx.moveTo(0, ox.y); ctx.lineTo(this.cssWidth, ox.y);
     ctx.stroke();
     // Scale label (lower-right).
-    ctx.fillStyle = STYLE.axis;
+    ctx.fillStyle = this.style.axis;
     ctx.font = '11px system-ui, sans-serif';
     ctx.textAlign = 'right';
     ctx.textBaseline = 'bottom';
@@ -947,8 +1050,8 @@ export class Canvas2DRenderer {
         ? (field.E && (field.E.x !== 0 || field.E.y !== 0))
         : true;
       if (renderE) {
-        ctx.strokeStyle = STYLE.efield;
-        ctx.fillStyle = STYLE.efield;
+        ctx.strokeStyle = this.style.efield;
+        ctx.fillStyle = this.style.efield;
         ctx.lineWidth = 1.25;
         for (let i = 0; i < FIELD_GRID_COUNT; i++) {
           for (let j = 0; j < FIELD_GRID_COUNT; j++) {
@@ -1013,8 +1116,8 @@ export class Canvas2DRenderer {
           const autoscale =
             maxInPlane * FIELD_B_PX_PER_T < B_ARROW_VISIBLE_FLOOR_PX;
           if (autoscale) anyNotToScale = true;
-          ctx.strokeStyle = STYLE.bfield;
-          ctx.fillStyle = STYLE.bfield;
+          ctx.strokeStyle = this.style.bfield;
+          ctx.fillStyle = this.style.bfield;
           ctx.lineWidth = 1.5;
           for (const s of bSamples) {
             const tail = this.worldToPx({ x: s.xw, y: s.yw });
@@ -1049,8 +1152,8 @@ export class Canvas2DRenderer {
         ? (field.B && field.B.z !== 0)
         : true;
       if (renderB) {
-        ctx.strokeStyle = STYLE.bfield;
-        ctx.fillStyle = STYLE.bfield;
+        ctx.strokeStyle = this.style.bfield;
+        ctx.fillStyle = this.style.bfield;
         ctx.lineWidth = 1.25;
         for (let i = 0; i < FIELD_GRID_COUNT; i++) {
           for (let j = 0; j < FIELD_GRID_COUNT; j++) {
@@ -1078,7 +1181,7 @@ export class Canvas2DRenderer {
             ctx.beginPath();
             ctx.arc(c.x, c.y, FIELD_B_TOKEN_RADIUS_PX, 0, 2 * Math.PI);
             if (bToken === 'dot') {
-              ctx.fillStyle = STYLE.bfield;
+              ctx.fillStyle = this.style.bfield;
               ctx.fill();
             } else {
               ctx.stroke();
@@ -1097,7 +1200,7 @@ export class Canvas2DRenderer {
     // label the arrows "not to scale", mirroring the FBD "Arrows not to scale"
     // convention so the rendered length is never read as a true magnitude.
     if (anyNotToScale) {
-      ctx.fillStyle = STYLE.axis;
+      ctx.fillStyle = this.style.axis;
       ctx.font = 'italic 11px system-ui, sans-serif';
       ctx.textAlign = 'left';
       ctx.textBaseline = 'bottom';
@@ -1135,7 +1238,7 @@ export class Canvas2DRenderer {
       for (const channel of ['E', 'B']) {
         const seeds = streamlineSeeds(field, channel, bounds);
         if (seeds.length === 0) continue;
-        ctx.strokeStyle = channel === 'E' ? STYLE.efield : STYLE.bfield;
+        ctx.strokeStyle = channel === 'E' ? this.style.efield : this.style.bfield;
         const sampleDir = channel === 'E'
           ? (pt) => { const F = field.E_at(pt); return { x: F.x, y: F.y }; }
           : (pt) => { const F = field.B_at(pt); return { x: F.x, y: F.y }; };
@@ -1185,9 +1288,9 @@ export class Canvas2DRenderer {
     // Effectively-zero flux (incl. FP-near-zero cancellation) → neutral.
     const isZeroFlux = !hasPhi || Math.abs(phi) < FLUX_ZERO_EPS;
     // Sign → color. Neutral gray when the flux is (effectively) zero or unknown.
-    let signColor = STYLE.axis;
-    if (!isZeroFlux && phi > 0) signColor = STYLE.charge_pos;
-    else if (!isZeroFlux && phi < 0) signColor = STYLE.charge_neg;
+    let signColor = this.style.axis;
+    if (!isZeroFlux && phi > 0) signColor = this.style.charge_pos;
+    else if (!isZeroFlux && phi < 0) signColor = this.style.charge_neg;
     const shade = !isZeroFlux;
 
     ctx.save();
@@ -1285,7 +1388,7 @@ export class Canvas2DRenderer {
       if (!geo) continue;
       ctx.save();
       // Two rails.
-      ctx.strokeStyle = STYLE.wire;
+      ctx.strokeStyle = this.style.wire;
       ctx.lineWidth = 2;
       ctx.lineCap = 'round';
       for (const y of [geo.y_top, geo.y_bottom]) {
@@ -1297,7 +1400,7 @@ export class Canvas2DRenderer {
         ctx.stroke();
       }
       // Resistor zigzag at the closed end.
-      ctx.strokeStyle = STYLE.ckt_sym;
+      ctx.strokeStyle = this.style.ckt_sym;
       ctx.lineWidth = 2;
       ctx.beginPath();
       const p0 = this.worldToPx(geo.resistor[0]);
@@ -1322,7 +1425,7 @@ export class Canvas2DRenderer {
     // Conductor boundary — solid copper (a physical wire, unlike the dashed
     // mathematical Gauss surface).
     ctx.save();
-    ctx.strokeStyle = STYLE.induction;
+    ctx.strokeStyle = this.style.induction;
     ctx.lineWidth = 2.25;
     ctx.lineCap = 'round';
     ctx.beginPath();
@@ -1358,7 +1461,7 @@ export class Canvas2DRenderer {
     if (!hasEmf && typeof fluxB === 'number' && Number.isFinite(fluxB)) lines.push(`Φ_B = ${formatFlux(fluxB)} Wb`);
     if (lines.length > 0) {
       const topPx = this.worldToPx({ x: proj.cx, y: proj.cy + proj.halfHt });
-      ctx.fillStyle = STYLE.induction;
+      ctx.fillStyle = this.style.induction;
       ctx.font = '11px system-ui, sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'bottom';
@@ -1382,8 +1485,8 @@ export class Canvas2DRenderer {
     const N = 8;
     const dHead = 0.16 * r; // world-space arrowhead reach
     ctx.save();
-    ctx.strokeStyle = STYLE.induction;
-    ctx.fillStyle = STYLE.induction;
+    ctx.strokeStyle = this.style.induction;
+    ctx.fillStyle = this.style.induction;
     ctx.lineWidth = 1.75;
     for (let k = 0; k < N; k++) {
       const theta = (2 * Math.PI * k) / N;
@@ -1443,7 +1546,7 @@ export class Canvas2DRenderer {
     if (layout.rail) {
       try {
         ctx.save();
-        ctx.strokeStyle = STYLE.wire;
+        ctx.strokeStyle = this.style.wire;
         ctx.lineWidth = 1.75;
         ctx.lineCap = 'round';
         const a = W({ x: layout.rail.x0, y: layout.rail.y });
@@ -1519,7 +1622,7 @@ export class Canvas2DRenderer {
 
     // Jogs (offset branch → node) + the two leads (terminal → symbol edge).
     ctx.save();
-    ctx.strokeStyle = STYLE.wire;
+    ctx.strokeStyle = this.style.wire;
     ctx.lineWidth = 1.75;
     ctx.lineCap = 'round';
     ctx.beginPath();
@@ -1544,7 +1647,7 @@ export class Canvas2DRenderer {
     const marks = flowMarkerPositions([branch.fromEnd, branch.toEnd], i, this.currentConvention, simTime);
     if (marks.length) {
       ctx.save();
-      ctx.fillStyle = this.currentConvention === 'electron' ? STYLE.flow_electron : STYLE.ckt_curr;
+      ctx.fillStyle = this.currentConvention === 'electron' ? this.style.flow_electron : this.style.ckt_curr;
       for (const m of marks) {
         const p = W(m);
         ctx.beginPath();
@@ -1564,8 +1667,8 @@ export class Canvas2DRenderer {
     const arrowCtr = { x: branch.mid.x + perp.x * CKT_ARROW_OFFSET, y: branch.mid.y + perp.y * CKT_ARROW_OFFSET };
     if (flow) {
       ctx.save();
-      ctx.strokeStyle = STYLE.ckt_curr;
-      ctx.fillStyle = STYLE.ckt_curr;
+      ctx.strokeStyle = this.style.ckt_curr;
+      ctx.fillStyle = this.style.ckt_curr;
       ctx.lineWidth = 1.75;
       const tail = W({ x: arrowCtr.x - flow.x * CKT_ARROW_HALF, y: arrowCtr.y - flow.y * CKT_ARROW_HALF });
       const head = W({ x: arrowCtr.x + flow.x * CKT_ARROW_HALF, y: arrowCtr.y + flow.y * CKT_ARROW_HALF });
@@ -1588,7 +1691,7 @@ export class Canvas2DRenderer {
         x: branch.mid.x + perp.x * perpReach + branch.axis.x * drop,
         y: branch.mid.y + perp.y * perpReach + branch.axis.y * drop,
       });
-      ctx.fillStyle = STYLE.ckt_curr;
+      ctx.fillStyle = this.style.ckt_curr;
       ctx.font = '10px system-ui, sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
@@ -1613,7 +1716,7 @@ export class Canvas2DRenderer {
         x: branch.mid.x - perp.x * (CKT_ARROW_OFFSET + 0.05) - branch.axis.x * lift,
         y: branch.mid.y - perp.y * (CKT_ARROW_OFFSET + 0.05) - branch.axis.y * lift,
       });
-      ctx.fillStyle = STYLE.ckt_sym;
+      ctx.fillStyle = this.style.ckt_sym;
       ctx.font = '10px system-ui, sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
@@ -1636,8 +1739,8 @@ export class Canvas2DRenderer {
     const mid = branch.mid;
     const L = (s, q) => W({ x: mid.x + g.x * s + perp.x * q, y: mid.y + g.y * s + perp.y * q });
     ctx.save();
-    ctx.strokeStyle = STYLE.ckt_sym;
-    ctx.fillStyle = STYLE.ckt_sym;
+    ctx.strokeStyle = this.style.ckt_sym;
+    ctx.fillStyle = this.style.ckt_sym;
     ctx.lineWidth = 1.75;
     ctx.lineCap = 'round';
     switch (branch.type) {
@@ -1750,13 +1853,13 @@ export class Canvas2DRenderer {
       if (n.isGround) {
         // Ground is the reference (MNA emits no v_node_gnd) — labelled 0 V,
         // below the rail.
-        ctx.fillStyle = STYLE.wire;
+        ctx.fillStyle = this.style.wire;
         ctx.textBaseline = 'top';
         ctx.fillText(`${n.id} = 0 V`, p.x, p.y + 6);
         continue;
       }
       const v = diagnostics[`v_node_${n.id}`];
-      ctx.fillStyle = STYLE.ckt_node;
+      ctx.fillStyle = this.style.ckt_node;
       ctx.textBaseline = 'bottom';
       if (typeof v === 'number' && Number.isFinite(v)) {
         ctx.fillText(`${n.id} = ${formatCircuitVal(v)} V`, p.x, p.y - 8);
@@ -1770,39 +1873,114 @@ export class Canvas2DRenderer {
 
   drawSurfaces(loaded) {
     const ctx = this.ctx;
-    ctx.strokeStyle = STYLE.surface;
+    // Worksheet theme (v1 — single-convex-arc K015-shaped scenes ONLY; see the
+    // THEME_* comment): paint the docx "solid terrain" fill UNDER the strokes —
+    // a tan band below each flat surface, and the full tan disk of each convex
+    // circular_arc — so the hill reads as a filled dome on filled ground. Both
+    // flags are OFF in THEME_DEFAULT → this is skipped entirely and the render
+    // is byte-identical to before.
+    if (this.style.fillFlatBand || this.style.fillConvexArc) {
+      this._fillWorksheetTerrain(loaded);
+    }
+    ctx.strokeStyle = this.style.surface;
     ctx.lineWidth = 2.5;
     ctx.lineCap = 'round';
     for (const s of loaded.surfaces.values()) {
+      const drawn = this.drawnSurface(s);
       ctx.beginPath();
-      if (s.shape === 'flat' || s.shape === 'inclined') {
-        const p1 = this.worldToPx(s.p1);
-        const p2 = this.worldToPx(s.p2);
+      if (drawn.shape === 'flat' || drawn.shape === 'inclined') {
+        const p1 = this.worldToPx(drawn.p1);
+        const p2 = this.worldToPx(drawn.p2);
         ctx.moveTo(p1.x, p1.y);
         ctx.lineTo(p2.x, p2.y);
       } else {
         // circular_arc / curved — convex arc with center on the side
         // OPPOSITE the chord normal.
-        const cPx = this.worldToPx(s.center);
-        const rPx = s.radius * this.scale;
-        // Canvas y is flipped; sweep direction inverts. Compute start
-        // and end angles in canvas space.
-        const startCanvas = -s.thetaStart;
-        const endCanvas = -(s.thetaStart + s.thetaSweep);
-        const ccw = s.thetaSweep > 0; // world CCW → canvas CW (y flip)
-        ctx.arc(cPx.x, cPx.y, rPx, startCanvas, endCanvas, !ccw);
+        const cPx = this.worldToPx(drawn.center);
+        const rPx = drawn.radius * this.scale;
+        // Canvas y is flipped, so canvas angle = −world angle. That negation IS
+        // the flip — the sweep flag must NOT invert it a second time (F4: it did,
+        // and the renderer stroked the complementary arc, leaving K015's ridden
+        // hilltop undrawn). arcSweepCanvas owns the conversion; it is unit-tested
+        // against the engine's parameterization in surface_geometry.test.js.
+        const { startCanvas, endCanvas, anticlockwise } =
+          arcSweepCanvas(drawn.thetaStart, drawn.thetaSweep);
+        ctx.arc(cPx.x, cPx.y, rPx, startCanvas, endCanvas, anticlockwise);
       }
       ctx.stroke();
       // Hatching on the back (opposite chordNormal) to suggest the
       // solid side. Short tick marks every ~14 px along the chord.
-      this.hatchSurface(s);
+      this.hatchSurface(drawn);
     }
+  }
+
+  // Where a surface is DRAWN: one glyph radius into its solid side, so a body —
+  // drawn as a disk at its true position — RESTS on the line instead of straddling
+  // it. The engine's point mass is the ball's CENTRE; the surface it rides is the
+  // curve the centre follows; the visible surface is one radius below that. All
+  // three drawing legs (stroke, terrain fill, hatch) go through this one method so
+  // they cannot drift apart. drawnSurfaceGeometry is pure + unit-tested; see its
+  // docstring for why the old "lift the ball" offset was removed.
+  drawnSurface(s) {
+    return drawnSurfaceGeometry(s, BODY_RADIUS_PX / this.scale);
+  }
+
+  // Worksheet-theme terrain fill (behind drawSurfaces' strokes). Convex arcs
+  // (circular_arc / curved) → their FULL circle, tan; flat surfaces → a tan band
+  // from the (extended) surface line down to the bottom of the canvas. Both use
+  // one flat colour (terrainFill = GRC), so a hill dome poking above the ground
+  // band reads as one continuous tan terrain (overlap below ground is the same
+  // colour). Concave arcs (loop interiors) and inclined ramp segments are left
+  // stroke-only — the v1 rule is scoped to a lone hill + flat ground.
+  _fillWorksheetTerrain(loaded) {
+    const ctx = this.ctx;
+    ctx.save();
+    ctx.fillStyle = this.style.terrainFill;
+    for (const s of loaded.surfaces.values()) {
+      // The fill must use the SAME drawn geometry as the stroke, or the tan dome
+      // would sit a glyph radius above its own outline.
+      const drawn = this.drawnSurface(s);
+      if (this.style.fillFlatBand && drawn.shape === 'flat') {
+        this._fillGroundBand(drawn);
+      } else if (
+        this.style.fillConvexArc &&
+        (drawn.shape === 'circular_arc' || drawn.shape === 'curved')
+      ) {
+        const cPx = this.worldToPx(drawn.center);
+        const rPx = drawn.radius * this.scale;
+        ctx.beginPath();
+        ctx.arc(cPx.x, cPx.y, rPx, 0, 2 * Math.PI);
+        ctx.fill();
+      }
+    }
+    ctx.restore();
+  }
+
+  // Fill the region BELOW a flat surface line (its solid side) down to the
+  // canvas bottom, spanning the full canvas width. The surface line is extended
+  // to the left/right canvas edges so the ground reads as a continuous plane,
+  // not a segment. A (degenerate) vertical surface has no "below" band → skip.
+  _fillGroundBand(s) {
+    const ctx = this.ctx;
+    const p1 = this.worldToPx(s.p1);
+    const p2 = this.worldToPx(s.p2);
+    const dx = p2.x - p1.x;
+    if (Math.abs(dx) < 1e-6) return;              // vertical: no horizontal band
+    const slope = (p2.y - p1.y) / dx;
+    const yAt = (x) => p1.y + slope * (x - p1.x); // extended line's pixel-y at x
+    ctx.beginPath();
+    ctx.moveTo(0, yAt(0));
+    ctx.lineTo(this.cssWidth, yAt(this.cssWidth));
+    ctx.lineTo(this.cssWidth, this.cssHeight);
+    ctx.lineTo(0, this.cssHeight);
+    ctx.closePath();
+    ctx.fill();
   }
 
   hatchSurface(s) {
     const ctx = this.ctx;
     ctx.save();
-    ctx.strokeStyle = STYLE.surface;
+    ctx.strokeStyle = this.style.surface;
     ctx.lineWidth = 1;
     ctx.globalAlpha = 0.55;
     if (s.shape === 'flat' || s.shape === 'inclined') {
@@ -1842,6 +2020,124 @@ export class Canvas2DRenderer {
     ctx.restore();
   }
 
+  // ---- Worksheet annotation layer (k015_worksheet_parity_live_sim_v1 W4) -----
+  // The printed-worksheet overlay: bold A/B position labels, the h height line
+  // with T-ticks, the dashed blue R radius, and the italic v₀ = 0. Every record
+  // is EMITTED from scene geometry by the archetype (loaded.annotations), never
+  // hand-placed. Gated on `this.style.annotationLayer`, which is TRUE only under
+  // the worksheet theme — so the default look draws ZERO annotations (the
+  // anti-target). No-op on any scene without an annotations block.
+  drawAnnotations(loaded) {
+    if (!this.style.annotationLayer) return;   // worksheet theme only (anti-target)
+    const anns = loaded && loaded.annotations;
+    if (!Array.isArray(anns) || anns.length === 0) return;
+    for (const a of anns) {
+      switch (a.type) {
+        case 'position_label': this._drawPositionLabel(a); break;
+        case 'measure_line':   this._drawMeasureLine(a); break;
+        case 'radius_line':    this._drawRadiusLine(a); break;
+        case 'text_label':     this._drawTextLabel(a); break;
+        default: break;                         // unknown type: skip (validators reject upstream)
+      }
+    }
+  }
+
+  // Bold-serif position label (A, B) centred above its world anchor so it clears
+  // the ball disk.
+  _drawPositionLabel(a) {
+    const ctx = this.ctx;
+    const p = this.worldToPx(a.world);
+    ctx.save();
+    ctx.fillStyle = this.style.annLabelColor;   // SC
+    ctx.font = this.style.annLabelFont;         // bold serif
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText(a.text, p.x, p.y - ANN_LABEL_OFFSET_PX);
+    ctx.restore();
+  }
+
+  // Height measure line (h): a solid near-black segment with perpendicular T-tick
+  // caps at both ends and an italic label at the midpoint. The tick direction is
+  // COMPUTED from the endpoints (⊥ the line), never assumed vertical.
+  _drawMeasureLine(a) {
+    const ctx = this.ctx;
+    const p1 = this.worldToPx(a.p1);
+    const p2 = this.worldToPx(a.p2);
+    ctx.save();
+    ctx.strokeStyle = this.style.annMeasure;    // DC — near-black
+    ctx.fillStyle = this.style.annMeasure;
+    ctx.lineWidth = ANN_MEASURE_WIDTH_PX;
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.moveTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.stroke();
+    // T-ticks (default on) — unit perpendicular to the line, in screen space.
+    if (a.ticks !== false) {
+      const dx = p2.x - p1.x;
+      const dy = p2.y - p1.y;
+      const len = Math.hypot(dx, dy) || 1;
+      const ux = -dy / len;
+      const uy = dx / len;
+      for (const e of [p1, p2]) {
+        ctx.beginPath();
+        ctx.moveTo(e.x - ux * ANN_TICK_HALF_PX, e.y - uy * ANN_TICK_HALF_PX);
+        ctx.lineTo(e.x + ux * ANN_TICK_HALF_PX, e.y + uy * ANN_TICK_HALF_PX);
+        ctx.stroke();
+      }
+    }
+    this._drawLineLabel(a.label, p1, p2, this.style.annMeasure);
+    ctx.restore();
+  }
+
+  // Radius line (R): a dashed blue construction segment (apex → centre) with an
+  // italic label at the midpoint.
+  _drawRadiusLine(a) {
+    const ctx = this.ctx;
+    const p1 = this.worldToPx(a.p1);
+    const p2 = this.worldToPx(a.p2);
+    ctx.save();
+    ctx.strokeStyle = this.style.annRadius;     // BLC
+    ctx.fillStyle = this.style.annRadius;
+    ctx.lineWidth = ANN_MEASURE_WIDTH_PX;
+    ctx.setLineDash(a.dashed === false ? [] : ANN_DASH);
+    ctx.beginPath();
+    ctx.moveTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    this._drawLineLabel(a.label, p1, p2, this.style.annRadius);
+    ctx.restore();
+  }
+
+  // Italic text label (v₀ = 0) below its world anchor, in the worksheet serif-
+  // italic label font (SC).
+  _drawTextLabel(a) {
+    const ctx = this.ctx;
+    const p = this.worldToPx(a.world);
+    ctx.save();
+    ctx.fillStyle = this.style.labelColor;      // SC (worksheet)
+    // italic default; a non-italic text_label falls back to the bold-serif face.
+    ctx.font = a.italic === false ? this.style.annLabelFont : this.style.labelFont;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText(a.text, p.x, p.y + ANN_LABEL_OFFSET_PX);
+    ctx.restore();
+  }
+
+  // Shared: an italic measurement label placed just past the midpoint of a line,
+  // coloured to match the line so line + label read as one unit.
+  _drawLineLabel(label, p1, p2, color) {
+    const ctx = this.ctx;
+    const mx = (p1.x + p2.x) / 2;
+    const my = (p1.y + p2.y) / 2;
+    ctx.fillStyle = color;
+    ctx.font = this.style.labelFont;            // worksheet serif-italic
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, mx + ANN_TICK_HALF_PX + ANN_LABEL_PAD_PX, my);
+  }
+
   // Kinetic-theory box walls (sim_kinetic_theory P4). The reflecting boundary is
   // the schema-declared box {min,max} on the box_wall_reflection collision —
   // drawn from there (NOT a hardcoded rect), so a re-authored box moves the walls
@@ -1857,7 +2153,7 @@ export class Canvas2DRenderer {
     const w = Math.abs(b.x - a.x);
     const h = Math.abs(b.y - a.y);
     ctx.save();
-    ctx.strokeStyle = STYLE.surface;
+    ctx.strokeStyle = this.style.surface;
     ctx.lineWidth = 2.5;
     ctx.lineJoin = 'round';
     ctx.beginPath();
@@ -1890,7 +2186,7 @@ export class Canvas2DRenderer {
       const items = entry.source === 'constraints' ? loaded.constraints : loaded.forces;
       for (const obj of items ?? []) {
         if (!obj || obj.constructor?.name !== entry.className) continue;
-        entry.draw(this, obj, bodyById);
+        entry.draw(this, obj, bodyById, loaded);
       }
     }
   }
@@ -1900,7 +2196,7 @@ export class Canvas2DRenderer {
     const ctx = this.ctx;
     ctx.beginPath();
     ctx.arc(a.x, a.y, 3.5, 0, 2 * Math.PI);
-    ctx.fillStyle = STYLE.pivot;
+    ctx.fillStyle = this.style.pivot;
     ctx.fill();
   }
 
@@ -1911,19 +2207,19 @@ export class Canvas2DRenderer {
     const ctx = this.ctx;
     ctx.beginPath();
     ctx.arc(p.x, p.y, 7, 0, 2 * Math.PI);
-    ctx.strokeStyle = STYLE.rod;
+    ctx.strokeStyle = this.style.rod;
     ctx.lineWidth = 2;
     ctx.stroke();
     ctx.beginPath();
     ctx.arc(p.x, p.y, 2.5, 0, 2 * Math.PI);
-    ctx.fillStyle = STYLE.pivot;
+    ctx.fillStyle = this.style.pivot;
     ctx.fill();
   }
 
   // Rigid rod: solid bar from anchor to body, plus a pivot dot.
   drawRod(a, p) {
     const ctx = this.ctx;
-    ctx.strokeStyle = STYLE.rod;
+    ctx.strokeStyle = this.style.rod;
     ctx.lineWidth = 2.5;
     ctx.lineCap = 'round';
     ctx.beginPath();
@@ -1938,7 +2234,7 @@ export class Canvas2DRenderer {
   // be dashed — but the engine only models an active Tension here.
   drawRope(a, p) {
     const ctx = this.ctx;
-    ctx.strokeStyle = STYLE.rope;
+    ctx.strokeStyle = this.style.rope;
     ctx.lineWidth = 1.75;
     ctx.lineCap = 'round';
     ctx.beginPath();
@@ -1956,7 +2252,7 @@ export class Canvas2DRenderer {
     const dx = p.x - a.x;
     const dy = p.y - a.y;
     const L = Math.hypot(dx, dy);
-    ctx.strokeStyle = STYLE.spring;
+    ctx.strokeStyle = this.style.spring;
     ctx.lineWidth = 1.75;
     ctx.lineCap = 'round';
     ctx.beginPath();
@@ -2007,7 +2303,10 @@ export class Canvas2DRenderer {
     const suppressed = collectSuppressedIds(loaded.render_groups);
     for (const body of loaded.bodies) {
       if (isRenderSuppressed(body, suppressed)) continue;
-      const p = this.worldToPx(body.position);
+      // Drawn position, not raw position: a body resting on a surface is lifted
+      // by one glyph radius so it sits ON the surface (F2). Every overlay below
+      // (velocity arrow, orientation arrow, label) hangs off this same anchor.
+      const p = this.bodyAnchorPx(body, loaded);
       const isCharge = typeof body.charge === 'number';
       // Body glyph — T4 shape dispatch. Default = the 10px disk; a body
       // carrying a registered renderShape.kind (rod, …) draws its own
@@ -2021,8 +2320,8 @@ export class Canvas2DRenderer {
       // drawn from the body centre.
       const vMag = Math.hypot(body.velocity.x, body.velocity.y);
       if (vMag > 1e-6) {
-        ctx.strokeStyle = STYLE.velocity;
-        ctx.fillStyle = STYLE.velocity;
+        ctx.strokeStyle = this.style.velocity;
+        ctx.fillStyle = this.style.velocity;
         ctx.lineWidth = 2;
         const dx = body.velocity.x * VELOCITY_SCALE_PX_PER_M_PER_S;
         const dy = -body.velocity.y * VELOCITY_SCALE_PX_PER_M_PER_S;
@@ -2049,15 +2348,25 @@ export class Canvas2DRenderer {
       // Label, just above the glyph. A shaped body shows its descriptive
       // renderShape.label (notation parity, e.g. "conducting rod"); a
       // plain body shows its id.
-      const labelText = body.renderShape?.label ?? body.id;
-      ctx.fillStyle = '#444';
-      ctx.font = '11px system-ui, sans-serif';
-      ctx.textAlign = 'center';
-      // Drawer may request a baseline: disk labels sit ABOVE (default
-      // 'bottom'); the rod labels BELOW its lower tip ('top') to clear
-      // top-edge overlays like the induction-loop EMF label.
-      ctx.textBaseline = labelAnchor.baseline ?? 'bottom';
-      ctx.fillText(labelText, labelAnchor.x, labelAnchor.y);
+      // k015_worksheet_parity_live_sim_v1 W4: under the WORKSHEET theme the raw
+      // internal body id ("ball") is authoring notation, not printed-diagram
+      // notation — the annotation layer's position labels (A / B) name the
+      // object instead, so suppress the id label here to avoid double-labelling
+      // (and its collision with the A label). Gated on the worksheet flag, so the
+      // default look draws the id label exactly as before (byte-identical).
+      const showsAnnotationLabels =
+        this.style.annotationLayer && !body.renderShape?.label;
+      if (!showsAnnotationLabels) {
+        const labelText = body.renderShape?.label ?? body.id;
+        ctx.fillStyle = this.style.labelColor;
+        ctx.font = this.style.labelFont;
+        ctx.textAlign = 'center';
+        // Drawer may request a baseline: disk labels sit ABOVE (default
+        // 'bottom'); the rod labels BELOW its lower tip ('top') to clear
+        // top-edge overlays like the induction-loop EMF label.
+        ctx.textBaseline = labelAnchor.baseline ?? 'bottom';
+        ctx.fillText(labelText, labelAnchor.x, labelAnchor.y);
+      }
     }
   }
 
@@ -2070,12 +2379,12 @@ export class Canvas2DRenderer {
     ctx.beginPath();
     ctx.arc(p.x, p.y, BODY_RADIUS_PX, 0, 2 * Math.PI);
     if (isCharge) {
-      ctx.fillStyle = body.charge >= 0 ? STYLE.charge_pos : STYLE.charge_neg;
+      ctx.fillStyle = body.charge >= 0 ? this.style.charge_pos : this.style.charge_neg;
     } else {
-      ctx.fillStyle = STYLE.particle;
+      ctx.fillStyle = this.style.particle;
     }
     ctx.fill();
-    ctx.strokeStyle = STYLE.particleEdge;
+    ctx.strokeStyle = this.style.particleEdge;
     ctx.lineWidth = 1.25;
     ctx.stroke();
     if (isCharge) {
@@ -2099,8 +2408,8 @@ export class Canvas2DRenderer {
     const ends = rodEndpointsWorld(body.position, rs.length_m, rs.angle_rad ?? 0);
     const pa = this.worldToPx(ends.a);
     const pb = this.worldToPx(ends.b);
-    ctx.strokeStyle = STYLE.rod;
-    ctx.fillStyle = STYLE.rod;
+    ctx.strokeStyle = this.style.rod;
+    ctx.fillStyle = this.style.rod;
     ctx.lineWidth = 4;
     ctx.lineCap = 'round';
     ctx.beginPath();
@@ -2138,8 +2447,8 @@ export class Canvas2DRenderer {
       const labelAnchor = drawer(this, group, pxAnchor);
       // Glyph label — classroom notation (e.g. "charged line"), never an
       // internal member id.
-      ctx.fillStyle = '#444';
-      ctx.font = '11px system-ui, sans-serif';
+      ctx.fillStyle = this.style.labelColor;
+      ctx.font = this.style.labelFont;
       ctx.textAlign = 'center';
       ctx.textBaseline = labelAnchor.baseline ?? 'bottom';
       ctx.fillText(group.label ?? group.kind, labelAnchor.x, labelAnchor.y);
@@ -2149,9 +2458,9 @@ export class Canvas2DRenderer {
   // Charge-tinted glyph color (matches the disk convention: red +, blue −;
   // neutral edge for an uncharged / mixed group).
   _chargeGlyphColor(sign) {
-    if (sign > 0) return STYLE.charge_pos;
-    if (sign < 0) return STYLE.charge_neg;
-    return STYLE.particleEdge;
+    if (sign > 0) return this.style.charge_pos;
+    if (sign < 0) return this.style.charge_neg;
+    return this.style.particleEdge;
   }
 
   // Extended `line` glyph: a thick charged segment between the load-computed
@@ -2211,11 +2520,26 @@ export class Canvas2DRenderer {
   // drawArrow moved to ./render_primitives.js (roadmap F1 P2); call sites use
   // the free drawArrow(this.ctx, tail, head, headLen).
 
+  // Where a body's glyph is actually DRAWN, in canvas px — the single source of
+  // truth for the disk, its velocity/orientation arrows, its label anchor and
+  // click-picking. It is the body's TRUE position, with no offset of any kind: the
+  // glyph rests on a surface because the SURFACE is drawn one glyph radius into its
+  // solid side (drawnSurface), not because the ball is lifted off it. The old lift
+  // (F2) is gone — it had to switch off in free flight, and every switch-off popped
+  // the glyph by a full radius. See drawnSurfaceGeometry's docstring.
+  //
+  // Kept as a method (rather than inlining worldToPx at ~8 call sites) so the
+  // glyph, its arrows, its label and its hit-target can never disagree about where
+  // the body is.
+  bodyAnchorPx(body) {
+    return this.worldToPx(body.position);
+  }
+
   // Pick a body whose disk contains the given pixel coordinate (for inspector).
   pickBodyAt(loaded, pxPoint) {
     if (!loaded) return null;
     for (const body of loaded.bodies) {
-      const p = this.worldToPx(body.position);
+      const p = this.bodyAnchorPx(body, loaded);
       const dx = pxPoint.x - p.x;
       const dy = pxPoint.y - p.y;
       if (Math.hypot(dx, dy) <= BODY_RADIUS_PX + 4) return body;

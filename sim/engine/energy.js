@@ -222,6 +222,25 @@ export class ConservationTracker {
     this._W_external += deltaJoules;
   }
 
+  // dawn_last_burn_live_sim_v1 D2: re-zero the CUMULATIVE work/dissipation
+  // budget so a timeline-scrub replay-from-t=0 re-accumulates each contribution
+  // exactly once. `_dissipated` and `_W_external` are running integrals/sums —
+  // the continuous dissipation `-P·dt`, the discrete `addDissipated` (a merge's
+  // U_thermal), and the discrete `addExternalWork` (a burn's fuel energy) all
+  // ADD each tick. seekTo() restores state0 + t=0 (SimRunner.reset) but replays
+  // WITHOUT rebuilding the tracker, so without this every such contribution
+  // DOUBLE-counts on the second pass (D1 §3-ii confirmed W_external ratio exactly
+  // 2.0 for a burn, and the merge's U_thermal leaks the same pre-existing way).
+  // Zeroing these two re-establishes a clean budget; `_initialTotal` / `_maxScale`
+  // / `_history` are deliberately PRESERVED so the drift is still measured against
+  // the true t=0 baseline (the state0 total is deterministic, so the preserved
+  // baseline equals a fresh run's). One library method fixes BOTH the burn and the
+  // pre-existing merge scrub-leak. Called from ui/timeline_scrub.js::seekTo.
+  reset() {
+    this._dissipated = 0;
+    this._W_external = 0;
+  }
+
   current() {
     let K = 0;
     let K_rot = 0;

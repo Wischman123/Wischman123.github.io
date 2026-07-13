@@ -338,6 +338,41 @@ export const SCENES = [
     preset: 'ap_c',
     bandsSnapshots: 101
   },
+  // dawn_last_burn_live_sim_v1 D2 — verification fixture for the scheduled
+  // impulsive-Δv burn primitive. A scaled circular orbit (GM=1, r=1, v=1) + one
+  // prograde `maneuvers` burn (Δv/v = F001's 0.0802413) reshapes into the analytic
+  // ellipse r_apo/r = 1.400733. The burn books ΔK_burn via addExternalWork, so the
+  // scene EMITS energy.total and the SINGLE global closure holds across the burn
+  // (drift_budget ~1e-12) — NO skipCheckBands; the energy.total closure IS a primary
+  // weld. End-state + non-periodic drift budget ⇒ bandsSnapshots 0. published:false —
+  // a verification fixture (like the _proof scenes), out of the public dropdown.
+  {
+    id: 'maneuver_verify_orbit',
+    path: 'scenarios/ap_c/maneuver_verify_orbit.json',
+    preset: 'ap_c',
+    bandsSnapshots: 0,
+    published: false
+  },
+  // dawn_last_burn_live_sim_v1 D3 — the full F001 "Dawn's Last Burn" story as one
+  // welded scene: Dawn in a scaled circular orbit (GM=1, r0=1, v_A=1) fires a
+  // scheduled prograde `maneuvers` burn (Δv/v_A = F001's 0.0802) that reshapes the
+  // circle into an ellipse (r_C/r0 = 1.40072), coasts to apoapsis C, where a
+  // GRAVITY-BOUND debris fragment sticks (perfectly_inelastic, ΔK → U_thermal). ONE
+  // global energy.total closure: the burn books ΔK via addExternalWork, the merge
+  // deposits ΔK via addDissipated, so the drift budget holds across the WHOLE run
+  // (~5e-12). A burn injects EXTERNAL momentum, so this scene opts OUT of the
+  // collision-triggered p_linear closure (scene.js maneuver exclusion) — like a
+  // box_wall gas. End-state + non-periodic drift budget ⇒ bandsSnapshots 0.
+  // Published 2026-07-13 by user decision at the D4 gate ("publish it; I can take
+  // it down if I don't like it") — the live dropdown IS the review surface. Emitted
+  // by the orbit_burn_collision archetype — re-run
+  // tools/sim_authoring/emit_dawn_last_burn.py to regenerate.
+  {
+    id: 'dawn_last_burn',
+    path: 'scenarios/ap_c/dawn_last_burn.json',
+    preset: 'ap_c',
+    bandsSnapshots: 0
+  },
   // Quick-win pack — quadratic-drag terminal velocity. The cv² Drag model
   // was implemented + unit-tested (forces.js) but had no committed scene.
   // 1 kg sphere falling from 100 m: F_drag=cv² (c=0.2) balances mg at
@@ -1432,6 +1467,27 @@ export const SCENES = [
     skipCheckBands: true,
     skipDriftBaseline: true,
     rodEnergyModel: 'undamped'
+  },
+  // k015_worksheet_parity_live_sim_v1 Phase W2 — the FULL-STORY K015 scene:
+  // rest at A → straight ramp → concave polyline valley → convex circular hill
+  // → lift-off at separation → ballistic tail, emitted by the archetype
+  // tools/sim_authoring/archetypes.py::_circular_hilltop_full. W1 proved the
+  // chain clears the welded-scene drift band at 0.5°/kink; this scene runs it
+  // end to end (77 surfaces, duration 2.925 s, drift −0.176%). Band-checked via
+  // sim:check-bands (bandsSnapshots 0 — the at-selectors build the recorder
+  // regardless; energy closure reads the tracker history). published:false until
+  // the W6 verdict (the standalone app's public scene list is user-visible, so
+  // the conservative default holds until Brendan approves). skipDriftBaseline:
+  // a 2.9 s multi-surface penalty-contact run's byte-identical t_final would
+  // false-fail on any future 1-ULP engine change (same fragility rationale the
+  // chaos scene skips for) — the drift-budget closure is the durable gate.
+  {
+    id: 'k015_eulers_hilltop_full',
+    path: 'scenarios/1st_year/k015_eulers_hilltop_full.json',
+    preset: '1st_year',
+    bandsSnapshots: 0,
+    published: false,
+    skipDriftBaseline: true
   }
 ];
 

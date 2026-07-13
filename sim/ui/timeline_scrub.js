@@ -69,10 +69,17 @@ export function seekTo(runner, targetT) {
 
   const steps = stepsToTarget(runner, targetT);
 
-  // Reset clears t and restores state0. Tracker is intentionally NOT
-  // reset (its drift history would be misleading); same contract as
-  // the existing `runner.reset()` call from `loadAndStart`.
+  // Reset clears t and restores state0. `runner.reset()` restores state0 but
+  // does NOT touch the tracker (its drift history/baseline are kept — the UI
+  // Reset button + embed restart get a clean tracker by rebuilding via loadScene
+  // instead). For a SCRUB-replay, though, that would DOUBLE-count the tracker's
+  // cumulative work/dissipation on the second pass (dawn_last_burn_live_sim_v1
+  // D2 / D1 §3-ii: a burn's W_external, and — pre-existing — a merge's U_thermal).
+  // So re-zero just the cumulative budget (accumulators) here, keeping the drift
+  // baseline, so the replay re-accumulates each contribution exactly once and a
+  // scrub is byte-identical to a fresh run INCLUDING the energy books.
   runner.reset();
+  runner.loaded?.tracker?.reset?.();
 
   // `runner.reset()` already fires `onTick` once with t=0. Suppress
   // the per-step onTick during the rebuild so we don't repaint /

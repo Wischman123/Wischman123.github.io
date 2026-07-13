@@ -29,6 +29,16 @@ const VALID_FORCE_TYPES = new Set(['gravity', 'spring', 'drag', 'friction', 'rol
 // scene.schema.json $defs.constraint.properties.type.enum
 // (sim/__tests__/schema_browser_lockstep.test.js pair 5).
 const VALID_CONSTRAINT_TYPES = new Set(['rod', 'string', 'body_rod']);
+// k015_worksheet_parity_live_sim_v1 W4 — worksheet-annotation record types.
+// Must stay lockstep with scene.schema.json $defs.annotation.properties.type.enum
+// (sim/__tests__/schema_browser_lockstep.test.js pair 8).
+const VALID_ANNOTATION_TYPES = new Set(['position_label', 'measure_line', 'radius_line', 'text_label']);
+// dawn_last_burn_live_sim_v1 D2 — scheduled-burn heading enum. Must stay lockstep
+// with scene.schema.json $defs.maneuver.properties.direction.oneOf[0].enum AND
+// with MANEUVER_DIRECTIONS (sim/engine/maneuvers.js) — asserted by
+// maneuver_schema.test.js so a node-only patch cannot pass headless while the
+// embed rejects the scene at load.
+const VALID_MANEUVER_DIRECTIONS = new Set(['prograde', 'retrograde']);
 // sim_oracle_fidelity Phase P1 — `outputs[].at` predicate identifiers.
 // MUST stay lockstep with scene.schema.json (outputs.at.oneOf enums) AND
 // with Object.keys(PREDICATES) in sim/engine/output_events.js — asserted by
@@ -67,6 +77,12 @@ export function validateScene(scene) {
     }
     if (typeof sd.g !== 'number' || sd.g < 0 || sd.g > 20) {
       push('/scene_defaults/g', 'must be a number in [0, 20]');
+    }
+    // Optional declared U_g zero line. Unbounded (a scene may put its origin
+    // anywhere), so the only failure mode is a non-number — which would make
+    // `y - datum_y` NaN and silently poison every energy readout.
+    if (sd.gravity_datum_y !== undefined && typeof sd.gravity_datum_y !== 'number') {
+      push('/scene_defaults/gravity_datum_y', 'must be a number when present');
     }
     for (const k of ['air_resistance', 'spring_mass', 'rope_mass']) {
       if (typeof sd[k] !== 'boolean') push(`/scene_defaults/${k}`, 'required boolean');
@@ -113,6 +129,34 @@ export function validateScene(scene) {
       push('/constraints', 'must be an array');
     } else {
       scene.constraints.forEach((c, i) => validateConstraint(c, `/constraints/${i}`, push));
+    }
+  }
+
+  // annotations (optional) — k015_worksheet_parity_live_sim_v1 W4. Mirrors the
+  // scene.schema.json $defs.annotation oneOf so the iframe embed (which boots
+  // through THIS validator, never Ajv) rejects a malformed worksheet annotation
+  // with a field-named message, exactly like the CLI. A scene WITHOUT the block
+  // is untouched (the whole leg is skipped when the key is absent).
+  if (scene.annotations !== undefined) {
+    if (!Array.isArray(scene.annotations)) {
+      push('/annotations', 'must be an array');
+    } else {
+      scene.annotations.forEach((a, i) => validateAnnotation(a, `/annotations/${i}`, push));
+    }
+  }
+
+  // maneuvers (optional) — dawn_last_burn_live_sim_v1 D2. Mirrors
+  // scene.schema.json $defs.maneuver so the iframe embed (which boots through
+  // THIS validator, never Ajv) rejects a malformed scheduled burn with a
+  // field-named message, exactly like the CLI. A node-only patch would pass
+  // headless yet fail in-app without this leg — maneuver_schema.test.js's
+  // validator-agreement test is the regression guard. A scene WITHOUT the block
+  // is untouched (the whole leg is skipped when the key is absent).
+  if (scene.maneuvers !== undefined) {
+    if (!Array.isArray(scene.maneuvers)) {
+      push('/maneuvers', 'must be an array');
+    } else {
+      scene.maneuvers.forEach((m, i) => validateManeuver(m, `/maneuvers/${i}`, push));
     }
   }
 
@@ -533,6 +577,68 @@ function validateConstraint(c, base, push) {
   if (c.c_damping !== undefined &&
       (typeof c.c_damping !== 'number' || !Number.isFinite(c.c_damping) || c.c_damping < 0)) {
     push(`${base}/c_damping`, 'must be a finite number ≥ 0');
+  }
+}
+
+// k015_worksheet_parity_live_sim_v1 W4 — mirror scene.schema.json $defs.annotation.
+// position_label {text, world}; measure_line {label, p1, p2, ticks?};
+// radius_line {label, p1, p2, dashed?}; text_label {text, world, italic?}. Every
+// reject message names the offending field so a broken worksheet layer surfaces
+// in the embed banner exactly as it does at the CLI.
+function validateAnnotation(a, base, push) {
+  if (typeof a !== 'object' || a === null) { push(base, 'must be an object'); return; }
+  if (!VALID_ANNOTATION_TYPES.has(a.type)) {
+    push(`${base}/type`, `must be one of ${[...VALID_ANNOTATION_TYPES].join(', ')}`);
+    return;
+  }
+  const nonEmptyStr = (v) => typeof v === 'string' && v.length > 0;
+  if (a.type === 'position_label' || a.type === 'text_label') {
+    if (!nonEmptyStr(a.text)) push(`${base}/text`, 'required non-empty string');
+    if (!isVec2(a.world)) push(`${base}/world`, 'required {x, y} object with finite numbers');
+    if (a.type === 'text_label' && a.italic !== undefined && typeof a.italic !== 'boolean') {
+      push(`${base}/italic`, 'must be a boolean when present');
+    }
+  } else if (a.type === 'measure_line' || a.type === 'radius_line') {
+    if (!nonEmptyStr(a.label)) push(`${base}/label`, 'required non-empty string');
+    if (!isVec2(a.p1)) push(`${base}/p1`, 'required {x, y} object with finite numbers');
+    if (!isVec2(a.p2)) push(`${base}/p2`, 'required {x, y} object with finite numbers');
+    if (a.type === 'measure_line' && a.ticks !== undefined && typeof a.ticks !== 'boolean') {
+      push(`${base}/ticks`, 'must be a boolean when present');
+    }
+    if (a.type === 'radius_line' && a.dashed !== undefined && typeof a.dashed !== 'boolean') {
+      push(`${base}/dashed`, 'must be a boolean when present');
+    }
+  }
+}
+
+// dawn_last_burn_live_sim_v1 D2 — mirror scene.schema.json $defs.maneuver.
+// { body_id (non-empty string), t_burn_s (> 0), delta_v_m_per_s (> 0),
+// direction ('prograde' | 'retrograde' | { x, y }) }. Every reject message names
+// the offending field so a broken burn surfaces in the embed banner exactly as
+// it does at the CLI. maneuver_schema.test.js asserts this agrees with Ajv on the
+// same blocks, so a node-only patch can't silently pass headless.
+const MANEUVER_KEYS = new Set(['body_id', 't_burn_s', 'delta_v_m_per_s', 'direction']);
+function validateManeuver(m, base, push) {
+  if (typeof m !== 'object' || m === null) { push(base, 'must be an object'); return; }
+  // additionalProperties: false — reject a stray/misspelled field, matching the
+  // schema $defs.maneuver (so the two validators agree; see maneuver_schema.test.js).
+  for (const k of Object.keys(m)) {
+    if (!MANEUVER_KEYS.has(k)) push(`${base}/${k}`, 'unknown key (additionalProperties: false)');
+  }
+  if (typeof m.body_id !== 'string' || m.body_id.length === 0) {
+    push(`${base}/body_id`, 'required non-empty string');
+  }
+  if (typeof m.t_burn_s !== 'number' || !Number.isFinite(m.t_burn_s) || m.t_burn_s <= 0) {
+    push(`${base}/t_burn_s`, 'must be a finite number > 0 (a burn cannot be scheduled at or before t=0)');
+  }
+  if (typeof m.delta_v_m_per_s !== 'number' || !Number.isFinite(m.delta_v_m_per_s) || m.delta_v_m_per_s <= 0) {
+    push(`${base}/delta_v_m_per_s`, 'must be a finite magnitude > 0 (the heading is carried by direction)');
+  }
+  // direction: a named heading OR an explicit { x, y } unit-resolvable vector.
+  const named = typeof m.direction === 'string' && VALID_MANEUVER_DIRECTIONS.has(m.direction);
+  const vec = isVec2(m.direction);
+  if (!named && !vec) {
+    push(`${base}/direction`, `must be one of ${[...VALID_MANEUVER_DIRECTIONS].join(', ')} or an explicit {x, y} vector`);
   }
 }
 
