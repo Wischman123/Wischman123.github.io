@@ -936,17 +936,38 @@
          AND IT OSCILLATES IN TIME.  That is what makes it a WAVE.
 
          The amplitude A(t) is not the body's displacement -- it is the
-         perimeter's OWN flexural mode: a lightly damped oscillator (1.5 Hz)
+         perimeter's OWN flexural mode: a lightly damped oscillator (1.52 Hz)
          pumped by the body's motion.  Driving A straight off (scale - 1), as
          this first did, never crosses neutral: the edges bulge and relax and
          that is a static distortion that GROWS, not a standing wave.  A real
          standing wave swings THROUGH zero -- crest becomes trough becomes crest.
-         This one crosses zero ~22 times a beat.
+         This one crosses zero 19 times a beat.
+
+         AND IT WAVES WHILE IT GROWS -- which took a second correction, because
+         the first one did not go far enough.  Pumped by the body's displacement
+         ALONE, the rim is still quasi-static during the CHARGE: a 1.8s inflation
+         ramp driving a 0.66s mode.  It does not ring on the ramp, it TRACKS it --
+         so the rim swelled outward, monotonically, for the entire growth, and only
+         began to move when the discharge hit.  No amount of retuning fixes that;
+         a linear mode rings at its own frequency only if the drive carries energy
+         AT that frequency, and a smooth 1.8s ramp carries almost none.
+
+         The missing drive was already on the page.  THE MEMBRANE IS FED BY A WAVE
+         -- the dashes streaming inward along the API lines.  The ask does not
+         arrive as one smooth shove; it arrives as an oscillating stream, and a
+         wave landing on a boundary drives that boundary AT THE WAVE'S FREQUENCY.
+         So the rim rings WHILE IT CHARGES, because the thing feeding it oscillates.
+         The stream runs at 14 cycles per beat (1.56 Hz) against the rim's own
+         1.52 Hz -- essentially ON RESONANCE, the rim tuned to its own supply --
+         which is why so small a drive suffices.  It acts only while inflow is
+         happening, so the hexagon is still exactly sharp at rest.
 
          It also RINGS ON after the body has stopped.  The membrane is still
-         waving while the adapters discharge (22% of peak through that window),
-         decaying to 5% by the end of the beat.  And L1's perimeter is set going
-         by the WAVEFRONT'S BLOW -- strike a membrane and its edge rings.
+         waving while the adapters discharge (26% of peak through that window),
+         decaying to 4% by the end of the beat.  And L1's perimeter is set going
+         by the WAVEFRONT'S BLOW -- strike a membrane and its edge rings.  L1 needs
+         no stream of its own: its swell lasts ~one flexural period, so the strike's
+         ring already fills it.
 
          WHY A TABLE AND NOT AN ODE INTEGRATED HERE
          ------------------------------------------
@@ -965,8 +986,24 @@
          ====================================================================== */
       (function () {
         /* >>> GENERATED RING TABLE -- gen_core_springs.py -- DO NOT HAND-EDIT */
-        /* GENERATED -- the perimeter's flexural ring, T_n=0.66s (1.5 Hz) zeta=0.08.
-           One steady-state beat of  q'' + 2*zf*wf*q' + wf^2*q = wf^2*(scale-1).
+        /* GENERATED -- the perimeter's flexural ring, T_n=0.66s (1.52 Hz) zeta=0.08.
+           One steady-state beat of
+
+             q'' + 2*zf*wf*q' + wf^2*q = wf^2*( (scale-1)  +  0.25 * max(v,0) * sin(2pi*14*t/BEAT) )
+
+           The first term is the BULGE: the body swells, the rim bows out.
+           The second is why the rim WAVES WHILE IT GROWS instead of merely
+           bulging.  Forced by the bulge alone the rim is quasi-static -- a
+           1.8s inflation ramp driving a 0.66s mode -- so it TRACKS the ramp
+           and does not ring: monotone for the whole growth, dead until the
+           discharge.  But the membrane is FED BY A WAVE (the wave-travel
+           dashes streaming in along the API lines), and a wave landing on a
+           boundary drives it at the WAVE's frequency.  14 cycles/beat
+           = 1.56 Hz against the rim's 1.52 Hz -- ON RESONANCE, so the
+           drive is tiny (Q ~ 6 does the work).  max(v,0): the stream shakes
+           the rim only while inflow is happening, so the hexagon is still
+           EXACTLY sharp at rest.  Whole cycles per beat, so the loop closes.
+
            A TABLE, not an ODE integrated live, for two reasons: the harness
            PINS the CSS clock and jumps around in it, which a real-time
            integrator would ignore; and steady state is what makes the loop
