@@ -98,6 +98,7 @@
 
     var iframe = null;
     var activated = false;
+    var booted = false;     // the app is up and listening (set in ok(), below)
 
     function activate() {
       if (activated) return;
@@ -116,6 +117,7 @@
       var settled = false;
       function fail() {
         if (settled) return; settled = true;
+        booted = false;
         stage.classList.remove('is-activating');
         stage.classList.add('is-failed');
         fallback.hidden = false;
@@ -125,8 +127,12 @@
       }
       function ok() {
         if (settled) return; settled = true;
+        booted = true;
         stage.classList.remove('is-activating');
         stage.classList.add('is-booted'); // CSS reveals the iframe over the poster
+        // Post nothing before this point: a message sent to an iframe that has not
+        // finished loading is simply dropped. Re-evaluate now that it can be heard.
+        update();
       }
 
       var timer = setTimeout(function () {
@@ -172,33 +178,100 @@
     //
     // Thresholds [0, PLAY_RATIO] so the callback fires on BOTH edges (a single
     // 0.25 threshold never reports the ratio==0 crossing that arms the restart).
+    // VISIBLE IS TWO CONDITIONS, NOT ONE.
+    //
+    //   (a) the stage is in the viewport            -> IntersectionObserver
+    //   (b) the frame it lives in is the SHOWN one  -> the `.is-shown` class
+    //
+    // (b) is what the STORY block needs and the sims page does not, and leaving it
+    // out is what made "scroll the sim away and come back" do nothing on the home
+    // page. The story is a scrollytelling CROSS-FADE: every beat is a `.frame`
+    // stacked absolutely inside ONE sticky stage, and the reader moves between beats
+    // by scrolling. The sticky stage never leaves the viewport — so the
+    // IntersectionObserver, watching the stage alone, reported the sim as
+    // permanently visible and fired exactly ZERO messages for the whole page. The
+    // sim ran on behind the other beats, finished unseen, and coming back showed a
+    // dead end-state that never moved again. Beat-changes move a CLASS, not the
+    // scroll position, so the observer could never have seen them: (b) needs a
+    // MutationObserver, which is why watching harder with IO alone would not fix it.
+    //
+    // On the sims page there is no `.frame` ancestor, so frameShown() is constantly
+    // true and every transition below reduces to exactly the previous behaviour.
+    var wasFullyOut = false;
+    var lastRatio = 0;
+    var lastPost = null;
+
+    // True when the exhibit is not inside a cross-fade at all (the sims page), and
+    // in the story's no-JS fallback layout, where every frame is laid out visibly
+    // and `is-shown` is never set on any of them.
+    function frameShown() {
+      var fr = stage.closest ? stage.closest('.frame') : null;
+      if (!fr) return true;
+      var sc = fr.closest('.scrolly');
+      if (sc && !sc.classList.contains('is-js')) return true;
+      return fr.classList.contains('is-shown');
+    }
+
+    // Both observers below can fire repeatedly for one real transition. Collapse
+    // them so the app sees each state change once.
+    function send(type) {
+      if (type === lastPost) return;
+      lastPost = type;
+      post(iframe, type);
+    }
+
+    function update() {
+      var shown = frameShown();
+      var canPlay = lastRatio >= PLAY_RATIO && shown;
+      // "Fully out" now means off-screen OR cross-faded away. Either one means the
+      // reader cannot see it, so either one must ARM the replay. Threshold flicker
+      // (0 < ratio < PLAY_RATIO while still shown) still pauses WITHOUT arming, so
+      // a nudge of the wheel never restarts a run the reader is watching.
+      if (lastRatio <= 0 || !shown) wasFullyOut = true;
+
+      // Track visibility even before boot, so an exhibit activated while in view is
+      // never mistaken for a scroll-back and restarted on first sight.
+      if (!booted || !iframe) {
+        if (canPlay) wasFullyOut = false;
+        return;
+      }
+      if (!canPlay) { send(MSG_PAUSE); return; }
+      if (wasFullyOut) {
+        wasFullyOut = false;
+        lastPost = null;          // a replay must always go out, even back-to-back
+        send(MSG_RESTART);
+      } else {
+        send(MSG_RESUME);
+      }
+    }
+
     if ('IntersectionObserver' in window) {
-      var wasFullyOut = false;
       var io = new IntersectionObserver(function (entries) {
         entries.forEach(function (entry) {
-          var ratio = entry.intersectionRatio;
-          var canPlay = entry.isIntersecting && ratio >= PLAY_RATIO;
-          if (ratio <= 0) wasFullyOut = true;
-          // Track visibility even before boot, so an exhibit activated while in
-          // view is never mistaken for a scroll-back and restarted on first sight.
-          if (!iframe) {
-            if (canPlay) wasFullyOut = false;
-            return;
-          }
-          if (!canPlay) { post(iframe, MSG_PAUSE); return; }
-          if (wasFullyOut) {
-            wasFullyOut = false;
-            post(iframe, MSG_RESTART);
-          } else {
-            post(iframe, MSG_RESUME);
-          }
+          lastRatio = entry.isIntersecting ? entry.intersectionRatio : 0;
+          update();
         });
       }, { threshold: [0, PLAY_RATIO] });
       io.observe(stage);
+    } else {
+      lastRatio = 1;   // no IO: never hold the exhibit paused on a false negative.
     }
-    // Also pause when the tab is hidden (never animate an unseen embed).
+
+    // The cross-fade swaps a CLASS; no scroll happens, so the IntersectionObserver
+    // above never hears about it. This is the other half of the visibility signal.
+    var crossfadeFrame = stage.closest ? stage.closest('.frame') : null;
+    if (crossfadeFrame && 'MutationObserver' in window) {
+      new MutationObserver(update).observe(crossfadeFrame,
+        { attributes: true, attributeFilter: ['class'] });
+    }
+
+    // Also pause when the tab is hidden (never animate an unseen embed), and pick
+    // back up on return — the reader never scrolled away, so this resumes mid-run
+    // rather than replaying.
     document.addEventListener('visibilitychange', function () {
-      if (iframe && document.hidden) post(iframe, MSG_PAUSE);
+      if (!iframe || !booted) return;
+      if (document.hidden) send(MSG_PAUSE);
+      else update();
     });
 
     // (5) A rotate / window resize needs no showcase-side refit: the iframe is

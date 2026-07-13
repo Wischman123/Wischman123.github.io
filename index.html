@@ -859,11 +859,21 @@
      click boots the simulation). Width matches the page content column. */
   #story .frame--img .fill img,#story .frame .stack img{cursor:zoom-in;}
   #story .lightbox{position:fixed;inset:0;z-index:1200;display:none;cursor:zoom-out;
-    align-items:center;justify-content:center;padding:clamp(16px,4vw,44px);
+    overflow-y:auto;padding:clamp(16px,4vw,44px);
     background:color-mix(in srgb,var(--ink) 82%, transparent);}
   #story .lightbox.is-open{display:flex;}
-  #story .lightbox img{display:block;width:min(1180px,94vw);height:auto;
-    max-width:min(1180px,94vw);max-height:92vh;border-radius:8px;background:var(--card);
+  /* A zoom SCALES the figure; it must never STRETCH it. Constraining `width` AND
+     `max-height` at once did exactly that: Chromium honours both literally, so the
+     portrait printed page (1275x1650) came out 1180x828 — 84% off its real ratio.
+     Constrain ONE axis (width, so the figure fills the content column as intended)
+     and leave the other intrinsic. A figure taller than the viewport then SCROLLS
+     rather than squashing: `overflow-y:auto` on the backdrop plus `margin:auto` on
+     the image centres a short figure both ways yet never clips the top of a tall
+     one (the flex auto-margin overflow rule) — which `align-items:center` would.
+     This is the same geometry the gallery lightbox on this page already uses. */
+  #story .lightbox img{display:block;margin:auto;
+    width:min(1180px,94vw);height:auto;
+    border-radius:8px;background:var(--card);
     box-shadow:0 30px 80px rgba(0,0,0,.55);}
   @media (prefers-reduced-motion:no-preference){
     #story .lightbox.is-open img{animation:story-zoom .18s ease;}
