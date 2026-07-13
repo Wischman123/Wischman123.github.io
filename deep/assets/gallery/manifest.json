@@ -4,38 +4,6 @@
   "generated": "2026-07-13",
   "assets": [
     {
-      "file": "problem_page.png",
-      "source": "problems/output/energy/preview_K015_page1.png",
-      "crop_origin": "verbatim copy of problems/output/energy/preview_K015_page1.png",
-      "generation_command": "python tools/showcase/render_gallery.py --curate",
-      "pii_checked": "2026-07-13",
-      "pii_note": "physics problem render; scientist bio only, no student data"
-    },
-    {
-      "file": "lol_chart.png",
-      "source": "problems/output/energy/preview_K015_page2.png",
-      "crop_origin": "PIL crop (100, 628, 985, 905) of problems/output/energy/preview_K015_page2.png",
-      "generation_command": "python tools/showcase/render_gallery.py --curate",
-      "pii_checked": "2026-07-13",
-      "pii_note": "LOL energy bar-chart crop; physics only, no student data"
-    },
-    {
-      "file": "fbd.png",
-      "source": "problems/output/energy/preview_K015_page4.png",
-      "crop_origin": "PIL crop (90, 130, 620, 440) of problems/output/energy/preview_K015_page4.png",
-      "generation_command": "python tools/showcase/render_gallery.py --curate",
-      "pii_checked": "2026-07-13",
-      "pii_note": "free-body diagram crop; physics only, no student data"
-    },
-    {
-      "file": "sim_still.png",
-      "source": "tools/showcase/assets/sims/k015_hilltop_crest.png",
-      "crop_origin": "verbatim copy of tools/showcase/assets/sims/k015_hilltop_crest.png",
-      "generation_command": "python tools/showcase/render_gallery.py --curate",
-      "pii_checked": "2026-07-13",
-      "pii_note": "sim exhibit screenshot; physics only, no student data"
-    },
-    {
       "file": "gate_rejection.png",
       "source": "tools/showcase/assets/engine/gate_rejection.png",
       "crop_origin": "verbatim copy of tools/showcase/assets/engine/gate_rejection.png",
@@ -52,12 +20,36 @@
       "pii_note": "BLANK engineering quiz form (Form A); 'Do not write on this test' — no name field, no roster"
     },
     {
-      "file": "dawn_worked.png",
-      "source": "../publicity/anthropic/application/site/assets/dawns_last_burn_p1.png; ../publicity/anthropic/application/site/assets/dawns_last_burn_p2.png; ../publicity/anthropic/application/site/assets/dawns_last_burn_p3.png; ../publicity/anthropic/application/site/assets/dawns_last_burn_p4.png",
-      "crop_origin": "PIL grid composite (cell_h=620px, gap=20px) of ../publicity/anthropic/application/site/assets/dawns_last_burn_p1.png, ../publicity/anthropic/application/site/assets/dawns_last_burn_p2.png, ../publicity/anthropic/application/site/assets/dawns_last_burn_p3.png, ../publicity/anthropic/application/site/assets/dawns_last_burn_p4.png",
+      "file": "dawn_p1.png",
+      "source": "../publicity/anthropic/application/site/assets/dawns_last_burn_p1.png",
+      "crop_origin": "verbatim copy of ../publicity/anthropic/application/site/assets/dawns_last_burn_p1.png",
       "generation_command": "python tools/showcase/render_gallery.py --curate",
       "pii_checked": "2026-07-13",
-      "pii_note": "generated physics worked-example pages (Dawn's Last Burn, a year-end review problem, teacher answer-key edition); scientist bio (Konstantin Tsiolkovsky) only, no student data"
+      "pii_note": "generated physics worked-example page (Dawn's Last Burn, a year-end review problem, teacher answer-key edition); scientist bio (Konstantin Tsiolkovsky) only, no student data"
+    },
+    {
+      "file": "dawn_p2.png",
+      "source": "../publicity/anthropic/application/site/assets/dawns_last_burn_p2.png",
+      "crop_origin": "verbatim copy of ../publicity/anthropic/application/site/assets/dawns_last_burn_p2.png",
+      "generation_command": "python tools/showcase/render_gallery.py --curate",
+      "pii_checked": "2026-07-13",
+      "pii_note": "generated physics worked-example page (Dawn's Last Burn, a year-end review problem, teacher answer-key edition); scientist bio (Konstantin Tsiolkovsky) only, no student data"
+    },
+    {
+      "file": "dawn_p3.png",
+      "source": "../publicity/anthropic/application/site/assets/dawns_last_burn_p3.png",
+      "crop_origin": "verbatim copy of ../publicity/anthropic/application/site/assets/dawns_last_burn_p3.png",
+      "generation_command": "python tools/showcase/render_gallery.py --curate",
+      "pii_checked": "2026-07-13",
+      "pii_note": "generated physics worked-example page (Dawn's Last Burn, a year-end review problem, teacher answer-key edition); scientist bio (Konstantin Tsiolkovsky) only, no student data"
+    },
+    {
+      "file": "dawn_p4.png",
+      "source": "../publicity/anthropic/application/site/assets/dawns_last_burn_p4.png",
+      "crop_origin": "verbatim copy of ../publicity/anthropic/application/site/assets/dawns_last_burn_p4.png",
+      "generation_command": "python tools/showcase/render_gallery.py --curate",
+      "pii_checked": "2026-07-13",
+      "pii_note": "generated physics worked-example page (Dawn's Last Burn, a year-end review problem, teacher answer-key edition); scientist bio (Konstantin Tsiolkovsky) only, no student data"
     },
     {
       "file": "regen_review_before.png",
@@ -93,18 +85,18 @@
     },
     {
       "file": "plain_vs_system_before.png",
-      "source": "tools/showcase/plain_vs_system/pages/plain_native_p1.png",
-      "crop_origin": "before half of the PIL wipe pair (both scaled to h=1200px, then padded to a common 927x1200 canvas so the wipe overlay aligns) of tools/showcase/plain_vs_system/pages/plain_native_p1.png + tools/showcase/plain_vs_system/pages/k015_system_drawingml.png",
+      "source": "tools/showcase/plain_vs_system/pages/d1_plain_solution_p2.png",
+      "crop_origin": "before half of the PIL wipe pair (both scaled to h=1200px, then padded to a common 927x1200 canvas so the wipe overlay aligns) of tools/showcase/plain_vs_system/pages/d1_plain_solution_p2.png + tools/showcase/plain_vs_system/pages/d1_system_solution_p2.png",
       "generation_command": "python tools/showcase/render_gallery.py --curate",
-      "pii_note": "before: a plain isolated Claude agent's physics problem page (self-invented car-over-hill scene, native editable Word shapes); after: the engine's energy-K015 page (calibrated DrawingML scene + LOL chart); physics only, no student data",
+      "pii_note": "the worked SOLUTION page of one assignment (D1, a car cresting a circular hill) produced two ways — before: a plain isolated Claude agent; after: the engine (circular-D001). Both are real Word renderings; physics only, no student data",
       "pii_checked": "2026-07-13"
     },
     {
       "file": "plain_vs_system_after.png",
-      "source": "tools/showcase/plain_vs_system/pages/k015_system_drawingml.png",
-      "crop_origin": "after half of the PIL wipe pair (both scaled to h=1200px, then padded to a common 927x1200 canvas so the wipe overlay aligns) of tools/showcase/plain_vs_system/pages/plain_native_p1.png + tools/showcase/plain_vs_system/pages/k015_system_drawingml.png",
+      "source": "tools/showcase/plain_vs_system/pages/d1_system_solution_p2.png",
+      "crop_origin": "after half of the PIL wipe pair (both scaled to h=1200px, then padded to a common 927x1200 canvas so the wipe overlay aligns) of tools/showcase/plain_vs_system/pages/d1_plain_solution_p2.png + tools/showcase/plain_vs_system/pages/d1_system_solution_p2.png",
       "generation_command": "python tools/showcase/render_gallery.py --curate",
-      "pii_note": "before: a plain isolated Claude agent's physics problem page (self-invented car-over-hill scene, native editable Word shapes); after: the engine's energy-K015 page (calibrated DrawingML scene + LOL chart); physics only, no student data",
+      "pii_note": "the worked SOLUTION page of one assignment (D1, a car cresting a circular hill) produced two ways — before: a plain isolated Claude agent; after: the engine (circular-D001). Both are real Word renderings; physics only, no student data",
       "pii_checked": "2026-07-13"
     },
     {

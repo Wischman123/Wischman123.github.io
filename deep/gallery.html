@@ -3,8 +3,7 @@
 <head>
   <!-- showcase-generated:systems_showcase_deepdive_v2 -->
   <meta charset="utf-8">
-  <meta name="robots" content="noindex, nofollow">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex, nofollow">
   <title>The gallery — what the system makes</title>
   <style>
     /* ---------- palette (echoes docs/architecture/hexagonal_engine_v1.html) ---------- */
@@ -414,6 +413,56 @@
 .wipe noscript img{
   width:100%; height:auto; border:1px solid var(--rule); border-radius:8px;
 }
+/* _lightbox.css — the deep-dive SKIN for the shared click-to-enlarge lightbox.
+   =========================================================================
+   WHAT THIS IS. The site has exactly ONE lightbox implementation: the JS module
+   publicity/.../site/public/assets/js/lightbox.js (the same "D-0 single-module
+   rule" wipe_slider.js names). That module owns the BEHAVIOUR and the DOM
+   contract — it upgrades any img[data-zoomable] into a control and builds a
+   single .lightbox > img dialog on the body — and render_gallery.render_page
+   ships the module's BYTES (never a retyped copy). This file only SKINS those
+   class names for the deep-dive palette.
+
+   WHY A SEPARATE SKIN. Same split _wipe.css documents: the front page's copy of
+   these rules (public/assets/site.css) is written against that design system's
+   custom properties (--rule), the deep-dive family against its own (--line /
+   --card). The module is shared; the skin is per-design-system.
+
+   THE ONE RULE THAT MATTERS — "page-width zoom", not "fit on screen". The
+   enlarged image is sized to the WIDTH of the viewport (capped), with height:auto
+   and the dialog scrolling vertically. A printed problem page is tall; fitting it
+   inside the viewport would shrink it back to unreadable, which defeats the
+   click. So: fill the width, let the reader scroll. margin:auto (not
+   place-items:center) centers a SHORT image both ways while still letting a TALL
+   one overflow scrollably — a centered flex item cannot be scrolled back to its
+   own top edge, and its first lines would be unreachable. This is the same
+   geometry the front page's #story lightbox uses.
+
+   KNOWN DUPLICATION (deliberate, and dated 2026-07-13). These rules exist twice:
+   here and in site.css. Collapse them when the showcase site-restructure merges
+   the two trees into one stylesheet — and delete this note then. Do not fork a
+   third copy in the meantime.
+   ========================================================================= */
+
+  /* The affordance: only a zoomable image advertises the zoom. The JS adds the
+     attribute's behaviour; the attribute itself is authored in the template, so
+     with JS off this cursor is the only thing that over-promises — and it costs
+     nothing. Wipe sliders and their images are deliberately absent here: their
+     click already means "drag me". */
+  img[data-zoomable]{cursor:zoom-in;}
+  img[data-zoomable]:focus-visible{outline:3px solid var(--drive);outline-offset:3px;}
+
+  .lightbox{position:fixed;inset:0;z-index:1200;display:flex;overflow-y:auto;
+    padding:20px;background:rgba(14,17,16,.88);cursor:zoom-out;}
+  .lightbox[hidden]{display:none;}
+  .lightbox img{margin:auto;width:min(1600px,96vw);height:auto;
+    border:1px solid var(--line);background:#fff;border-radius:4px;
+    box-shadow:0 18px 60px rgba(0,0,0,.5);}
+  @media (prefers-reduced-motion:no-preference){
+    .lightbox:not([hidden]) img{animation:lightbox-zoom .18s ease;}
+  }
+  @keyframes lightbox-zoom{from{transform:scale(.965);opacity:.55;}
+    to{transform:none;opacity:1;}}
 
   header.hero{margin-bottom:8px;}
   .lede{font-size:15px;color:var(--muted);max-width:66ch;margin:18px 0 0;}
@@ -447,19 +496,6 @@
   figcaption .more a{font-weight:700;color:var(--drive);text-decoration:none;}
   figcaption .more a:hover{text-decoration:underline;}
 
-  /* the grade-free feedback card — a report facsimile, the full-width closer */
-  .feedback{margin-top:14px;background:var(--card);border:1px solid var(--line);
-    border-left:4px solid var(--drive);border-radius:var(--radius);
-    box-shadow:var(--shadow);padding:24px 26px;}
-  .fb-eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.18em;
-    text-transform:uppercase;color:var(--drive);margin:0 0 14px;}
-  .fb-head{font-weight:720;font-size:17px;margin:0 0 2px;}
-  .fb-quiz{font-size:13px;color:var(--muted);margin:0 0 16px;}
-  .fb-body{max-width:70ch;}
-  .fb-body p{font-size:14.5px;line-height:1.65;margin:0 0 12px;color:var(--text);}
-  .fb-body p:last-child{margin-bottom:0;}
-  .fb-note{font-family:var(--mono);font-size:11px;color:var(--muted);
-    margin:16px 0 0;padding-top:12px;border-top:1px solid var(--line);max-width:70ch;}
   </style>
 </head>
 <body class="gallery">
@@ -508,10 +544,10 @@
   <header class="hero">
     <p class="eyebrow">Systems showcase · deep dive</p>
     <h1>The gallery</h1>
-    <p class="dek">A wall of what the system actually makes &mdash; one physics
-      problem followed from the bank to a student&rsquo;s desk, the correctness
-      machinery that keeps it honest, and the engineering course next door. Every
-      artifact here was generated by the pipeline, not hand-built for show.</p>
+    <p class="dek">A wall of what the system actually makes &mdash; one harder
+      problem worked through in full, page by page, and the correctness machinery
+      that keeps it honest. Every artifact here was generated by the pipeline, not
+      hand-built for show. <b>Click any page to read it full size.</b></p>
     <div class="counts">
       <span><b><span class="stat" data-source="sum of data/problems/frq/*.json record counts" data-verified="2026-07-13" data-provenance="verified" title="source: sum of data/problems/frq/*.json record counts · verified 2026-07-13">51</span></b> free-response problems</span>
       <span><b><span class="stat" data-source="sum of data/problems/mc/*.json record counts" data-verified="2026-07-13" data-provenance="verified" title="source: sum of data/problems/mc/*.json record counts · verified 2026-07-13">72</span></b> multiple-choice items</span>
@@ -525,44 +561,36 @@
 
   <div class="grid">
     <figure class="card">
-      <div class="frame">
-        <img src="assets/gallery/problem_page.png" alt="A printed physics problem page for energy-K015, Euler&#39;s Hilltop: a ball released above a circular hill, with a scientist bio.">
+<div class="frame">
+        <img src="assets/gallery/dawn_p1.png" alt="The problem page of a generated physics worked example, Dawn&#39;s Last Burn: a spacecraft in a circular orbit around the dwarf planet Ceres fires one tangential burn and later collides with debris. A computed orbit diagram shows Ceres, the burn point, the high point of the new orbit, the exhaust, and the debris; a Given box closes the page." loading="lazy" data-zoomable>
       </div>
       <figcaption>
-        <p class="t">One problem, generated end to end</p>
-        <p class="c">energy-K015 · Euler&#39;s Hilltop — lines directed, not hand-typed.</p>      </figcaption>
+        <p class="t">A harder problem: the assignment</p>
+        <p class="c">One harder problem, generated end to end: the scenario, a computed orbit diagram, and the quantities the student is handed. Nothing here is hand-typed — the page is directed from code.</p>      </figcaption>
     </figure>
     <figure class="card">
-      <div class="frame">
-        <img src="assets/gallery/lol_chart.png" alt="An LOL energy bar chart: at the top of the track all energy is gravitational; at the hilltop it has become kinetic.">
+<div class="frame">
+        <img src="assets/gallery/dawn_p2.png" alt="The first solution page: the orbital speed and period derived from Newton&#39;s second law for circular motion with a free-body diagram, the exhaust speed of a xenon ion from the work-energy theorem, and the spacecraft&#39;s change in speed from conservation of momentum — each derivation annotated line by line in the margin." loading="lazy" data-zoomable>
       </div>
       <figcaption>
-        <p class="t">The energy story, before the algebra</p>
-        <p class="c">An LOL bar chart — students reason about energy before they reach for an equation.</p>      </figcaption>
+        <p class="t">The orbit, and the burn</p>
+        <p class="c">The opening parts, worked: the orbit from Newton&#39;s second law, the ion&#39;s exhaust speed from the work-energy theorem, and the burn from conservation of momentum. Every step carries its reason beside it.</p>      </figcaption>
     </figure>
     <figure class="card">
-      <div class="frame">
-        <img src="assets/gallery/fbd.png" alt="A free-body diagram of the ball at the hilltop: a normal force up and gravity down, with radial and tangential axes.">
+<div class="frame">
+        <img src="assets/gallery/dawn_p3.png" alt="The second solution page: the burn turns the circular orbit into an ellipse, and conservation of energy plus conservation of angular momentum are combined into a quadratic for the radius at the high point, then solved and converted to an altitude above Ceres&#39; surface." loading="lazy" data-zoomable>
       </div>
       <figcaption>
-        <p class="t">A free-body diagram, arrows to scale</p>
-        <p class="c">Every force drawn; arrow lengths scaled to magnitude.</p>      </figcaption>
+        <p class="t">The new orbit, solved</p>
+        <p class="c">The hardest part of the problem: energy and angular momentum combined into a quadratic, solved — and the discarded root turns out to be the burn point itself, a built-in check that the algebra is sound.</p>      </figcaption>
     </figure>
     <figure class="card">
-      <div class="frame">
-        <img src="assets/gallery/sim_still.png" alt="A sim exhibit screenshot: the bead cresting the hilltop with a live kinetic-and-potential energy bar chart.">
+<div class="frame">
+        <img src="assets/gallery/dawn_p4.png" alt="The final solution page: an inelastic head-on collision with the debris solved for the joined object&#39;s speed and the kinetic energy lost, followed by a closing vignette about Konstantin Tsiolkovsky, the deaf schoolteacher who derived the rocket equation." loading="lazy" data-zoomable>
       </div>
       <figcaption>
-        <p class="t">The same problem, alive</p>
-        <p class="c">The same problem running live — the real engine solves it in the browser; the bead crests, and it leaves the surface.</p>      </figcaption>
-    </figure>
-    <figure class="card">
-      <div class="frame">
-        <img src="assets/gallery/dawn_worked.png" alt="A contact sheet of all four pages of a worked physics problem, Dawn&#39;s Last Burn: a problem page with a computed orbit diagram, then three solution pages with a free-body diagram, derivations annotated line by line, and a closing historical vignette.">
-      </div>
-      <figcaption>
-        <p class="t">A harder problem, worked in full</p>
-        <p class="c">A complete worked example — every page of one harder problem: the orbital-burn setup, the free-body diagram, the derivation annotated line by line, and the historical vignette that closes it.</p>      </figcaption>
+        <p class="t">The collision, and the scientist</p>
+        <p class="c">The closing parts, and the beat the whole page is built toward: a deaf schoolteacher who worked out the rocket equation with a pen, decades before anyone flew one. Every problem ends with the person behind the physics.</p>      </figcaption>
     </figure>
     <figure class="card">
 <div class="frame">
@@ -588,24 +616,24 @@
         <div class="wipe" data-wipe
              data-before="assets/gallery/plain_vs_system_before.png"
              data-after="assets/gallery/plain_vs_system_after.png"
-             data-before-alt="A physics problem page written by a plain assistant with no access to the platform: a capable problem with a real, editable Word diagram of a car cresting a hill — but its equations are typed as ordinary text."
-             data-after-alt="The engine&#39;s Euler&#39;s Hilltop page: a calibrated editable scene diagram, typeset equations, and the energy bar charts the course teaches."
+             data-before-alt="The worked solution page a plain assistant produced, with no access to the platform: a hand-drawn free-body diagram of a car at the crest, and a correct derivation — but its equations are typed as ordinary text, and it labels the normal force with a capital N."
+             data-after-alt="The engine&#39;s solution page for the same problem: typeset equation objects, a free-body diagram in the course&#39;s own notation with a lowercase n for the normal force, and each step annotated with its reason in the margin."
              data-before-label="Plain Claude"
              data-after-label="This platform">
           <noscript>
-            <img src="assets/gallery/plain_vs_system_before.png" alt="A physics problem page written by a plain assistant with no access to the platform: a capable problem with a real, editable Word diagram of a car cresting a hill — but its equations are typed as ordinary text." loading="lazy">
-            <img src="assets/gallery/plain_vs_system_after.png" alt="The engine&#39;s Euler&#39;s Hilltop page: a calibrated editable scene diagram, typeset equations, and the energy bar charts the course teaches." loading="lazy">
+            <img src="assets/gallery/plain_vs_system_before.png" alt="The worked solution page a plain assistant produced, with no access to the platform: a hand-drawn free-body diagram of a car at the crest, and a correct derivation — but its equations are typed as ordinary text, and it labels the normal force with a capital N." loading="lazy">
+            <img src="assets/gallery/plain_vs_system_after.png" alt="The engine&#39;s solution page for the same problem: typeset equation objects, a free-body diagram in the course&#39;s own notation with a lowercase n for the normal force, and each step annotated with its reason in the margin." loading="lazy">
           </noscript>
         </div>
       </div>
       <figcaption>
         <p class="t">A plain assistant, and the platform</p>
-        <p class="c">The same assignment, produced two ways — both asked for an editable Word diagram, and both delivered one. A plain assistant, working alone, is genuinely capable. What it cannot bring is the course: its equations are typed as ordinary text rather than set as real equations, the energy chart students reason with is absent, and it names the normal force with the very letter that also means newtons — so its own answer collides with its own units. Drag the divider.</p>        <p class="more"><a href="../plain-vs-engine.html">Open the full side-by-side comparison &rarr;</a></p>
+        <p class="c">The same assignment — a car cresting a hilltop — worked two ways, and the same page of each: the solution, which is where they part. A plain assistant, working alone, is genuinely capable: its physics is right and its diagram is real. What it cannot bring is the course. Its equations are typed as ordinary text rather than set as real equations, the energy chart students reason with is absent, and it names the normal force with the very letter that also means newtons — so its own answer collides with its own units. Drag the divider.</p>        <p class="more"><a href="../plain-vs-engine.html">Open the full side-by-side comparison &rarr;</a></p>
       </figcaption>
     </figure>
     <figure class="card">
-      <div class="frame">
-        <img src="assets/gallery/gate_rejection.png" alt="A terminal capture of a correctness gate rejecting a seeded-bad physics problem.">
+<div class="frame">
+        <img src="assets/gallery/gate_rejection.png" alt="A terminal capture of a correctness gate rejecting a seeded-bad physics problem." loading="lazy" data-zoomable>
       </div>
       <figcaption>
         <p class="t">A gate refusing a bad problem</p>
@@ -631,16 +659,16 @@
         <p class="c">An earlier render with flawed ground geometry, and the page re-derived from corrected drawing code. The fix lands in the code and the page is regenerated — never patched by hand. Drag the divider to watch the ground heal.</p>      </figcaption>
     </figure>
     <figure class="card">
-      <div class="frame">
-        <img src="assets/gallery/de_form.png" alt="A blank Digital Electronics quiz form, Form A, with no student name field.">
+<div class="frame">
+        <img src="assets/gallery/de_form.png" alt="A blank Digital Electronics quiz form, Form A, with no student name field." loading="lazy" data-zoomable>
       </div>
       <figcaption>
         <p class="t">One of four parallel forms</p>
         <p class="c">A blank engineering quiz — four parallel forms so neighbors answer different questions, not a ranking.</p>      </figcaption>
     </figure>
     <figure class="card">
-      <div class="frame">
-        <img src="assets/gallery/loc_tracker.png" alt="The platform&#39;s line-of-code tracker render: stacked daily bars of first-party lines by project, rising over the platform&#39;s life, with per-project subcharts.">
+<div class="frame">
+        <img src="assets/gallery/loc_tracker.png" alt="The platform&#39;s line-of-code tracker render: stacked daily bars of first-party lines by project, rising over the platform&#39;s life, with per-project subcharts." loading="lazy" data-zoomable>
       </div>
       <figcaption>
         <p class="t">The platform, counting itself</p>
@@ -648,24 +676,12 @@
     </figure>
   </div>
 
-  <section class="feedback" aria-label="A grade-free feedback report">
-    <p class="fb-eyebrow">Feedback, not a grade</p>
-    <p class="fb-head">Aldo Acker</p>
-    <p class="fb-quiz">DE Quiz &middot; Introduction to Circuit Design</p>
-    <div class="fb-body">
-      <p>Mistakes on this quiz are the most useful thing you&#39;ll see all week — they show you exactly where your understanding has room to grow. The next page lists where to review each missed concept in the PLTW curriculum, plus a few open-response practice questions to work through afterward.</p>
-      <p>For each concept you missed, the section pointer below tells you where to review it in the PLTW curriculum. After reviewing, work through the practice questions in your notebook (or with a classmate) — reason in words; there&#39;s no formula to apply. Bring what you wrote to next class so we can compare ideas.</p>
-    </div>
-    <p class="fb-note">A generated report on a fictional roster — narrative feedback, never a score.</p>
-  </section>
-
   <footer class="foot">
     <span class="rule">Every placard is a real generated artifact &mdash; the
       machinery keeps them honest so the teacher&rsquo;s judgment is the one that
       counts.</span><br>
-    Curated copies only; every image carries a source and a pixel-checked date,
-    and the feedback report runs on a fictional roster. Numbers are harvested
-    live from the repository.
+    Curated copies only; every image carries a source and a pixel-checked date.
+    Numbers are harvested live from the repository.
   </footer>
 </main>
   <a class="nextbar nextband nextbar--home" href="../index.html">
@@ -676,5 +692,6 @@
     <span class="nextbar__arrow nextband__arrow" aria-hidden="true">&rarr;</span>
   </a>
 <script src="assets/js/wipe_slider.js" defer></script>
+<script src="assets/js/lightbox.js" defer></script>
 </body>
 </html>
