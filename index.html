@@ -662,7 +662,7 @@
 </script>
 <!-- SITERAIL END -->
 <div class="preview-note">
-  <strong>Work in progress</strong> — this portfolio is being actively built out and refined; some sections are still landing. Last&nbsp;updated <span class="wip-updated">2026-07-13 9:43 AM CT</span>.
+  <strong>Work in progress</strong> — this portfolio is being actively built out and refined; some sections are still landing. Last&nbsp;updated <span class="wip-updated">2026-07-13 10:08 AM CT</span>.
 </div>
 
 <!-- The left rail is INJECTED here, immediately above this header, inside the
@@ -991,6 +991,20 @@
         <figcaption class="frame__cap">The diagram engine &mdash; one shared library, every scene</figcaption>
       </figure>
 
+      <figure class="frame frame--sim" data-frame="alive">
+        <div class="fill">
+          <div class="ex__stage js-embed" data-autostart
+               data-embed-src="sim/index.html?scene=k015_eulers_hilltop_full&amp;embed=1&amp;theme=worksheet"
+               data-label="Euler&rsquo;s Hilltop">
+            <div class="ex__frame">
+              <img class="ex__poster" src="assets/sims/k015_eulers_hilltop_full.poster.png"
+                   alt="Euler&rsquo;s Hilltop running live, drawn the way the worksheet draws it: the ball starts at rest at A, runs down the ramp and through the valley, crests the hill and lifts off the surface, with the live energy bars (K, U&#8202;g) and a zero-drift total.">
+            </div>
+          </div>
+        </div>
+        <figcaption class="frame__cap">The same motion, running live &mdash; the worksheet&rsquo;s own diagram</figcaption>
+      </figure>
+
       <figure class="frame frame--img" data-frame="page">
         <div class="fill">
           <img src="assets/story/printed_page.png" loading="lazy"
@@ -1076,18 +1090,6 @@
           </div>
         </div>
         <figcaption class="frame__cap">Feedback, not a grade</figcaption>
-      </figure><figure class="frame frame--sim" data-frame="alive">
-        <div class="fill">
-          <div class="ex__stage js-embed" data-autostart
-               data-embed-src="sim/index.html?scene=k015_eulers_hilltop_full&amp;embed=1&amp;theme=worksheet"
-               data-label="Euler&rsquo;s Hilltop">
-            <div class="ex__frame">
-              <img class="ex__poster" src="assets/sims/k015_eulers_hilltop_full.poster.png"
-                   alt="Euler&rsquo;s Hilltop running live, drawn the way the worksheet draws it: the ball starts at rest at A, runs down the ramp and through the valley, crests the hill and lifts off the surface, with the live energy bars (K, U&#8202;g) and a zero-drift total.">
-            </div>
-          </div>
-        </div>
-        <figcaption class="frame__cap">The same motion, running live &mdash; the worksheet&rsquo;s own diagram</figcaption>
       </figure>
 
       <figure class="frame" data-frame="correct">
@@ -1160,6 +1162,21 @@
           shared library files.</p>
       </li>
 
+      <li class="beat" data-frame="alive" id="beat-alive">
+        <p class="beat__n">The same problem, alive</p>
+        <h3>Not only a page &mdash; a simulation</h3>
+        <p>The same problem &mdash; Euler&rsquo;s Hilltop, the one you just watched clear the
+          gauntlet &mdash; <b>runs live</b>: not a picture of the motion but the real engine,
+          solving the worksheet&rsquo;s own diagram in your browser. It begins at rest at A,
+          exactly as the printed page will set it up, and runs the whole story: down the ramp,
+          through the valley, up over the crest. The energy bars trade kinetic for
+          gravitational as the ball climbs. It crests, the normal force dies, and it leaves the
+          surface &mdash; no code says when. <span class="stat" data-source="node sim/scripts/dump_registry.js (scenario registry)" data-verified="2026-07-13" data-provenance="verified" title="source: node sim/scripts/dump_registry.js (scenario registry) · verified 2026-07-13">104</span> scenarios are registered
+          and <span class="stat" data-source="tools/sim_coverage.py --json" data-verified="2026-07-13" data-provenance="verified" title="source: tools/sim_coverage.py --json · verified 2026-07-13">39</span> weld their physics to an independent check; this run is
+          held to the same energy books, and the exhibit page opens the welded fixture itself.</p>
+        <a class="go" href="deep/sims.html">Open the sim exhibit</a>
+      </li>
+
       <li class="beat" data-frame="page" id="beat-page">
         <p class="beat__n">The printed page</p>
         <h3>What lands on the desk</h3>
@@ -1216,21 +1233,6 @@
           Armadillo&rdquo; &mdash; and no student data ever leaves the building.</p>
       </li>
 
-      <li class="beat" data-frame="alive" id="beat-alive">
-        <p class="beat__n">The same problem, alive</p>
-        <h3>Not only a page &mdash; a simulation</h3>
-        <p>The same problem &mdash; Euler&rsquo;s Hilltop, the one you just watched clear the
-          gauntlet &mdash; <b>runs live</b>: not a picture of the motion but the real engine,
-          solving the worksheet&rsquo;s own diagram in your browser. It begins at rest at A,
-          exactly as the printed page sets it up, and runs the whole story: down the ramp,
-          through the valley, up over the crest. The energy bars trade kinetic for
-          gravitational as the ball climbs. It crests, the normal force dies, and it leaves the
-          surface &mdash; no code says when. <span class="stat" data-source="node sim/scripts/dump_registry.js (scenario registry)" data-verified="2026-07-13" data-provenance="verified" title="source: node sim/scripts/dump_registry.js (scenario registry) · verified 2026-07-13">104</span> scenarios are registered
-          and <span class="stat" data-source="tools/sim_coverage.py --json" data-verified="2026-07-13" data-provenance="verified" title="source: tools/sim_coverage.py --json · verified 2026-07-13">39</span> weld their physics to an independent check; this run is
-          held to the same energy books, and the exhibit page opens the welded fixture itself.</p>
-        <a class="go" href="deep/sims.html">Open the sim exhibit</a>
-      </li>
-
       <li class="beat" data-frame="correct" id="beat-correct">
         <p class="beat__n">How it stays correct</p>
         <h3>None of this is trusted on faith</h3>
@@ -1245,7 +1247,9 @@
     </ol>
   </div><div class="lightbox" id="story-lightbox" role="dialog" aria-modal="true"
        aria-label="Enlarged figure" tabindex="-1">
-    <img alt="Enlarged figure">
+    <!-- src is set by JS on open and REMOVED on close, so this target is empty
+         at rest; `data-js-src` declares that to the QA gate. -->
+    <img alt="Enlarged figure" data-js-src="story-lightbox">
   </div>
 </section>
 
@@ -1262,7 +1266,7 @@
   for(var i=0;i<list.length;i++){ frames[list[i].getAttribute('data-frame')] = list[i]; }
   if(list.length){ list[0].classList.add('is-shown'); }
 
-  // Autostart-on-scroll: the first time the live-sim frame ('alive', beat #11)
+  // Autostart-on-scroll: the first time the live-sim frame ('alive', beat #5)
   // becomes active, click the run control embed.js injected so the sim boots with
   // no tap. Lazy query (only fires once the reader reaches the beat) so this can't
   // race embed.js's own DOMContentLoaded setup regardless of script order.
