@@ -774,15 +774,16 @@
              lives here and scales with it about the hex centre (600,340). -->
         <g class="corebody">
           <!-- soft glow behind the core; brightens as the membrane fills -->
-          <polygon class="pulse" points="600,100 807.85,220 807.85,460 600,580 392.15,460 392.15,220"
-                   fill="var(--core)" opacity=".07"/>
+          <path class="pulse" id="wv-glow" d="M600,100L807.85,220L807.85,460L600,580L392.15,460L392.15,220Z" fill="var(--core)" opacity=".07"/>
           <!-- the CHARGING rim: a wide soft stroke that brightens all through
                the inflation, then is spent into the wave.  Behind the hex's own
                outline, so it reads as a halo rather than a fattened line. -->
-          <polygon class="rim" points="600,100 807.85,220 807.85,460 600,580 392.15,460 392.15,220"/>
-          <!-- L2 outer hex -->
-          <polygon points="600,100 807.85,220 807.85,460 600,580 392.15,460 392.15,220"
-                   fill="var(--core)" fill-opacity=".10" stroke="var(--core)" stroke-width="2"/>
+          <path class="rim" id="wv-rim" d="M600,100L807.85,220L807.85,460L600,580L392.15,460L392.15,220Z"/>
+          <!-- L2 outer hex.  A PATH, not a polygon: its perimeter is rewritten every
+               frame into a standing wave (see the script at the end of the SVG). -->
+          <path id="wv-l2" d="M600,100L807.85,220L807.85,460L600,580L392.15,460L392.15,220Z"
+                fill="var(--core)" fill-opacity=".10" stroke="var(--core)" stroke-width="2"
+                stroke-linejoin="round"/>
 
           <!-- port notches = valves.  The driving port opens as the ask enters.
                The four driven ports open when L1's REPLY reaches the membrane —
@@ -800,8 +801,9 @@
              membrane 0.85s late, overshoots it, and rings.  The chevrons ride
              WITH it -- they mark L1's boundary, so they must not drift off it. -->
         <g class="coreinner">
-          <polygon class="l1shell" points="600,230 695.26,285 695.26,395 600,450 504.74,395 504.74,285"
-                   fill="var(--mech)" fill-opacity=".16" stroke="var(--mech)" stroke-width="1.8"/>
+          <path class="l1shell" id="wv-l1" d="M600,230L695.26,285L695.26,395L600,450L504.74,395L504.74,285Z"
+                fill="var(--mech)" fill-opacity=".16" stroke="var(--mech)" stroke-width="1.8"
+                stroke-linejoin="round"/>
           <!-- inward chevrons (L2 depends on L1) -->
           <g stroke="var(--mech)" stroke-width="1.6" fill="none" opacity=".65">
             <path d="M590,246 L600,254 L610,246"/>
@@ -920,6 +922,166 @@
         <!-- ports label -->
         <text class="t-tiny" x="838" y="150" text-anchor="end">ports ▸</text>
       </svg>
+
+      <script>
+      /* ======================================================================
+         THE PERIMETER RINGS.
+
+         Each hexagon edge is a STRING CLAMPED AT BOTH ENDS.  The vertices are
+         NODES -- displacement is identically zero there, for every frame, by
+         construction: the displacement is A*sin(m*pi*s) with s running 0..1
+         along each edge, and sin(0) = sin(pi) = 0.  Each edge bulges at its
+         midpoint, so a swollen hexagon blooms into a six-lobed flower.
+
+         The amplitude is the hexagon's own growth:
+
+             A = gain * (scale - 1)
+
+         which has three consequences worth having, all of them free:
+           * at rest (scale == 1) the amplitude is EXACTLY zero -- a clean,
+             sharp hexagon.  The wave appears only when the body moves.
+           * L1 is motionless until the wavefront strikes it, so its perimeter
+             is flat until the strike and blooms ON impact.  We do not have to
+             time that; it is already true.
+           * when a hexagon COMPRESSES, scale-1 goes negative, so the bulges
+             invert into DIMPLES.  A struck bell does exactly this.
+
+         WHY IT READS THE RENDERED SCALE, AND DOES NOT RE-DERIVE IT
+         ---------------------------------------------------------
+         getComputedStyle gives us the scale the browser is ACTUALLY painting,
+         which is the CSS spring the generator produced.  Re-implementing that
+         curve here would mean two models of the same motion, free to drift
+         apart on the next retune.  There is one model; this reads it.
+
+         It also means this is slaved to the CSS clock for free: pause the CSS
+         animations and the perimeter freezes with them, which is what lets the
+         verification harness step through the beat.
+
+         CSS cannot do this -- a polygon's points are not interpolable -- so it
+         is the one piece of the diagram that needs script.  Everything degrades
+         safely: the paths ship with a plain hexagon in their `d`, so with no JS
+         (or with prefers-reduced-motion) the diagram is exactly the static
+         drawing it always was.
+         ====================================================================== */
+      (function () {
+        var CX = 600, CY = 340;          // the hexagons' shared centre
+        var SEG = 24;                    // samples per edge; mode 3 needs the resolution
+
+        /* MODE and GAIN are not free.  A hexagon's "flatness" -- the gap between a
+           vertex (r) and an edge midpoint (r*cos30 = .866r) -- is only 13.4% of r:
+           32 units on L2, 15 on L1.  That is the entire budget the wave has to
+           play in.
+
+           MODE 1 (one antinode per edge) spends all of it in ONE direction: every
+           edge bows outward at once, and at a visible amplitude the hexagon
+           rounds off into a blob.  It stops being a hexagon.  (It did.)
+
+           MODE 3 puts 1.5 wavelengths on each edge -- crest, trough, crest -- so
+           the mean outward push is only 0.212*A.  The perimeter RIPPLES instead
+           of inflating, the corners stay sharp, and it reads unmistakably as a
+           sine wave rather than as a swelling.  Nodes still sit exactly on the
+           vertices, plus two more per edge.
+
+           GAIN is then capped so |A| stays under a third of the flat depth. */
+        /* WAVE -- the one knob worth turning, and it is a REAL trade.
+
+           A hexagon's whole identity is that its edges are STRAIGHT.  The budget
+           the ripple has to play in is the "flat depth": the gap between a vertex
+           (r) and an edge midpoint (.866r), which is just 13.4% of r -- 32 units
+           on L2, 15 on L1.  Measured against that budget:
+
+             amp <= ~17% of flat depth : edges read as straight-but-rippling.
+                                         Still unmistakably a hexagon.   <-- HERE
+             amp ~= 25%                : edges read as CURVES.  It becomes a
+                                         six-lobed blob, and the page is titled
+                                         "drawn as a hexagon".  (It did.  Twice.)
+
+           So this is capped at the readable end, not the dramatic end.  Raise
+           WAVE to make the ripple bolder; past ~1.5 you will trade the hexagon
+           for it.  Motion is doing a lot of the work here -- a 5-unit ripple is
+           near-invisible frozen, and plainly visible once it is growing,
+           inverting and ringing. */
+        var WAVE = 1.0;
+
+        var BODIES = [
+          { pts: [[600,100],[807.85,220],[807.85,460],[600,580],[392.15,460],[392.15,220]],
+            group: '.corebody',  gain: 137 * WAVE, mode: 3,  // => 5.5 units; flat depth 32
+            targets: ['#wv-glow', '#wv-rim', '#wv-l2'] },
+          { pts: [[600,230],[695.26,285],[695.26,395],[600,450],[504.74,395],[504.74,285]],
+            group: '.coreinner', gain: 44 * WAVE,  mode: 3,  // => 2.4 units; flat depth 15
+            targets: ['#wv-l1'] }
+        ];
+        var TAPER = 0.12;      // see CLAMPED, below
+
+        var reduced = window.matchMedia &&
+                      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        /* CLAMPED, not merely pinned.
+           A bare sin(m*pi*s) is zero in DISPLACEMENT at a vertex but its SLOPE
+           there is A*m*pi/L -- large.  The curve therefore leaves the corner at
+           an angle (~21 degrees at mode 3), and the hexagon's sharp 120-degree
+           corner rounds off into a bump.  The vertices stay nodes by the numbers
+           and the hexagon stops being a hexagon to the eye.  (It did.)
+
+           So taper the wave to zero SLOPE as well as zero displacement at each
+           corner -- a clamped edge, not a pinned one.  The taper is a raised
+           cosine over the first and last 12% of the edge, which is flat 1
+           everywhere in between, so the sine keeps its shape where you can see
+           it and the corners stay razor sharp. */
+        function taper(s) {
+          if (s < TAPER)     return 0.5 * (1 - Math.cos(Math.PI * s / TAPER));
+          if (s > 1 - TAPER) return 0.5 * (1 - Math.cos(Math.PI * (1 - s) / TAPER));
+          return 1;
+        }
+
+        function wavyPath(pts, amp, mode) {
+          var d = '', i, k;
+          for (i = 0; i < 6; i++) {
+            var p0 = pts[i], p1 = pts[(i + 1) % 6];
+            var ex = p1[0] - p0[0], ey = p1[1] - p0[1];
+            var len = Math.sqrt(ex * ex + ey * ey);
+            var nx = -ey / len, ny = ex / len;             // edge normal
+            var mx = (p0[0] + p1[0]) / 2, my = (p0[1] + p1[1]) / 2;
+            if ((mx - CX) * nx + (my - CY) * ny < 0) { nx = -nx; ny = -ny; }  // point it OUT
+            for (k = 0; k < SEG; k++) {
+              var s = k / SEG;                     // 0 at this vertex, ->1 at the next
+              // sin() gives the NODE at the corner; taper() gives the sharp corner
+              var disp = amp * taper(s) * Math.sin(mode * Math.PI * s);
+              var x = p0[0] + ex * s + nx * disp;
+              var y = p0[1] + ey * s + ny * disp;
+              d += (i === 0 && k === 0 ? 'M' : 'L') + x.toFixed(2) + ',' + y.toFixed(2);
+            }
+          }
+          return d + 'Z';
+        }
+
+        function scaleOf(sel) {
+          var el = document.querySelector(sel);
+          if (!el) return 1;
+          var t = getComputedStyle(el).transform;
+          if (!t || t === 'none') return 1;
+          try { return new DOMMatrix(t).a; } catch (e) { return 1; }
+        }
+
+        var nodes = BODIES.map(function (b) {
+          return b.targets.map(function (sel) { return document.querySelector(sel); })
+                          .filter(Boolean);
+        });
+
+        function frame() {
+          // READ every scale first, THEN write every path -- interleaving them
+          // would force a style recalc per element, every frame.
+          var amps = BODIES.map(function (b) { return b.gain * (scaleOf(b.group) - 1); });
+          for (var i = 0; i < BODIES.length; i++) {
+            var d = wavyPath(BODIES[i].pts, amps[i], BODIES[i].mode);
+            for (var j = 0; j < nodes[i].length; j++) nodes[i][j].setAttribute('d', d);
+          }
+          requestAnimationFrame(frame);
+        }
+
+        if (!reduced) requestAnimationFrame(frame);
+      })();
+      </script>
     </div>
   </div>
 
