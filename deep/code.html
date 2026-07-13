@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- showcase-generated:systems_showcase_deepdive_v2 -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>The code beneath the system</title>
+  <style>
+    /* ---------- palette (echoes docs/architecture/hexagonal_engine_v1.html) ---------- */
+    :root{
+      --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --mono: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+
+      --paper:#e9eef6; --card:#ffffff; --text:#101d31; --muted:#566885; --line:#d5deec;
+      --core:#2f63ff; --mech:#7a5cf0; --drive:#0f9d8f; --driven:#c67f22;
+      --subject:#dc4046; --gate:#5d6c82; --edge:#6a7a92;
+      --radius:14px;
+      --shadow:0 1px 2px rgba(16,29,49,.06), 0 10px 30px rgba(16,29,49,.07);
+    }
+    @media (prefers-color-scheme: dark){
+      :root{
+        --paper:#080d18; --card:#0e1626; --text:#e6edf8; --muted:#93a2bd; --line:#1d2942;
+        --core:#5f8bff; --mech:#9a86ff; --drive:#2fd4bf; --driven:#eab24a;
+        --subject:#ff6a70; --gate:#8b9ab2; --edge:#8494ad;
+        --shadow:0 1px 2px rgba(0,0,0,.4), 0 18px 46px rgba(0,0,0,.45);
+      }
+    }
+    /* explicit toggle wins in both directions */
+    :root[data-theme="light"]{
+      --paper:#e9eef6; --card:#ffffff; --text:#101d31; --muted:#566885; --line:#d5deec;
+      --core:#2f63ff; --mech:#7a5cf0; --drive:#0f9d8f; --driven:#c67f22;
+      --subject:#dc4046; --gate:#5d6c82; --edge:#6a7a92;
+      --shadow:0 1px 2px rgba(16,29,49,.06), 0 10px 30px rgba(16,29,49,.07);
+    }
+    :root[data-theme="dark"]{
+      --paper:#080d18; --card:#0e1626; --text:#e6edf8; --muted:#93a2bd; --line:#1d2942;
+      --core:#5f8bff; --mech:#9a86ff; --drive:#2fd4bf; --driven:#eab24a;
+      --subject:#ff6a70; --gate:#8b9ab2; --edge:#8494ad;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 18px 46px rgba(0,0,0,.45);
+    }
+
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;background:var(--paper);color:var(--text);font-family:var(--sans);
+      line-height:1.6;-webkit-font-smoothing:antialiased;}
+    a{color:var(--core);text-decoration:none}
+    a:hover{text-decoration:underline}
+    .wrap{max-width:1180px;margin:0 auto;padding:clamp(20px,4vw,56px) clamp(16px,4vw,40px) 40px;}
+
+    .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.22em;text-transform:uppercase;
+      color:var(--core);margin:0 0 14px;display:flex;align-items:center;gap:10px;}
+    .eyebrow::before{content:"";width:26px;height:2px;background:var(--core);display:inline-block;}
+    h1{font-size:clamp(30px,5vw,50px);line-height:1.05;letter-spacing:-.022em;font-weight:820;
+      margin:0 0 16px;text-wrap:balance;max-width:22ch;}
+    .dek{font-size:clamp(16px,2.1vw,19px);color:var(--muted);max-width:66ch;margin:0;}
+
+    /* ---------- the stat contract (gate e) ---------- */
+    .stat{font-family:var(--mono);font-weight:700;font-variant-numeric:tabular-nums;
+      color:var(--text);background:color-mix(in srgb,var(--core) 12%, transparent);
+      border-radius:6px;padding:.04em .4em;white-space:nowrap;}
+    .stat--pinned{background:color-mix(in srgb,var(--driven) 16%, transparent);}
+    .stat__pin{font-size:.8em;color:var(--driven);margin-left:.15em;vertical-align:super;}
+
+    .foot{margin-top:64px;padding-top:24px;border-top:1px solid var(--line);
+      font-family:var(--mono);font-size:12px;color:var(--muted);line-height:1.9;}
+    .foot .rule{color:var(--text);}
+
+    /* ---------- accessibility: honor a reduced-motion preference ---------- */
+    @media (prefers-reduced-motion: reduce){
+      html{scroll-behavior:auto}
+      *,*::before,*::after{
+        animation-duration:.001ms !important; animation-iteration-count:1 !important;
+        transition-duration:.001ms !important; scroll-behavior:auto !important;
+      }
+    }
+
+    /* ---------- the shared site rail + next-page banner ----------
+       The whole SITE is one narrative and the LINK ORDER is a deliberate spine
+       (not alphabetical). Order + labels live in ONE canonical (slug, label)
+       list — tools/showcase/deep_nav.py::SITE_NAV — installed as the `site_nav`
+       Jinja global; the rail below AND the bottom .nextbar banner both DERIVE
+       from it, so this template and the root-page injector cannot drift.
+
+       HREFS are derived per directory depth by deep_nav.py::href_for(slug,
+       context) — NOT baked. From here the context is always "deep": wing peers
+       are bare filenames, and a ROOT page (index/systems/architecture/videos,
+       which live one directory UP from deep/) correctly becomes ../x.html.
+
+       The STYLING below is included from _siterail.css — the same file
+       inject_site_rail.py reads as text and emits inside its marked block on
+       each root page (they do not extend this template, so they cannot inherit
+       these rules). One source, two consumers. _deepnav.css is RETIRED BY
+       DISUSE (its .nextbar block was folded into _siterail.css); it and
+       inject_arch_nav.py are left on disk — deleting source files needs
+       Brendan's explicit approval. */
+/* ---------- the site rail: ONE left rail, every page ----------
+   THE ONE SOURCE for the .siterail component AND the .nextbar next-page banner.
+
+   TWO consumers, one file (do NOT paste a divergent copy into either):
+     * base.html.j2 — pulls this in with a Jinja include, inside its style
+       block, so every deep/*.html page gets it.
+     * inject_site_rail.py — reads this file as TEXT and emits it INSIDE its
+       marked block on each ROOT page (index / systems / architecture / videos),
+       which do not extend the Jinja base and so cannot inherit the styles.
+
+   WARNING — this file is parsed by Jinja (base.html.j2 includes it), so it must
+   contain NO Jinja delimiters ANYWHERE, comments included. Writing the include
+   tag literally in a comment once made _deepnav.css include ITSELF and the build
+   died with RecursionError (2026-07-12). Describe the tag in prose; never spell
+   it out here. Single CSS braces are fine and are all this file uses.
+
+   .nextbar WAS in _deepnav.css and is FOLDED IN here verbatim, on purpose: the
+   rail replaced the .deepnav strip, so a page that stopped including _deepnav.css
+   would have silently lost the bottom banner too — the very control the next
+   phase exists to refine. One file carries both, so that cannot happen.
+
+   THE NEXT BAND (review item 9) — READ THIS BEFORE TOUCHING EITHER BAND.
+   The site has TWO bottom bands, and the obvious one is the WRONG one:
+
+     * .arch-fade — the LAST CONTENT BLOCK of the FRONT page (index.html), whose
+       destination is architecture.html. Brendan's review items 1-8 are all
+       front-page items and the destination he named is Architecture, so THIS is
+       the band he hovered. Its rules used to live in index.html's own inline
+       style block, where its ONLY hover was an underline on the headline — no
+       background change at all, i.e. no affordance.
+     * .nextbar — the derived next-page banner on the deep pages and on
+       architecture.html. Its hover was a --core tint 6% -> 12% OVER TRANSPARENT,
+       which reads as nothing.
+
+   Fixing only .nextbar ships item 9 "done" while the band Brendan was actually
+   looking at still looks dead. So the affordance is ONE contract — .nextband —
+   and BOTH bands consume it: cursor, resting tint, a clear background lift on
+   hover, a border-colour change, an arrow that steps forward, an underline on
+   the destination line, and :focus-visible preserved for the keyboard. Each
+   band then adds only its own LAYOUT. Do not re-add a hover rule to either band:
+   a second copy is how the two drift apart again.
+
+   TWO PALETTES, ONE COMPONENT. The deep pages and index/architecture/videos
+   carry the CANONICAL custom properties (--text/--muted/--line/--core/--paper,
+   from theme.css or base.html.j2's inline copy). The root systems.html still
+   links the older assets/site.css, which declares ONLY the COMPAT names
+   (--ink/--ink-soft/--rule/--accent-text/--bg). So every colour below is read
+   through a --rail-* alias with a var() fallback chain: canonical first, compat
+   second, a literal last. The rail therefore renders correctly on BOTH palettes
+   without this component re-theming systems.html (not its call to make). The
+   chain flows canonical -> compat ONLY, never back — theme.css's cycle hazard.
+
+   (This comment ships inside every deep page, so it deliberately avoids the
+   word the meta wing's "no cost claims" gate scans for — see test_meta.py.)
+
+   Link ORDER and labels are NOT here — they live in deep_nav.py::SITE_NAV.
+   Hrefs are derived per directory depth by deep_nav.py::href_for. */
+
+:root{
+  --railw:208px;
+}
+
+.siterail,.nextband{
+  --rail-fg:var(--text, var(--ink, #101d31));
+  --rail-dim:var(--muted, var(--ink-soft, #566885));
+  --rail-line:var(--line, var(--rule, #d5deec));
+  --rail-accent:var(--core, var(--accent-text, #2f63ff));
+  --rail-bg:var(--paper, var(--bg, #e9eef6));
+}
+
+/* ---------- desktop: a fixed left column ---------- */
+.siterail{
+  position:fixed;top:0;left:0;bottom:0;width:var(--railw);z-index:30;
+  background:var(--rail-bg);border-right:1px solid var(--rail-line);
+  overflow-y:auto;overscroll-behavior:contain;
+}
+.siterail__inner{display:flex;flex-direction:column;padding:30px 22px 26px;}
+
+.siterail__mark{display:flex;flex-direction:column;
+  font-family:var(--serif, var(--sans, sans-serif));font-size:1.02rem;font-weight:600;
+  line-height:1.3;color:var(--rail-fg);text-decoration:none;margin:0 0 22px;}
+.siterail__mark:hover{color:var(--rail-accent);text-decoration:none;}
+
+.siterail__zone{display:flex;flex-direction:column;}
+.siterail__zone + .siterail__zone{margin-top:16px;padding-top:14px;
+  border-top:1px solid var(--rail-line);}
+.siterail__title{font-family:var(--mono, monospace);font-size:10px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--rail-dim);opacity:.7;margin:0 0 4px;}
+
+/* The CURRENT-PAGE MARKER is aria-current="page" — the HTML-spec value — for
+   BOTH zones. The rail this replaced used aria-current="true" for its scrollspy
+   while .deepnav used "page"; two spellings meant two sets of selectors that had
+   to agree. One spelling now, and the ported scrollspy sets exactly this one. */
+.siterail a.rail-anchor,.siterail a.rail-page{
+  font-family:var(--mono, monospace);font-size:11.5px;text-transform:uppercase;
+  letter-spacing:.08em;color:var(--rail-dim);text-decoration:none;
+  padding:7px 0;line-height:1.35;}
+.siterail a.rail-anchor:hover,.siterail a.rail-page:hover{
+  color:var(--rail-accent);text-decoration:none;}
+.siterail a.rail-anchor[aria-current="page"],.siterail a.rail-page[aria-current="page"]{
+  color:var(--rail-accent);}
+.siterail a.rail-anchor[aria-current="page"]::before,
+.siterail a.rail-page[aria-current="page"]::before{content:"— ";}
+.siterail a:focus-visible{outline:2px solid var(--rail-accent);outline-offset:2px;}
+
+/* The rail is FIXED, so it is out of flow and cannot push anything: every page's
+   content is inset by its width from ONE rule here. The pages themselves know
+   nothing about the rail — which is what lets the same component drop onto four
+   hand-authored root pages and six generated ones with no per-page layout edit. */
+@media (min-width:1100px){
+  body{padding-left:var(--railw);}
+}
+
+/* ---------- mobile: the rail COLLAPSES, it does not vanish ----------
+   This is a first-class deliverable, not an edge case. The rail this replaced
+   had exactly one mobile rule — .rail{display:none} at 1099px, with NO fallback
+   — while the .deepnav strip it ALSO replaced was a flex-wrap bar that worked at
+   every width. Shipping the rail as-was would therefore have removed ALL
+   navigation from every deep page below 1100px. Below the same real breakpoint
+   the rail becomes a sticky top bar: the mark, then each zone as a horizontally
+   scrollable chip row (the pattern code.html.j2's TOC already used at its narrow
+   width). Verified at 900px and at 500px — a nav is reachable at both. */
+@media (max-width:1099px){
+  .siterail{position:sticky;top:0;left:auto;bottom:auto;width:auto;height:auto;
+    border-right:0;border-bottom:1px solid var(--rail-line);
+    background:color-mix(in srgb, var(--rail-bg) 88%, transparent);
+    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+    overflow:visible;}
+  .siterail__inner{flex-direction:column;align-items:stretch;gap:4px;
+    max-width:1180px;margin:0 auto;padding:9px clamp(12px,4vw,24px);}
+  .siterail__mark{flex-direction:row;gap:.35em;margin:0 0 2px;font-size:.95rem;}
+  .siterail__title{display:none;}
+  .siterail__zone{flex-direction:row;flex-wrap:nowrap;gap:4px;
+    overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px;}
+  .siterail__zone + .siterail__zone{margin-top:0;padding-top:0;border-top:0;}
+  .siterail a.rail-anchor,.siterail a.rail-page{
+    flex:0 0 auto;white-space:nowrap;font-size:11px;
+    padding:5px 10px;border-radius:8px;}
+  .siterail a.rail-anchor[aria-current="page"],.siterail a.rail-page[aria-current="page"]{
+    color:var(--rail-fg);
+    background:color-mix(in srgb, var(--rail-accent) 15%, transparent);}
+  .siterail a.rail-anchor[aria-current="page"]::before,
+  .siterail a.rail-page[aria-current="page"]::before{content:none;}
+}
+
+/* ================= THE NEXT BAND — ONE affordance, BOTH bands =================
+   The whole band is the button. Both bands were ALREADY whole-band anchors, so
+   the click target was never the defect — the defect was that nothing on screen
+   said so. Every rule that makes a band FEEL like a control lives here, once:
+
+     resting tint     a band is visibly a control before you touch it (it used to
+                      be flat paper, indistinguishable from a footer);
+     hover lift       6% -> 18% of the accent, mixed against the PAPER, not
+                      against `transparent`. That was the old bug: a 6% -> 12%
+                      transparent tint is a ~6% alpha change over whatever is
+                      behind it, which is why the hover "did nothing";
+     border           the top rule goes accent-coloured, so the band's whole
+                      outline answers the pointer, not just its middle;
+     cursor           pointer, everywhere in the band — including its padding;
+     arrow            steps forward 5px (its own class, so a band with no arrow
+                      simply has nothing to translate);
+     label            the destination line underlines — the classic link cue,
+                      kept from .arch-fade's old hover and given to .nextbar too;
+     keyboard         :focus-visible gets the SAME lift plus the focus ring, so
+                      the affordance is not mouse-only.
+
+   The motion is the only new thing here that a reader can be hurt by, so it is
+   switched off under prefers-reduced-motion at the bottom of this block — the
+   root pages have no reduced-motion block of their own to fall back on. */
+.nextband{
+  display:block;                 /* each band overrides with its own layout */
+  cursor:pointer;
+  text-decoration:none;
+  color:var(--rail-fg);
+  border-top:1px solid var(--rail-line);
+  background:color-mix(in srgb, var(--rail-accent) 6%, var(--rail-bg));
+  transition:background-color .16s ease, border-color .16s ease;
+}
+.nextband:hover,.nextband:focus-visible{
+  background:color-mix(in srgb, var(--rail-accent) 18%, var(--rail-bg));
+  border-top-color:var(--rail-accent);
+  text-decoration:none;
+}
+.nextband:focus-visible{outline:2px solid var(--rail-accent);outline-offset:-3px;}
+.nextband__arrow{display:inline-block;transition:transform .16s ease;}
+.nextband:hover .nextband__arrow,.nextband:focus-visible .nextband__arrow{
+  transform:translateX(5px);}
+.nextband:hover .nextband__label,.nextband:focus-visible .nextband__label{
+  text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px;}
+@media (prefers-reduced-motion: reduce){
+  .nextband,.nextband__arrow{transition:none;}
+  .nextband:hover .nextband__arrow,.nextband:focus-visible .nextband__arrow{
+    transform:none;}
+}
+
+/* ---------- band 1: the next-page banner (folded in from _deepnav.css) -------
+   A full-width page-level "next" control at the FOOT of a deep page (and of
+   architecture.html), DERIVED from the deep_nav spine: the entry after the
+   active page; the last wing page -> the site front page. LAYOUT ONLY — its
+   hover/focus/cursor come from .nextband above. */
+.nextbar{display:flex;align-items:center;justify-content:space-between;gap:16px;
+  max-width:1180px;margin:24px auto 0;padding:18px clamp(16px,4vw,40px);}
+.nextbar__text{display:flex;flex-direction:column;gap:3px;min-width:0;}
+.nextbar__eyebrow{font-family:var(--mono, monospace);font-size:11px;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--rail-accent);font-weight:700;}
+.nextbar__dest{font-size:clamp(19px,2.5vw,24px);font-weight:820;
+  letter-spacing:-.015em;color:var(--rail-fg);line-height:1.1;}
+.nextbar__arrow{font-size:26px;line-height:1;color:var(--rail-accent);font-weight:700;flex:none;}
+
+/* ---------- band 2: the front page's hand-off into architecture.html ---------
+   MOVED HERE from index.html's own inline style block (2026-07-12). It stayed
+   private for as long as it was a bespoke GRADIENT — the homepage's warm paper
+   dissolving into architecture.html's cool paper. theme.css gave both pages one
+   palette, so there are no longer two papers to blend: the gradient is gone, the
+   band is flat, and what remains is the same control .nextbar is. Keeping a
+   second private copy of "how a next band behaves" is precisely how the front
+   page ends up with a dead-looking hover while the gate reports green.
+
+   LAYOUT ONLY, like .nextbar. The colours read through the --rail-* aliases (not
+   --paper/--rule directly) so the band survives on either palette, exactly as the
+   rail does. */
+.arch-fade{display:grid;justify-items:center;gap:10px;
+  margin-top:72px;padding:64px 24px;text-align:center;}
+.arch-fade .cue{font-family:var(--mono, monospace);font-size:12px;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--rail-dim);}
+.arch-fade .headline{font-family:var(--serif, serif);font-size:1.5rem;font-weight:600;
+  color:var(--rail-fg);}
+.arch-fade .sub{font-size:.95rem;color:var(--rail-dim);max-width:46ch;}
+/* The band's own bottom padding already carries the gap to whatever follows, so
+   the footer's top margin would double it. Collapse it only in that adjacency —
+   a standalone .footer keeps its own. */
+.arch-fade + .footer{margin-top:0;}
+
+    /* ---------- code excerpt cards ---------- */
+    .sys{margin:56px 0 0;}
+    .sys__head{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px;
+      border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:22px;}
+    .sys__label{font-family:var(--sans);font-weight:760;font-size:clamp(20px,2.6vw,26px);
+      letter-spacing:-.01em;margin:0;}
+    .sys__repo{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+      color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:.15em .6em;}
+    .sys__stats{font-size:14px;color:var(--muted);margin:0 0 8px;line-height:2;}
+    .sys__stats .noun{margin:0 .55em 0 .2em;}
+
+    .excerpt{margin:0 0 30px;background:var(--card);border:1px solid var(--line);
+      border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;}
+    .excerpt__meta{font-family:var(--mono);font-size:12px;color:var(--muted);
+      padding:11px 16px;border-bottom:1px solid var(--line);
+      display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+    .excerpt__meta .path{color:var(--text);font-weight:600;}
+    .excerpt__meta .sep{opacity:.5;}
+    /* An excerpt's line span and the harvest date are provenanced FACTS, so both
+       render through the shared render_stat macro: gate (e) sees a .stat carrying
+       data-source/data-verified, and the reader gets the source on hover. They are
+       fine print, not display metrics, so the stat CHIP (bold + tinted pill) is
+       dialed back to inherit here — provenance is added with no visual change. */
+    .excerpt__meta .stat,.foot .stat{font-family:inherit;font-weight:inherit;
+      color:inherit;background:none;padding:0;border-radius:0;}
+
+    /* Code surface is a FIXED dark chrome in BOTH page themes (monokai tokens
+       are tuned for it); the page around it still follows light/dark. */
+    pre[data-excerpt]{margin:0;padding:18px 18px;background:#272822;color:#f8f8f2;
+      font-family:var(--mono);font-size:13px;line-height:1.65;
+      overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:pre;tab-size:4;}
+
+    figcaption{padding:14px 18px 16px;font-size:15px;color:var(--text);
+      line-height:1.6;background:color-mix(in srgb,var(--core) 5%, transparent);}
+    figcaption::before{content:"Why it's hard  ";font-family:var(--mono);font-size:11px;
+      letter-spacing:.14em;text-transform:uppercase;color:var(--core);}
+
+    /* ---------- page shell ----------
+       This page used to carry its OWN left sidebar (.toc, "On this page") beside
+       base.html.j2's .deepnav strip. The shared site rail replaced the strip AND
+       owns an "On this page" zone, so keeping .toc would stack TWO sidebars on
+       one page. The system list is now passed to the rail as `rail_anchors`
+       (render_code.py) — same links, same scrollspy, one sidebar. The wrap is a
+       plain single column again. */
+    .codewrap{max-width:1180px;margin:0 auto;
+      padding:clamp(20px,4vw,56px) clamp(16px,4vw,40px) 72px;}
+    .codemain{min-width:0;}
+
+    /* The rail is sticky at the top below 1100px, so an anchored jump must clear
+       it; harmless above that breakpoint (the rail is a fixed left column). */
+    .sys{scroll-margin-top:66px;}
+
+    /* ---------- Pygments token colors, scoped to the excerpt <pre> ---------- */
+    pre { line-height: 125%; }
+td.linenos .normal { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+span.linenos { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+td.linenos .special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+pre[data-excerpt] .hll { background-color: #49483e }
+pre[data-excerpt] { background: #272822; color: #F8F8F2 }
+pre[data-excerpt] .c { color: #959077 } /* Comment */
+pre[data-excerpt] .err { color: #ED007E; background-color: #1E0010 } /* Error */
+pre[data-excerpt] .esc { color: #F8F8F2 } /* Escape */
+pre[data-excerpt] .g { color: #F8F8F2 } /* Generic */
+pre[data-excerpt] .k { color: #66D9EF } /* Keyword */
+pre[data-excerpt] .l { color: #AE81FF } /* Literal */
+pre[data-excerpt] .n { color: #F8F8F2 } /* Name */
+pre[data-excerpt] .o { color: #FF4689 } /* Operator */
+pre[data-excerpt] .x { color: #F8F8F2 } /* Other */
+pre[data-excerpt] .p { color: #F8F8F2 } /* Punctuation */
+pre[data-excerpt] .ch { color: #959077 } /* Comment.Hashbang */
+pre[data-excerpt] .cm { color: #959077 } /* Comment.Multiline */
+pre[data-excerpt] .cp { color: #959077 } /* Comment.Preproc */
+pre[data-excerpt] .cpf { color: #959077 } /* Comment.PreprocFile */
+pre[data-excerpt] .c1 { color: #959077 } /* Comment.Single */
+pre[data-excerpt] .cs { color: #959077 } /* Comment.Special */
+pre[data-excerpt] .gd { color: #FF4689 } /* Generic.Deleted */
+pre[data-excerpt] .ge { color: #F8F8F2; font-style: italic } /* Generic.Emph */
+pre[data-excerpt] .ges { color: #F8F8F2; font-weight: bold; font-style: italic } /* Generic.EmphStrong */
+pre[data-excerpt] .gr { color: #F8F8F2 } /* Generic.Error */
+pre[data-excerpt] .gh { color: #F8F8F2 } /* Generic.Heading */
+pre[data-excerpt] .gi { color: #A6E22E } /* Generic.Inserted */
+pre[data-excerpt] .go { color: #66D9EF } /* Generic.Output */
+pre[data-excerpt] .gp { color: #FF4689; font-weight: bold } /* Generic.Prompt */
+pre[data-excerpt] .gs { color: #F8F8F2; font-weight: bold } /* Generic.Strong */
+pre[data-excerpt] .gu { color: #959077 } /* Generic.Subheading */
+pre[data-excerpt] .gt { color: #F8F8F2 } /* Generic.Traceback */
+pre[data-excerpt] .kc { color: #66D9EF } /* Keyword.Constant */
+pre[data-excerpt] .kd { color: #66D9EF } /* Keyword.Declaration */
+pre[data-excerpt] .kn { color: #FF4689 } /* Keyword.Namespace */
+pre[data-excerpt] .kp { color: #66D9EF } /* Keyword.Pseudo */
+pre[data-excerpt] .kr { color: #66D9EF } /* Keyword.Reserved */
+pre[data-excerpt] .kt { color: #66D9EF } /* Keyword.Type */
+pre[data-excerpt] .ld { color: #E6DB74 } /* Literal.Date */
+pre[data-excerpt] .m { color: #AE81FF } /* Literal.Number */
+pre[data-excerpt] .s { color: #E6DB74 } /* Literal.String */
+pre[data-excerpt] .na { color: #A6E22E } /* Name.Attribute */
+pre[data-excerpt] .nb { color: #F8F8F2 } /* Name.Builtin */
+pre[data-excerpt] .nc { color: #A6E22E } /* Name.Class */
+pre[data-excerpt] .no { color: #66D9EF } /* Name.Constant */
+pre[data-excerpt] .nd { color: #A6E22E } /* Name.Decorator */
+pre[data-excerpt] .ni { color: #F8F8F2 } /* Name.Entity */
+pre[data-excerpt] .ne { color: #A6E22E } /* Name.Exception */
+pre[data-excerpt] .nf { color: #A6E22E } /* Name.Function */
+pre[data-excerpt] .nl { color: #F8F8F2 } /* Name.Label */
+pre[data-excerpt] .nn { color: #F8F8F2 } /* Name.Namespace */
+pre[data-excerpt] .nx { color: #A6E22E } /* Name.Other */
+pre[data-excerpt] .py { color: #F8F8F2 } /* Name.Property */
+pre[data-excerpt] .nt { color: #FF4689 } /* Name.Tag */
+pre[data-excerpt] .nv { color: #F8F8F2 } /* Name.Variable */
+pre[data-excerpt] .ow { color: #FF4689 } /* Operator.Word */
+pre[data-excerpt] .pm { color: #F8F8F2 } /* Punctuation.Marker */
+pre[data-excerpt] .w { color: #F8F8F2 } /* Text.Whitespace */
+pre[data-excerpt] .mb { color: #AE81FF } /* Literal.Number.Bin */
+pre[data-excerpt] .mf { color: #AE81FF } /* Literal.Number.Float */
+pre[data-excerpt] .mh { color: #AE81FF } /* Literal.Number.Hex */
+pre[data-excerpt] .mi { color: #AE81FF } /* Literal.Number.Integer */
+pre[data-excerpt] .mo { color: #AE81FF } /* Literal.Number.Oct */
+pre[data-excerpt] .sa { color: #E6DB74 } /* Literal.String.Affix */
+pre[data-excerpt] .sb { color: #E6DB74 } /* Literal.String.Backtick */
+pre[data-excerpt] .sc { color: #E6DB74 } /* Literal.String.Char */
+pre[data-excerpt] .dl { color: #E6DB74 } /* Literal.String.Delimiter */
+pre[data-excerpt] .sd { color: #E6DB74 } /* Literal.String.Doc */
+pre[data-excerpt] .s2 { color: #E6DB74 } /* Literal.String.Double */
+pre[data-excerpt] .se { color: #AE81FF } /* Literal.String.Escape */
+pre[data-excerpt] .sh { color: #E6DB74 } /* Literal.String.Heredoc */
+pre[data-excerpt] .si { color: #E6DB74 } /* Literal.String.Interpol */
+pre[data-excerpt] .sx { color: #E6DB74 } /* Literal.String.Other */
+pre[data-excerpt] .sr { color: #E6DB74 } /* Literal.String.Regex */
+pre[data-excerpt] .s1 { color: #E6DB74 } /* Literal.String.Single */
+pre[data-excerpt] .ss { color: #E6DB74 } /* Literal.String.Symbol */
+pre[data-excerpt] .bp { color: #F8F8F2 } /* Name.Builtin.Pseudo */
+pre[data-excerpt] .fm { color: #A6E22E } /* Name.Function.Magic */
+pre[data-excerpt] .vc { color: #F8F8F2 } /* Name.Variable.Class */
+pre[data-excerpt] .vg { color: #F8F8F2 } /* Name.Variable.Global */
+pre[data-excerpt] .vi { color: #F8F8F2 } /* Name.Variable.Instance */
+pre[data-excerpt] .vm { color: #F8F8F2 } /* Name.Variable.Magic */
+pre[data-excerpt] .il { color: #AE81FF } /* Literal.Number.Integer.Long */
+  </style>
+</head>
+<body class="code">
+<aside class="siterail" aria-label="Site navigation">
+  <div class="siterail__inner">
+    <a class="siterail__mark" href="../index.html"><span>Brendan</span><span>Wischweh</span></a>    <nav class="siterail__zone siterail__zone--page" aria-label="On this page">
+      <p class="siterail__title">On this page</p>      <a class="rail-anchor" href="#sys-validator_immune_system">Validator immune system</a>      <a class="rail-anchor" href="#sys-fv_triangulation">Answer verification</a>      <a class="rail-anchor" href="#sys-drawingml_geometry">DrawingML geometry</a>      <a class="rail-anchor" href="#sys-solution_notation">Solution generators</a>      <a class="rail-anchor" href="#sys-agent_meta_tooling">Agent & meta tooling</a>      <a class="rail-anchor" href="#sys-sim_engine">Sim engine</a>    </nav>    <nav class="siterail__zone siterail__zone--site" aria-label="The site">
+      <p class="siterail__title">The site</p>      <a class="rail-page" href="../index.html">Home</a>      <a class="rail-page" href="../architecture.html">Architecture</a>      <a class="rail-page" href="code.html" aria-current="page">Code</a>      <a class="rail-page" href="verification.html">Formal&nbsp;Verification</a>      <a class="rail-page" href="engine.html">Engine&nbsp;Room</a>      <a class="rail-page" href="systems.html">Systems&nbsp;Atlas</a>      <a class="rail-page" href="meta.html">Meta&nbsp;Tools</a>      <a class="rail-page" href="sims.html">Sims</a>      <a class="rail-page" href="gallery.html">Gallery</a>      <a class="rail-page" href="../videos.html">Videos</a>    </nav>
+  </div>
+</aside><script>
+(function () {
+  function start() {
+    var links = {};
+    var ids = [];
+    Array.prototype.forEach.call(
+      document.querySelectorAll('.siterail a.rail-anchor[href^="#"]'),
+      function (a) {
+        var id = a.getAttribute('href').slice(1);
+        if (!id) return;
+        links[id] = a;
+        ids.push(id);
+      }
+    );
+    if (!ids.length || !('IntersectionObserver' in window)) return;
+    var spy = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        ids.forEach(function (id) { links[id].removeAttribute('aria-current'); });
+        var link = links[e.target.id];
+        if (link) link.setAttribute('aria-current', 'page');
+      });
+    }, { rootMargin: '-35% 0px -55% 0px' });
+    ids.forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) spy.observe(el);
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', start);
+  } else {
+    start();
+  }
+})();
+</script>
+  <div class="codewrap">
+    <main class="codemain">
+      <p class="eyebrow">Deep dive · the code</p>
+      <h1>The code beneath the system</h1>
+      <p class="dek">Hand-picked excerpts from the engine that builds and checks the curriculum — each anchored to live source, each with an honest scale number beside it.</p>
+
+      <section class="sys" id="sys-validator_immune_system">
+        <div class="sys__head">
+          <h2 class="sys__label">Fail the build, not the student: the validator immune system</h2>
+          <span class="sys__repo">physics</span>
+        </div>
+        <p class="sys__stats">
+<span class="stat" data-source="code_excerpt_harvest.py: newline-count over physics@28077a1 globs [lib/*validation*.py, problems/tests/test_*validation*.py]" data-verified="2026-07-11" data-provenance="verified" title="source: code_excerpt_harvest.py: newline-count over physics@28077a1 globs [lib/*validation*.py, problems/tests/test_*validation*.py] · verified 2026-07-11">14,693</span><span class="noun">lines</span><span class="sep"> · </span><span class="stat" data-source="code_excerpt_harvest.py: def/class AST enum over physics@28077a1 globs [lib/*validation*.py, problems/tests/test_*validation*.py]" data-verified="2026-07-11" data-provenance="verified" title="source: code_excerpt_harvest.py: def/class AST enum over physics@28077a1 globs [lib/*validation*.py, problems/tests/test_*validation*.py] · verified 2026-07-11">719</span><span class="noun">functions</span><span class="sep"> · </span><span class="stat" data-source="code_excerpt_harvest.py: def test_* AST enum over physics@28077a1 globs [lib/*validation*.py, problems/tests/test_*validation*.py]" data-verified="2026-07-11" data-provenance="verified" title="source: code_excerpt_harvest.py: def test_* AST enum over physics@28077a1 globs [lib/*validation*.py, problems/tests/test_*validation*.py] · verified 2026-07-11">379</span><span class="noun">tests</span>        </p>
+
+        <figure class="excerpt" data-excerpt="omml_rhs_has_variables">
+          <div class="excerpt__meta"><span class="path">lib/data_validation.py</span><span class="sep">·</span><span>lib.data_validation::_omml_rhs_has_variables</span><span class="sep">·</span><span>lines <span class="stat" data-source="code_excerpt_harvest.py: line span of lib.data_validation::_omml_rhs_has_variables captured byte-exact from lib/data_validation.py at physics@28077a1" data-verified="2026-07-11" data-provenance="verified" title="source: code_excerpt_harvest.py: line span of lib.data_validation::_omml_rhs_has_variables captured byte-exact from lib/data_validation.py at physics@28077a1 · verified 2026-07-11">1216–1257</span></span></div>
+          <pre data-excerpt="omml_rhs_has_variables"><span class="k">def</span><span class="w"> </span><span class="nf">_omml_rhs_has_variables</span><span class="p">(</span><span class="n">omml_el</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if an OMML equation&#39;s RHS contains physics variables.</span>
+
+<span class="sd">    Splits at the first equals (or approx) sign by finding all m:r</span>
+<span class="sd">    runs in document order, then checks whether any run after the</span>
+<span class="sd">    equals sign is italic (a physics variable, not a number/unit).</span>
+
+<span class="sd">    In OMML, variables are italic (no m:nor in rPr) and numbers/units</span>
+<span class="sd">    are non-italic (m:nor present).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        (has_eq, has_vars, full_text) where:</span>
+<span class="sd">        - has_eq: True if the element contains = or ≈</span>
+<span class="sd">        - has_vars: True if the RHS has italic (variable) runs</span>
+<span class="sd">        - full_text: all text content for diagnostic messages</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">runs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">omml_el</span><span class="o">.</span><span class="n">iter</span><span class="p">(</span><span class="n">_M_R</span><span class="p">))</span>
+
+    <span class="c1"># Find first run containing = or ≈</span>
+    <span class="n">eq_idx</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">runs</span><span class="p">):</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">_get_run_text</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;=&#39;</span> <span class="ow">in</span> <span class="n">text</span> <span class="ow">or</span> <span class="s1">&#39;</span><span class="se">\u2248</span><span class="s1">&#39;</span> <span class="ow">in</span> <span class="n">text</span><span class="p">:</span>
+            <span class="n">eq_idx</span> <span class="o">=</span> <span class="n">i</span>
+            <span class="k">break</span>
+
+    <span class="k">if</span> <span class="n">eq_idx</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+    <span class="n">full_text</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_get_run_text</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">runs</span><span class="p">)</span>
+
+    <span class="c1"># Check runs after the equals sign for italic variables</span>
+    <span class="n">has_vars</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">runs</span><span class="p">[</span><span class="n">eq_idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:]:</span>
+        <span class="k">if</span> <span class="n">_is_italic_run</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+            <span class="n">run_text</span> <span class="o">=</span> <span class="n">_get_run_text</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+            <span class="c1"># Skip lone delta character — it&#39;s a prefix, not a variable</span>
+            <span class="k">if</span> <span class="n">run_text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="ow">and</span> <span class="n">run_text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">!=</span> <span class="n">_DELTA</span><span class="p">:</span>
+                <span class="n">has_vars</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">break</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">has_vars</span><span class="p">,</span> <span class="n">full_text</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+</pre>
+          <figcaption>A question that hands a student the formula defeats the point, so the build refuses to ship one — but &#34;R = 8 m&#34; is fair given-data while &#34;K = ½mv²&#34; is a formula, and to Word both are just equations. The tell: in Word&#39;s OMML a variable renders italic and a number does not. So this finds the equals sign among the equation&#39;s runs, then asks whether anything on the right-hand side is an italic run — if so, a formula leaked into the prompt and the build fails. Detecting a pedagogy violation by reading font styling out of XML.</figcaption>
+        </figure>
+        <figure class="excerpt" data-excerpt="red_test_missing_fg_line">
+          <div class="excerpt__meta"><span class="path">problems/tests/test_data_validation.py</span><span class="sep">·</span><span>problems.tests.test_data_validation::TestUniversalGravFgLine.test_missing_fg_line_flags_error</span><span class="sep">·</span><span>lines <span class="stat" data-source="code_excerpt_harvest.py: line span of problems.tests.test_data_validation::TestUniversalGravFgLine.test_missing_fg_line_flags_error captured byte-exact from problems/tests/test_data_validation.py at physics@28077a1" data-verified="2026-07-11" data-provenance="verified" title="source: code_excerpt_harvest.py: line span of problems.tests.test_data_validation::TestUniversalGravFgLine.test_missing_fg_line_flags_error captured byte-exact from problems/tests/test_data_validation.py at physics@28077a1 · verified 2026-07-11">326–343</span></span></div>
+          <pre data-excerpt="red_test_missing_fg_line">    <span class="k">def</span><span class="w"> </span><span class="nf">test_missing_fg_line_flags_error</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;GMm/r² on LHS without preceding Fg should flag error.&quot;&quot;&quot;</span>
+        <span class="n">aligned</span> <span class="o">=</span> <span class="n">make_aligned_block</span><span class="p">([</span>
+            <span class="n">make_sigma_f_row</span><span class="p">(),</span>
+            <span class="n">make_gmm_row</span><span class="p">(),</span>   <span class="c1"># jumped straight to GMm — no Fg!</span>
+        <span class="p">])</span>
+        <span class="n">fbd</span> <span class="o">=</span> <span class="n">make_fbd</span><span class="p">([{</span><span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="s2">&quot;F_g&quot;</span><span class="p">,</span> <span class="s2">&quot;angle&quot;</span><span class="p">:</span> <span class="mi">270</span><span class="p">}])</span>
+        <span class="n">prob</span><span class="p">,</span> <span class="n">sol</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_grav_solution</span><span class="p">([</span>
+            <span class="n">fbd</span><span class="p">,</span>
+            <span class="p">(</span><span class="s2">&quot;direction_header&quot;</span><span class="p">,</span> <span class="s2">&quot;r-dimension (toward center = +)&quot;</span><span class="p">),</span>
+            <span class="n">aligned</span><span class="p">,</span>
+        <span class="p">])</span>
+        <span class="n">issues</span> <span class="o">=</span> <span class="n">check_solution_structure</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">prob</span><span class="p">],</span> <span class="p">[</span><span class="n">sol</span><span class="p">],</span> <span class="n">unit_name</span><span class="o">=</span><span class="s2">&quot;circular&quot;</span><span class="p">)</span>
+        <span class="n">grav_issues</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">issues</span>
+                       <span class="k">if</span> <span class="n">i</span><span class="p">[</span><span class="s1">&#39;check&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;universal-grav-fg-line&#39;</span><span class="p">]</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">grav_issues</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+        <span class="k">assert</span> <span class="n">grav_issues</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;severity&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;error&#39;</span>
+</pre>
+          <figcaption>A guardrail nobody proves can catch a violation is just a comment. Every check in this immune system ships with a failing-input test that proves it fires: here one builds a solution that jumps straight to GMm/r² — skipping the step that identifies the force first — and asserts the validator raises exactly one issue, at &#34;error&#34; severity. This is the discipline the scale number (&#34;N validators, M tests&#34;) is actually claiming.</figcaption>
+        </figure>
+      </section>
+      <section class="sys" id="sys-fv_triangulation">
+        <div class="sys__head">
+          <h2 class="sys__label">Three ways to be right: triangulated answer verification</h2>
+          <span class="sys__repo">physics</span>
+        </div>
+        <p class="sys__stats">
+<span class="stat" data-source="code_excerpt_harvest.py: newline-count over physics@28077a1 globs [tools/fv_triangulation_runner.py, scripts/fv_triangulation/*.py, scripts/fv_triangulation/tests/*.py]" data-verified="2026-07-11" data-provenance="verified" title="source: code_excerpt_harvest.py: newline-count over physics@28077a1 globs [tools/fv_triangulation_runner.py, scripts/fv_triangulation/*.py, scripts/fv_triangulation/tests/*.py] · verified 2026-07-11">1,313</span><span class="noun">lines</span><span class="sep"> · </span><span class="stat" data-source="code_excerpt_harvest.py: def/class AST enum over physics@28077a1 globs [tools/fv_triangulation_runner.py, scripts/fv_triangulation/*.py, scripts/fv_triangulation/tests/*.py]" data-verified="2026-07-11" data-provenance="verified" title="source: code_excerpt_harvest.py: def/class AST enum over physics@28077a1 globs [tools/fv_triangulation_runner.py, scripts/fv_triangulation/*.py, scripts/fv_triangulation/tests/*.py] · verified 2026-07-11">47</span><span class="noun">functions</span><span class="sep"> · </span><span class="stat" data-source="code_excerpt_harvest.py: def test_* AST enum over physics@28077a1 globs [tools/fv_triangulation_runner.py, scripts/fv_triangulation/*.py, scripts/fv_triangulation/tests/*.py]" data-verified="2026-07-11" data-provenance="verified" title="source: code_excerpt_harvest.py: def test_* AST enum over physics@28077a1 globs [tools/fv_triangulation_runner.py, scripts/fv_triangulation/*.py, scripts/fv_triangulation/tests/*.py] · verified 2026-07-11">14</span><span class="noun">tests</span>        </p>
+
+        <figure class="excerpt" data-excerpt="triangulate_fault_localizer">
+          <div class="excerpt__meta"><span class="path">scripts/fv_triangulation/triangulate.py</span><span class="sep">·</span><span>scripts.fv_triangulation.triangulate::triangulate</span><span class="sep">·</span><span>lines <span class="stat" data-source="code_excerpt_harvest.py: line span of scripts.fv_triangulation.triangulate::triangulate captured byte-exact from scripts/fv_triangulation/triangulate.py at physics@28077a1" data-verified="2026-07-11" data-provenance="verified" title="source: code_excerpt_harvest.py: line span of scripts.fv_triangulation.triangulate::triangulate captured byte-exact from scripts/fv_triangulation/triangulate.py at physics@28077a1 · verified 2026-07-11">118–188</span></span></div>
+          <pre data-excerpt="triangulate_fault_localizer"><span class="k">def</span><span class="w"> </span><span class="nf">triangulate</span><span class="p">(</span>
+    <span class="n">output_key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">legs</span><span class="p">:</span> <span class="n">LegValues</span><span class="p">,</span>
+    <span class="n">band_class</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">bands</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+    <span class="n">formal_trusted</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TriangulationResult</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Localize the fault (or confirm agreement) for one triangulated quantity.</span>
+
+<span class="sd">    PURE: no IO, no globals. ``formal_trusted`` is computed upstream (the</span>
+<span class="sd">    trace-key + faithfulness check) and passed in, so the localization logic</span>
+<span class="sd">    stays a unit-testable predicate.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">aS</span> <span class="o">=</span> <span class="n">_agree</span><span class="p">(</span><span class="n">legs</span><span class="o">.</span><span class="n">authored</span><span class="p">,</span> <span class="n">legs</span><span class="o">.</span><span class="n">sim</span><span class="p">,</span> <span class="n">band_class</span><span class="p">,</span> <span class="n">bands</span><span class="p">)</span>
+    <span class="n">aF</span> <span class="o">=</span> <span class="n">_agree</span><span class="p">(</span><span class="n">legs</span><span class="o">.</span><span class="n">authored</span><span class="p">,</span> <span class="n">legs</span><span class="o">.</span><span class="n">formal</span><span class="p">,</span> <span class="n">band_class</span><span class="p">,</span> <span class="n">bands</span><span class="p">)</span>
+    <span class="n">sF</span> <span class="o">=</span> <span class="n">_agree</span><span class="p">(</span><span class="n">legs</span><span class="o">.</span><span class="n">sim</span><span class="p">,</span> <span class="n">legs</span><span class="o">.</span><span class="n">formal</span><span class="p">,</span> <span class="n">band_class</span><span class="p">,</span> <span class="n">bands</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">aS</span> <span class="ow">and</span> <span class="n">aF</span> <span class="ow">and</span> <span class="n">sF</span><span class="p">:</span>
+        <span class="n">verdict</span> <span class="o">=</span> <span class="n">Verdict</span><span class="o">.</span><span class="n">PASS</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;three legs agree within tolerance&quot;</span>
+    <span class="k">elif</span> <span class="n">sF</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">aS</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">aF</span><span class="p">:</span>
+        <span class="c1"># A is the lone outlier; the two key-independent legs corroborate.</span>
+        <span class="n">verdict</span> <span class="o">=</span> <span class="n">Verdict</span><span class="o">.</span><span class="n">BAD_KEY</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">&quot;authored value disagrees with BOTH sim and formal (which agree) &quot;</span>
+            <span class="s2">&quot;-&gt; answer key is the outlier&quot;</span>
+        <span class="p">)</span>
+    <span class="k">elif</span> <span class="n">aS</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">aF</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">sF</span><span class="p">:</span>
+        <span class="c1"># F is the lone outlier; key and sim independently agree.</span>
+        <span class="n">verdict</span> <span class="o">=</span> <span class="n">Verdict</span><span class="o">.</span><span class="n">FORMAL_LEG_ERROR</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">&quot;formal predictor disagrees with BOTH authored and sim (which agree) &quot;</span>
+            <span class="s2">&quot;-&gt; the closed-form predictor is the outlier (not a content error)&quot;</span>
+        <span class="p">)</span>
+    <span class="k">elif</span> <span class="n">aF</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">aS</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">sF</span><span class="p">:</span>
+        <span class="c1"># S is the lone outlier; key and formal agree. Decisive ONLY if the</span>
+        <span class="c1"># formal leg is independent of the key (faithful to its Lean theorem).</span>
+        <span class="k">if</span> <span class="n">formal_trusted</span><span class="p">:</span>
+            <span class="n">verdict</span> <span class="o">=</span> <span class="n">Verdict</span><span class="o">.</span><span class="n">SIM_BUG</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="s2">&quot;sim disagrees while authored and a TRUSTED formal predictor &quot;</span>
+                <span class="s2">&quot;agree -&gt; simulation/integrator is the outlier&quot;</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">verdict</span> <span class="o">=</span> <span class="n">Verdict</span><span class="o">.</span><span class="n">SHARED_WRONG_MODEL</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="s2">&quot;sim disagrees while authored and formal agree, BUT the formal &quot;</span>
+                <span class="s2">&quot;predictor is NOT trusted (it does not faithfully implement its &quot;</span>
+                <span class="s2">&quot;Lean theorem) -&gt; cannot discriminate a sim bug from a shared &quot;</span>
+                <span class="s2">&quot;key+predictor wrong-model; human review required&quot;</span>
+            <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># All-disagree, or intransitive (e.g. A≈S and S≈F but A≠F). No clean</span>
+        <span class="c1"># lone outlier — fail loud rather than force-fit a label.</span>
+        <span class="n">verdict</span> <span class="o">=</span> <span class="n">Verdict</span><span class="o">.</span><span class="n">INDETERMINATE</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">&quot;no clean lone-outlier among the three legs &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;(agree A~S=</span><span class="si">{</span><span class="n">aS</span><span class="si">}</span><span class="s2">, A~F=</span><span class="si">{</span><span class="n">aF</span><span class="si">}</span><span class="s2">, S~F=</span><span class="si">{</span><span class="n">sF</span><span class="si">}</span><span class="s2">) -&gt; cannot localize; &quot;</span>
+            <span class="s2">&quot;human review required&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">TriangulationResult</span><span class="p">(</span>
+        <span class="n">output_key</span><span class="o">=</span><span class="n">output_key</span><span class="p">,</span>
+        <span class="n">verdict</span><span class="o">=</span><span class="n">verdict</span><span class="p">,</span>
+        <span class="n">legs</span><span class="o">=</span><span class="n">legs</span><span class="p">,</span>
+        <span class="n">formal_trusted</span><span class="o">=</span><span class="n">formal_trusted</span><span class="p">,</span>
+        <span class="n">agree_authored_sim</span><span class="o">=</span><span class="n">aS</span><span class="p">,</span>
+        <span class="n">agree_authored_formal</span><span class="o">=</span><span class="n">aF</span><span class="p">,</span>
+        <span class="n">agree_sim_formal</span><span class="o">=</span><span class="n">sF</span><span class="p">,</span>
+        <span class="n">message</span><span class="o">=</span><span class="n">msg</span><span class="p">,</span>
+    <span class="p">)</span>
+</pre>
+          <figcaption>Three independent values — the authored answer key, an RK4 numerical sim, and a Lean-proven closed form — collapse to three pairwise-agreement booleans, and every one of the eight combinations maps to an explicit fault verdict with no silent default. The subtle branch: when the sim is the lone outlier, that is ambiguous — a real sim bug, OR a key and predictor that share the SAME wrong model — so the code refuses to blame the sim unless the formal leg is provably independent of the key, degrading to &#34;shared wrong model, needs review&#34; otherwise. That guard is the line between a fault localizer and a rubber stamp that always blames the sim.</figcaption>
+        </figure>
+        <figure class="excerpt" data-excerpt="assess_formal_leg_trust">
+          <div class="excerpt__meta"><span class="path">scripts/fv_triangulation/predictors.py</span><span class="sep">·</span><span>scripts.fv_triangulation.predictors::assess_trust</span><span class="sep">·</span><span>lines <span class="stat" data-source="code_excerpt_harvest.py: line span of scripts.fv_triangulation.predictors::assess_trust captured byte-exact from scripts/fv_triangulation/predictors.py at physics@28077a1" data-verified="2026-07-11" data-provenance="verified" title="source: code_excerpt_harvest.py: line span of scripts.fv_triangulation.predictors::assess_trust captured byte-exact from scripts/fv_triangulation/predictors.py at physics@28077a1 · verified 2026-07-11">82–121</span></span></div>
+          <pre data-excerpt="assess_formal_leg_trust"><span class="k">def</span><span class="w"> </span><span class="nf">assess_trust</span><span class="p">(</span>
+    <span class="n">predicted</span><span class="p">:</span> <span class="n">PredictorOutput</span><span class="p">,</span>
+    <span class="n">theorem</span><span class="p">:</span> <span class="n">CurriculumTheoremProof</span><span class="p">,</span>
+    <span class="n">params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
+    <span class="n">built</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TrustResult</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Is the formal leg independent enough to corroborate the answer key?</span>
+
+<span class="sd">    Trusted iff ALL hold:</span>
+<span class="sd">      (a) target_symbol resolves to a BUILT, axiom-audited Lean theorem;</span>
+<span class="sd">      (b) the predictor&#39;s value reproduces the certified closed form (faithful);</span>
+<span class="sd">      (c) the predictor declares the certified formula it actually implements.</span>
+<span class="sd">    A failure of any clause means the formal leg cannot be treated as an</span>
+<span class="sd">    independent corroborator — the localizer then refuses to call a key+formal</span>
+<span class="sd">    agreement a &quot;sim bug&quot;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">resolves_to_built_theorem</span><span class="p">(</span><span class="n">predicted</span><span class="o">.</span><span class="n">target_symbol</span><span class="p">,</span> <span class="n">built</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">TrustResult</span><span class="p">(</span>
+            <span class="kc">False</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;target_symbol </span><span class="si">{</span><span class="n">predicted</span><span class="o">.</span><span class="n">target_symbol</span><span class="si">!r}</span><span class="s2"> does not resolve to a &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;built, axiom-audited Lean theorem&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="n">certified</span> <span class="o">=</span> <span class="n">theorem</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">math</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">predicted</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">certified</span><span class="p">,</span> <span class="n">rel_tol</span><span class="o">=</span><span class="mf">1e-9</span><span class="p">,</span> <span class="n">abs_tol</span><span class="o">=</span><span class="mf">1e-12</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">TrustResult</span><span class="p">(</span>
+            <span class="kc">False</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;predictor value </span><span class="si">{</span><span class="n">predicted</span><span class="o">.</span><span class="n">value</span><span class="si">!r}</span><span class="s2"> does not reproduce the &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;certified closed form (got </span><span class="si">{</span><span class="n">certified</span><span class="si">!r}</span><span class="s2">) — predictor has drifted &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;from the Lean-proven formula (shared-wrong-model symptom)&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">predicted</span><span class="o">.</span><span class="n">formula_id</span> <span class="o">!=</span> <span class="n">theorem</span><span class="o">.</span><span class="n">certified_formula</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">TrustResult</span><span class="p">(</span>
+            <span class="kc">False</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;predictor declares formula </span><span class="si">{</span><span class="n">predicted</span><span class="o">.</span><span class="n">formula_id</span><span class="si">!r}</span><span class="s2"> but the &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;certified formula is </span><span class="si">{</span><span class="n">theorem</span><span class="o">.</span><span class="n">certified_formula</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">TrustResult</span><span class="p">(</span>
+        <span class="kc">True</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">&quot;formal leg faithful to built theorem </span><span class="si">{</span><span class="n">predicted</span><span class="o">.</span><span class="n">target_symbol</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+</pre>
+          <figcaption>The formal leg can only corroborate the answer key to the extent it does not secretly depend on it — so &#34;trust&#34; takes three separate clauses: the target theorem is actually built and axiom-audited in Lean, the Python f64 value reproduces the certified closed form to 1e-9, and the predictor honestly declares which formula it implements. A predictor that has silently drifted from its proven formula encodes the same error a wrong key would, so this returns UNTRUSTED — which is exactly what stops the localizer from being fooled into blaming the sim.</figcaption>
+        </figure>
+      </section>
+      <section class="sys" id="sys-drawingml_geometry">
+        <div class="sys__head">
+          <h2 class="sys__label">Wrestling with Microsoft Word: DrawingML geometry</h2>
+          <span class="sys__repo">parent</span>
+        </div>
+        <p class="sys__stats">
+<span class="stat" data-source="code_excerpt_harvest.py: newline-count over parent@12913df globs [tools/claude_tools/diagrams/*.py]" data-verified="2026-07-11" data-provenance="verified" title="source: code_excerpt_harvest.py: newline-count over parent@12913df globs [tools/claude_tools/diagrams/*.py] · verified 2026-07-11">8,855</span><span class="noun">lines</span><span class="sep"> · </span><span class="stat" data-source="code_excerpt_harvest.py: def/class AST enum over parent@12913df globs [tools/claude_tools/diagrams/*.py]" data-verified="2026-07-11" data-provenance="verified" title="source: code_excerpt_harvest.py: def/class AST enum over parent@12913df globs [tools/claude_tools/diagrams/*.py] · verified 2026-07-11">196</span><span class="noun">functions</span>        </p>
+
+        <figure class="excerpt" data-excerpt="find_clear_cx">
+          <div class="excerpt__meta"><span class="path">tools/claude_tools/diagrams/surface.py</span><span class="sep">·</span><span>claude_tools.diagrams.surface::Surface.find_clear_cx</span><span class="sep">·</span><span>lines <span class="stat" data-source="code_excerpt_harvest.py: line span of claude_tools.diagrams.surface::Surface.find_clear_cx captured byte-exact from tools/claude_tools/diagrams/surface.py at parent@12913df" data-verified="2026-07-11" data-provenance="verified" title="source: code_excerpt_harvest.py: line span of claude_tools.diagrams.surface::Surface.find_clear_cx captured byte-exact from tools/claude_tools/diagrams/surface.py at parent@12913df · verified 2026-07-11">117–179</span></span></div>
+          <pre data-excerpt="find_clear_cx">    <span class="k">def</span><span class="w"> </span><span class="nf">find_clear_cx</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cx</span><span class="p">,</span> <span class="n">label_w</span><span class="p">,</span> <span class="n">perp_min</span><span class="p">,</span> <span class="n">perp_max</span><span class="p">,</span> <span class="n">pad</span><span class="o">=</span><span class="mi">12</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Find a clear x-position for a label, shifting if needed.</span>
+
+<span class="sd">        Checks the proposed label position against all 2D obstacles.</span>
+<span class="sd">        If an overlap is found, shifts the label along the surface</span>
+<span class="sd">        (rightward first, then leftward) until it clears.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            cx: proposed screen x-center of the label.</span>
+<span class="sd">            label_w: label width in pt.</span>
+<span class="sd">            perp_min, perp_max: perpendicular range of the label.</span>
+<span class="sd">            pad: minimum clearance in pt between label and obstacle.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Adjusted cx that avoids all obstacles.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">half_w</span> <span class="o">=</span> <span class="n">label_w</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="n">x_min</span> <span class="o">=</span> <span class="n">cx</span> <span class="o">-</span> <span class="n">half_w</span>
+        <span class="n">x_max</span> <span class="o">=</span> <span class="n">cx</span> <span class="o">+</span> <span class="n">half_w</span>
+
+        <span class="n">overlap</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_overlap</span><span class="p">(</span><span class="n">perp_min</span><span class="p">,</span> <span class="n">perp_max</span><span class="p">,</span> <span class="n">x_min</span><span class="p">,</span> <span class="n">x_max</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">overlap</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">cx</span>  <span class="c1"># no collision</span>
+
+        <span class="c1"># Shift right: place label&#39;s left edge at obstacle&#39;s right edge + pad</span>
+        <span class="n">elem_xmax</span> <span class="o">=</span> <span class="n">overlap</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;x_max&#39;</span><span class="p">)</span>
+        <span class="n">elem_xmin</span> <span class="o">=</span> <span class="n">overlap</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;x_min&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">elem_xmax</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">right_cx</span> <span class="o">=</span> <span class="n">elem_xmax</span> <span class="o">+</span> <span class="n">pad</span> <span class="o">+</span> <span class="n">half_w</span>
+            <span class="c1"># Check the new position doesn&#39;t collide with something else</span>
+            <span class="n">right_ok</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_overlap</span><span class="p">(</span>
+                <span class="n">perp_min</span><span class="p">,</span> <span class="n">perp_max</span><span class="p">,</span>
+                <span class="n">right_cx</span> <span class="o">-</span> <span class="n">half_w</span><span class="p">,</span> <span class="n">right_cx</span> <span class="o">+</span> <span class="n">half_w</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">right_ok</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">right_cx</span> <span class="o">=</span> <span class="n">cx</span>
+
+        <span class="k">if</span> <span class="n">elem_xmin</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">left_cx</span> <span class="o">=</span> <span class="n">elem_xmin</span> <span class="o">-</span> <span class="n">pad</span> <span class="o">-</span> <span class="n">half_w</span>
+            <span class="n">left_ok</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_overlap</span><span class="p">(</span>
+                <span class="n">perp_min</span><span class="p">,</span> <span class="n">perp_max</span><span class="p">,</span>
+                <span class="n">left_cx</span> <span class="o">-</span> <span class="n">half_w</span><span class="p">,</span> <span class="n">left_cx</span> <span class="o">+</span> <span class="n">half_w</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">left_ok</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">left_cx</span> <span class="o">=</span> <span class="n">cx</span>
+
+        <span class="c1"># Prefer whichever direction keeps the label closer to surface center</span>
+        <span class="n">surf_center</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x1</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">x2</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="k">if</span> <span class="n">right_ok</span> <span class="ow">and</span> <span class="n">left_ok</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">right_cx</span> <span class="o">-</span> <span class="n">surf_center</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">left_cx</span> <span class="o">-</span> <span class="n">surf_center</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">right_cx</span>
+            <span class="k">return</span> <span class="n">left_cx</span>
+        <span class="k">if</span> <span class="n">right_ok</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">right_cx</span>
+        <span class="k">if</span> <span class="n">left_ok</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">left_cx</span>
+
+        <span class="c1"># Neither direction works — use original and warn</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;WARNING: friction label at cx=</span><span class="si">{</span><span class="n">cx</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> overlaps &quot;</span>
+              <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">overlap</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&#39; and cannot shift clear&quot;</span><span class="p">,</span>
+              <span class="n">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">cx</span>
+</pre>
+          <figcaption>You can&#39;t ask Word &#34;did this label overlap that arrow?&#34; — so the code has to predict it. Given a proposed label position it checks every registered obstacle, and on a collision shifts the label along the surface (right, then left), re-checking each candidate, then keeps whichever clear spot sits closest to the surface&#39;s center — and warns honestly when nothing clears. This is collision avoidance the renderer will never do for you.</figcaption>
+        </figure>
+        <figure class="excerpt" data-excerpt="distance_elements_bbox">
+          <div class="excerpt__meta"><span class="path">tools/claude_tools/diagrams/measurements.py</span><span class="sep">·</span><span>claude_tools.diagrams.measurements::_distance_elements_bbox</span><span class="sep">·</span><span>lines <span class="stat" data-source="code_excerpt_harvest.py: line span of claude_tools.diagrams.measurements::_distance_elements_bbox captured byte-exact from tools/claude_tools/diagrams/measurements.py at parent@12913df" data-verified="2026-07-11" data-provenance="verified" title="source: code_excerpt_harvest.py: line span of claude_tools.diagrams.measurements::_distance_elements_bbox captured byte-exact from tools/claude_tools/diagrams/measurements.py at parent@12913df · verified 2026-07-11">158–182</span></span></div>
+          <pre data-excerpt="distance_elements_bbox"><span class="k">def</span><span class="w"> </span><span class="nf">_distance_elements_bbox</span><span class="p">(</span><span class="n">surf</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">perp</span><span class="p">,</span> <span class="n">label_gap</span><span class="p">,</span>
+                            <span class="n">font_size_half_pt</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">bold</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">italic</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Bounding box of the distance line&#39;s tick marks and label.</span>
+
+<span class="sd">    Computes where the ticks and label would be drawn (same math as</span>
+<span class="sd">    the drawing code) and returns (x_min, y_min, x_max, y_max).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">d1x</span><span class="p">,</span> <span class="n">d1y</span> <span class="o">=</span> <span class="n">surf</span><span class="o">.</span><span class="n">above</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">perp</span><span class="p">)</span>
+    <span class="n">d2x</span><span class="p">,</span> <span class="n">d2y</span> <span class="o">=</span> <span class="n">surf</span><span class="o">.</span><span class="n">above</span><span class="p">(</span><span class="n">x2</span><span class="p">,</span> <span class="n">perp</span><span class="p">)</span>
+
+    <span class="n">tk</span> <span class="o">=</span> <span class="mi">5</span>  <span class="c1"># tick half-length</span>
+    <span class="n">all_x</span> <span class="o">=</span> <span class="p">[</span><span class="n">d1x</span><span class="p">,</span> <span class="n">d2x</span><span class="p">]</span>
+    <span class="n">all_y</span> <span class="o">=</span> <span class="p">[</span><span class="n">d1y</span><span class="p">,</span> <span class="n">d2y</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">ptx</span><span class="p">,</span> <span class="n">pty</span> <span class="ow">in</span> <span class="p">[(</span><span class="n">d1x</span><span class="p">,</span> <span class="n">d1y</span><span class="p">),</span> <span class="p">(</span><span class="n">d2x</span><span class="p">,</span> <span class="n">d2y</span><span class="p">)]:</span>
+        <span class="n">all_x</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">ptx</span> <span class="o">+</span> <span class="n">tk</span> <span class="o">*</span> <span class="n">surf</span><span class="o">.</span><span class="n">nx</span><span class="p">,</span> <span class="n">ptx</span> <span class="o">-</span> <span class="n">tk</span> <span class="o">*</span> <span class="n">surf</span><span class="o">.</span><span class="n">nx</span><span class="p">])</span>
+        <span class="n">all_y</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">pty</span> <span class="o">+</span> <span class="n">tk</span> <span class="o">*</span> <span class="n">surf</span><span class="o">.</span><span class="n">ny</span><span class="p">,</span> <span class="n">pty</span> <span class="o">-</span> <span class="n">tk</span> <span class="o">*</span> <span class="n">surf</span><span class="o">.</span><span class="n">ny</span><span class="p">])</span>
+
+    <span class="c1"># Label bounding box</span>
+    <span class="n">mid_x</span> <span class="o">=</span> <span class="p">(</span><span class="n">x1</span> <span class="o">+</span> <span class="n">x2</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+    <span class="n">lx</span><span class="p">,</span> <span class="n">ly</span> <span class="o">=</span> <span class="n">surf</span><span class="o">.</span><span class="n">above</span><span class="p">(</span><span class="n">mid_x</span><span class="p">,</span> <span class="n">perp</span> <span class="o">-</span> <span class="n">label_gap</span><span class="p">)</span>
+    <span class="n">label_w</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">fit_text</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">font_size_half_pt</span><span class="p">,</span> <span class="n">bold</span><span class="o">=</span><span class="n">bold</span><span class="p">,</span> <span class="n">italic</span><span class="o">=</span><span class="n">italic</span><span class="p">)</span>
+    <span class="n">all_x</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">lx</span> <span class="o">-</span> <span class="n">label_w</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">lx</span> <span class="o">+</span> <span class="n">label_w</span> <span class="o">/</span> <span class="mi">2</span><span class="p">])</span>
+    <span class="n">all_y</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">ly</span><span class="p">,</span> <span class="n">ly</span> <span class="o">+</span> <span class="mi">14</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">all_x</span><span class="p">),</span> <span class="nb">min</span><span class="p">(</span><span class="n">all_y</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">all_x</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">all_y</span><span class="p">))</span>
+</pre>
+          <figcaption>Before a distance measurement is drawn, its footprint is computed the SAME way the DrawingML code will draw it — each tick projected along the surface normal with surf.above(), the label sized by actually measuring the text (fit_text). Because Word won&#39;t report back where anything rendered, that predicted bounding box is what lets a neighboring label detect an overlap and shift clear in advance.</figcaption>
+        </figure>
+      </section>
+      <section class="sys" id="sys-solution_notation">
+        <div class="sys__head">
+          <h2 class="sys__label">Notation you can&#39;t fake: the solution generators</h2>
+          <span class="sys__repo">physics</span>
+        </div>
+        <p class="sys__stats">
+<span class="stat" data-source="code_excerpt_harvest.py: newline-count over physics@28077a1 globs [lib/physics_subject/*.py]" data-verified="2026-07-11" data-provenance="verified" title="source: code_excerpt_harvest.py: newline-count over physics@28077a1 globs [lib/physics_subject/*.py] · verified 2026-07-11">2,242</span><span class="noun">lines</span><span class="sep"> · </span><span class="stat" data-source="code_excerpt_harvest.py: def/class AST enum over physics@28077a1 globs [lib/physics_subject/*.py]" data-verified="2026-07-11" data-provenance="verified" title="source: code_excerpt_harvest.py: def/class AST enum over physics@28077a1 globs [lib/physics_subject/*.py] · verified 2026-07-11">43</span><span class="noun">functions</span>        </p>
+
+        <figure class="excerpt" data-excerpt="force_setup">
+          <div class="excerpt__meta"><span class="path">lib/physics_subject/solution_templates.py</span><span class="sep">·</span><span>lib.physics_subject.solution_templates::force_setup</span><span class="sep">·</span><span>lines <span class="stat" data-source="code_excerpt_harvest.py: line span of lib.physics_subject.solution_templates::force_setup captured byte-exact from lib/physics_subject/solution_templates.py at physics@28077a1" data-verified="2026-07-11" data-provenance="verified" title="source: code_excerpt_harvest.py: line span of lib.physics_subject.solution_templates::force_setup captured byte-exact from lib/physics_subject/solution_templates.py at physics@28077a1 · verified 2026-07-11">26–88</span></span></div>
+          <pre data-excerpt="force_setup"><span class="k">def</span><span class="w"> </span><span class="nf">force_setup</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">note</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate standard \u03a3F = ma opening rows for Newton&#39;s 2nd law.</span>
+
+<span class="sd">    Returns a list of aligned-block row tuples ready to splice into an</span>
+<span class="sd">    (&quot;aligned&quot;, [...]) block with ``*force_setup(...)``.</span>
+
+<span class="sd">    Modes</span>
+<span class="sd">    -----</span>
+<span class="sd">    &quot;circular&quot;    \u2014 2 rows: \u03a3F = ma, then \u03a3F = mv\u00b2/R</span>
+<span class="sd">    &quot;linear&quot;      \u2014 1 row: \u03a3F = ma (with optional direction subscript)</span>
+<span class="sd">    &quot;equilibrium&quot; \u2014 1 row: \u03a3F = 0</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mode : str</span>
+<span class="sd">        One of &quot;circular&quot;, &quot;linear&quot;, &quot;equilibrium&quot;.</span>
+<span class="sd">    direction : str or None</span>
+<span class="sd">        Subscript for F and a: &quot;x&quot;, &quot;y&quot;, &quot;r&quot;, &quot;t&quot;, or None (no subscript).</span>
+<span class="sd">    note : str or None</span>
+<span class="sd">        Custom annotation for the first row.  Defaults vary by mode:</span>
+<span class="sd">        &quot;Newton\u2019s 2nd law&quot; for circular/linear, None for equilibrium.</span>
+
+<span class="sd">    Usage::</span>
+
+<span class="sd">        (&quot;aligned&quot;, [</span>
+<span class="sd">            *force_setup(&quot;circular&quot;),</span>
+<span class="sd">            ([T, -, mg], [mv\u00b2_B/L], &quot;at bottom: T toward center&quot;),</span>
+<span class="sd">            ...</span>
+<span class="sd">        ])</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Fresh OMML elements each call (avoids lxml single-parent reuse bug)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_sigma_f</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">direction</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">omml_text</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\u03a3</span><span class="s2">&quot;</span><span class="p">),</span>
+                    <span class="n">omml_sub</span><span class="p">([</span><span class="n">omml_var</span><span class="p">(</span><span class="s2">&quot;F&quot;</span><span class="p">)],</span> <span class="p">[</span><span class="n">omml_var</span><span class="p">(</span><span class="n">direction</span><span class="p">)])]</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">omml_text</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\u03a3</span><span class="s2">&quot;</span><span class="p">),</span> <span class="n">omml_var</span><span class="p">(</span><span class="s2">&quot;F&quot;</span><span class="p">)]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_ma</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">direction</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">omml_var</span><span class="p">(</span><span class="s2">&quot;m&quot;</span><span class="p">),</span>
+                    <span class="n">omml_sub</span><span class="p">([</span><span class="n">omml_var</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">)],</span> <span class="p">[</span><span class="n">omml_var</span><span class="p">(</span><span class="n">direction</span><span class="p">)])]</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">omml_var</span><span class="p">(</span><span class="s2">&quot;m&quot;</span><span class="p">),</span> <span class="n">omml_var</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">)]</span>
+
+    <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;equilibrium&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[(</span><span class="n">_sigma_f</span><span class="p">(),</span> <span class="p">[</span><span class="n">omml_text</span><span class="p">(</span><span class="s2">&quot;0&quot;</span><span class="p">)],</span> <span class="n">note</span><span class="p">)]</span>
+
+    <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;linear&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="p">(</span><span class="n">_sigma_f</span><span class="p">(),</span> <span class="n">_ma</span><span class="p">(),</span>
+             <span class="n">note</span> <span class="k">if</span> <span class="n">note</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot;Newton</span><span class="se">\u2019</span><span class="s2">s 2nd law&quot;</span><span class="p">),</span>
+        <span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;circular&quot;</span><span class="p">:</span>
+        <span class="n">mv2_r</span> <span class="o">=</span> <span class="p">[</span><span class="n">omml_frac</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">omml_var</span><span class="p">(</span><span class="s2">&quot;m&quot;</span><span class="p">),</span> <span class="n">omml_sup</span><span class="p">([</span><span class="n">omml_var</span><span class="p">(</span><span class="s2">&quot;v&quot;</span><span class="p">)],</span> <span class="p">[</span><span class="n">omml_text</span><span class="p">(</span><span class="s2">&quot;2&quot;</span><span class="p">)])],</span>
+            <span class="p">[</span><span class="n">omml_var</span><span class="p">(</span><span class="s2">&quot;R&quot;</span><span class="p">)])]</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="p">(</span><span class="n">_sigma_f</span><span class="p">(),</span> <span class="n">_ma</span><span class="p">(),</span>
+             <span class="n">note</span> <span class="k">if</span> <span class="n">note</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot;Newton</span><span class="se">\u2019</span><span class="s2">s 2nd law&quot;</span><span class="p">),</span>
+            <span class="p">(</span><span class="n">_sigma_f</span><span class="p">(),</span> <span class="n">mv2_r</span><span class="p">,</span> <span class="s2">&quot;circular: a = v</span><span class="se">\u00b2</span><span class="s2">/R&quot;</span><span class="p">),</span>
+        <span class="p">]</span>
+
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown force_setup mode: </span><span class="si">{</span><span class="n">mode</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre>
+          <figcaption>Every Newton&#39;s-second-law derivation a student sees opens the same way — ΣF = ma, with the right subscript, the mv²/R form for circular motion — because the opening rows are GENERATED, not retyped per problem. This emits them as Word equation (OMML) objects for three modes, and rebuilds fresh elements on every call to dodge an lxml bug where one node can&#39;t have two parents. Notation correctness by construction.</figcaption>
+        </figure>
+      </section>
+      <section class="sys" id="sys-agent_meta_tooling">
+        <div class="sys__head">
+          <h2 class="sys__label">The tools that build the tools: recall, the invariant registry, retro</h2>
+          <span class="sys__repo">parent</span>
+        </div>
+        <p class="sys__stats">
+<span class="stat" data-source="code_excerpt_harvest.py: newline-count over parent@12913df globs [tools/recall/**/*.py, tools/metacognition/**/*.py, tools/retro/**/*.py]" data-verified="2026-07-11" data-provenance="verified" title="source: code_excerpt_harvest.py: newline-count over parent@12913df globs [tools/recall/**/*.py, tools/metacognition/**/*.py, tools/retro/**/*.py] · verified 2026-07-11">220,484</span><span class="noun">lines</span><span class="sep"> · </span><span class="stat" data-source="code_excerpt_harvest.py: def/class AST enum over parent@12913df globs [tools/recall/**/*.py, tools/metacognition/**/*.py, tools/retro/**/*.py]" data-verified="2026-07-11" data-provenance="verified" title="source: code_excerpt_harvest.py: def/class AST enum over parent@12913df globs [tools/recall/**/*.py, tools/metacognition/**/*.py, tools/retro/**/*.py] · verified 2026-07-11">8,227</span><span class="noun">functions</span><span class="sep"> · </span><span class="stat" data-source="code_excerpt_harvest.py: def test_* AST enum over parent@12913df globs [tools/recall/**/*.py, tools/metacognition/**/*.py, tools/retro/**/*.py]" data-verified="2026-07-11" data-provenance="verified" title="source: code_excerpt_harvest.py: def test_* AST enum over parent@12913df globs [tools/recall/**/*.py, tools/metacognition/**/*.py, tools/retro/**/*.py] · verified 2026-07-11">2,724</span><span class="noun">tests</span>        </p>
+
+        <figure class="excerpt" data-excerpt="recall_tfidf_dismax_retrieve">
+          <div class="excerpt__meta"><span class="path">tools/recall/retrieval/keyword.py</span><span class="sep">·</span><span>recall.retrieval.keyword::KeywordRetriever.retrieve</span><span class="sep">·</span><span>lines <span class="stat" data-source="code_excerpt_harvest.py: line span of recall.retrieval.keyword::KeywordRetriever.retrieve captured byte-exact from tools/recall/retrieval/keyword.py at parent@12913df" data-verified="2026-07-11" data-provenance="verified" title="source: code_excerpt_harvest.py: line span of recall.retrieval.keyword::KeywordRetriever.retrieve captured byte-exact from tools/recall/retrieval/keyword.py at parent@12913df · verified 2026-07-11">204–267</span></span></div>
+          <pre data-excerpt="recall_tfidf_dismax_retrieve">    <span class="k">def</span><span class="w"> </span><span class="nf">retrieve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">k</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">RetrievalResult</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return up to *k* assets most similar to *query*, score-descending.</span>
+
+<span class="sd">        Score is TF-IDF cosine similarity in ``[0.0, 1.0]`` (see the module</span>
+<span class="sd">        docstring). Results scoring exactly ``0.0`` (no shared term) are</span>
+<span class="sd">        omitted — the caller&#39;s relevance floor would drop them anyway, and</span>
+<span class="sd">        omitting them keeps the list short. Ties break by ``asset.id`` so</span>
+<span class="sd">        the ordering is deterministic.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">query</span> <span class="ow">or</span> <span class="n">k</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">assets</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+
+        <span class="n">query_terms</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">tokenize</span><span class="p">(</span><span class="n">query</span><span class="p">))</span>
+        <span class="c1"># Full query vector over the hook + body vocabulary; drops terms absent</span>
+        <span class="c1"># from the whole corpus (they cannot contribute and would only distort</span>
+        <span class="c1"># the norm). Used to score BODY documents.</span>
+        <span class="n">q_full</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">t</span><span class="p">:</span> <span class="n">c</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_idf</span><span class="p">[</span><span class="n">t</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">query_terms</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_idf</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">q_full</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+        <span class="n">norm_full</span> <span class="o">=</span> <span class="n">_norm</span><span class="p">(</span><span class="n">q_full</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">norm_full</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+        <span class="c1"># Hook query vector — restricted to terms occurring in some hook</span>
+        <span class="c1"># document. This is exactly the v1 query vector, so hook-document scores</span>
+        <span class="c1"># are identical to the no-body index: multi-field max is regression-free.</span>
+        <span class="n">q_hook</span> <span class="o">=</span> <span class="p">{</span><span class="n">t</span><span class="p">:</span> <span class="n">w</span> <span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">q_full</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hook_vocab</span><span class="p">}</span>
+        <span class="n">norm_hook</span> <span class="o">=</span> <span class="n">_norm</span><span class="p">(</span><span class="n">q_hook</span><span class="p">)</span>
+
+        <span class="c1"># Score every document with its field&#39;s query vector, then collapse to</span>
+        <span class="c1"># one result per asset taking the MAX over its documents (multi-field</span>
+        <span class="c1"># max). An asset with a hook AND a body document keeps the higher.</span>
+        <span class="n">best_by_asset</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">owner</span><span class="p">,</span> <span class="n">doc_vec</span><span class="p">,</span> <span class="n">doc_norm</span><span class="p">,</span> <span class="n">is_body</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_doc_owner</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_doc_vectors</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_doc_norms</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_doc_is_body</span><span class="p">,</span>
+        <span class="p">):</span>
+            <span class="k">if</span> <span class="n">doc_norm</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">q_vec</span><span class="p">,</span> <span class="n">q_norm</span> <span class="o">=</span> <span class="p">(</span><span class="n">q_full</span><span class="p">,</span> <span class="n">norm_full</span><span class="p">)</span> <span class="k">if</span> <span class="n">is_body</span> <span class="k">else</span> <span class="p">(</span><span class="n">q_hook</span><span class="p">,</span> <span class="n">norm_hook</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">q_norm</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="c1"># Dot product over the smaller vector&#39;s terms.</span>
+            <span class="n">dot</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span>
+                <span class="n">weight</span> <span class="o">*</span> <span class="n">doc_vec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">term</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">term</span><span class="p">,</span> <span class="n">weight</span> <span class="ow">in</span> <span class="n">q_vec</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">dot</span> <span class="o">&lt;=</span> <span class="mf">0.0</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">score</span> <span class="o">=</span> <span class="n">dot</span> <span class="o">/</span> <span class="p">(</span><span class="n">q_norm</span> <span class="o">*</span> <span class="n">doc_norm</span><span class="p">)</span>
+            <span class="c1"># Clamp against tiny floating-point overshoot past 1.0.</span>
+            <span class="n">score</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">score</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">score</span> <span class="o">&gt;</span> <span class="n">best_by_asset</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">owner</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">):</span>
+                <span class="n">best_by_asset</span><span class="p">[</span><span class="n">owner</span><span class="p">]</span> <span class="o">=</span> <span class="n">score</span>
+
+        <span class="n">scored</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">RetrievalResult</span><span class="p">(</span><span class="n">asset</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">assets</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">score</span><span class="o">=</span><span class="n">s</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">best_by_asset</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">]</span>
+        <span class="n">scored</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">r</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="n">r</span><span class="o">.</span><span class="n">score</span><span class="p">,</span> <span class="n">r</span><span class="o">.</span><span class="n">asset</span><span class="o">.</span><span class="n">id</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">scored</span><span class="p">[:</span><span class="n">k</span><span class="p">]</span>
+</pre>
+          <figcaption>A pure-standard-library TF-IDF cosine retriever with a DisMax twist: each memory is indexed as TWO documents — a hook and a body — and scored by the MAX of the two, so the body can only ever RAISE recall, never dilute a strong hook match below the relevance floor. The crafted part is regression-freedom: hook docs are scored with a hook-restricted query vector against a hook-only IDF table, so every hook score stays byte-identical to the pre-body index. A proven no-regression, not a hoped one — an earlier pooled-IDF draft tipped a real borderline hit below the floor, and this design exists to prevent that.</figcaption>
+        </figure>
+        <figure class="excerpt" data-excerpt="metacog_registry_match_failsafe">
+          <div class="excerpt__meta"><span class="path">tools/metacognition/registry.py</span><span class="sep">·</span><span>metacognition.registry::match</span><span class="sep">·</span><span>lines <span class="stat" data-source="code_excerpt_harvest.py: line span of metacognition.registry::match captured byte-exact from tools/metacognition/registry.py at parent@12913df" data-verified="2026-07-11" data-provenance="verified" title="source: code_excerpt_harvest.py: line span of metacognition.registry::match captured byte-exact from tools/metacognition/registry.py at parent@12913df · verified 2026-07-11">800–857</span></span></div>
+          <pre data-excerpt="metacog_registry_match_failsafe"><span class="k">def</span><span class="w"> </span><span class="nf">match</span><span class="p">(</span><span class="n">prompt</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return ``list[RegistryHit]`` for entries whose ``topic_keywords``</span>
+<span class="sd">    overlap the prompt&#39;s tokens (keyword match — semantic matching is the</span>
+<span class="sd">    deferred D2 §2.2 follow-on).</span>
+
+<span class="sd">    FAIL-SAFE: this function **internally catches any load failure and</span>
+<span class="sd">    returns ``[]``**. A caller (recall on every prompt, invariant_guard on</span>
+<span class="sd">    every Write/Edit) never wraps ``match()`` in try/except — an empty list</span>
+<span class="sd">    is the single library-owned degraded result. This and ``load_registry``</span>
+<span class="sd">    are the ONLY two places fail-safe logic lives (Library-First: two</span>
+<span class="sd">    organs must not each re-implement defensive wrapping).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">entries</span> <span class="o">=</span> <span class="n">load_registry</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">entries</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+        <span class="n">prompt_tokens</span> <span class="o">=</span> <span class="n">_tokenize</span><span class="p">(</span><span class="n">prompt</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">prompt_tokens</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+        <span class="n">hits</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">entries</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="s2">&quot;archived&quot;</span><span class="p">:</span>
+                <span class="k">continue</span>  <span class="c1"># archived entries are no longer matched (§3.5)</span>
+            <span class="n">kw_norm</span> <span class="o">=</span> <span class="p">{(</span><span class="n">k</span><span class="p">,</span> <span class="n">k</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">e</span><span class="o">.</span><span class="n">topic_keywords</span><span class="p">}</span>
+            <span class="n">matched</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">({</span><span class="n">orig</span> <span class="k">for</span> <span class="n">orig</span><span class="p">,</span> <span class="n">low</span> <span class="ow">in</span> <span class="n">kw_norm</span>
+                              <span class="k">if</span> <span class="n">low</span> <span class="ow">in</span> <span class="n">prompt_tokens</span><span class="p">})</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">matched</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="c1"># relevance = fraction of the entry&#39;s keywords that the prompt</span>
+            <span class="c1"># hit (0..1). Phase 3&#39;s &quot;registry relevance floor&quot; compares</span>
+            <span class="c1"># against this.</span>
+            <span class="n">score</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">matched</span><span class="p">)</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">topic_keywords</span><span class="p">))</span>
+            <span class="n">score</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">score</span><span class="p">))</span>
+            <span class="c1"># derived_tier: a dormant entry is tier-capped down one rung</span>
+            <span class="c1"># (Stage 5 §3.5 soft-decay); otherwise the entry&#39;s full tier,</span>
+            <span class="c1"># always clamped to its declared maximum.</span>
+            <span class="n">tier</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">response_tier</span>
+            <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="s2">&quot;dormant&quot;</span><span class="p">:</span>
+                <span class="n">tier</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">MIN_TIER</span><span class="p">,</span> <span class="n">tier</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">hits</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">RegistryHit</span><span class="p">(</span>
+                <span class="n">entry</span><span class="o">=</span><span class="n">e</span><span class="p">,</span>
+                <span class="n">matched_keywords</span><span class="o">=</span><span class="n">matched</span><span class="p">,</span>
+                <span class="n">relevance_score</span><span class="o">=</span><span class="n">score</span><span class="p">,</span>
+                <span class="n">derived_tier</span><span class="o">=</span><span class="n">tier</span><span class="p">,</span>
+            <span class="p">))</span>
+        <span class="c1"># Semantic gate (default OFF). With the flag OFF this branch is never</span>
+        <span class="c1"># entered and `hits` is returned byte-identical to the legacy path.</span>
+        <span class="k">if</span> <span class="n">SEMANTIC_GATE_ENABLED</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">hits</span> <span class="o">=</span> <span class="n">_apply_semantic_gate</span><span class="p">(</span><span class="n">prompt</span><span class="p">,</span> <span class="n">hits</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="c1"># A gate-path failure FALLS OPEN to the full keyword list —</span>
+                <span class="c1"># never drops a candidate on infra failure, never collapses to</span>
+                <span class="c1"># [] (the [] degrade is reserved for a load_registry failure).</span>
+                <span class="n">_warn_gate_fall_open_once</span><span class="p">(</span><span class="s2">&quot;gate exception&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">hits</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[]</span>
+</pre>
+          <figcaption>Invoked on EVERY prompt and EVERY Write/Edit, so its reliability contract — not the keyword overlap — is the crafted part. It keeps two degraded results that must never be conflated: a load failure degrades to [] (&#34;registry absent&#34;), while a semantic-gate infra failure FALLS OPEN to the full list — because dropping a candidate on infra failure would silently disable a safety invariant, whereas an empty list only means the registry genuinely can&#39;t load. It also soft-decays a dormant entry one tier down and clamps every hit to its declared maximum tier. More precise, never less safe.</figcaption>
+        </figure>
+      </section>
+      <section class="sys" id="sys-sim_engine">
+        <div class="sys__head">
+          <h2 class="sys__label">The numbers behind the motion: the sim engine</h2>
+          <span class="sys__repo">physics</span>
+        </div>
+        <p class="sys__stats">
+<span class="stat" data-source="code_excerpt_harvest.py: newline-count over physics@28077a1 globs [sim/engine/*.js, sim/engine/circuits/*.js]" data-verified="2026-07-11" data-provenance="verified" title="source: code_excerpt_harvest.py: newline-count over physics@28077a1 globs [sim/engine/*.js, sim/engine/circuits/*.js] · verified 2026-07-11">11,410</span><span class="noun">lines</span>        </p>
+
+        <figure class="excerpt" data-excerpt="adaptive_dt_controller">
+          <div class="excerpt__meta"><span class="path">sim/engine/integrator.js</span><span class="sep">·</span><span>adaptive_dt_controller</span><span class="sep">·</span><span>lines <span class="stat" data-source="code_excerpt_harvest.py: line span of adaptive_dt_controller captured byte-exact from sim/engine/integrator.js at physics@28077a1" data-verified="2026-07-11" data-provenance="verified" title="source: code_excerpt_harvest.py: line span of adaptive_dt_controller captured byte-exact from sim/engine/integrator.js at physics@28077a1 · verified 2026-07-11">312–395</span></span></div>
+          <pre data-excerpt="adaptive_dt_controller">// Calculated controller constants (see the CONTROL LAW note above).
+const GROWTH_FACTOR = 1.25;      // 1.25^5 ≈ 3.05 &lt; 4 ⇒ grow-from-(budget/4) never rejects
+const GROW_DEADBAND_FRAC = 0.25; // grow only when errPct ≤ budget × this
+const STATE_SCALE_FLOOR = 1e-12; // guard the relative-error denominator near a zero state
+
+export function adaptiveDtRunner({
+  integrator, derivState, dt, duration, state0, onSnapshot, strides,
+  driftBudgetPct, dtFloor
+}) {
+  const budgetPct = driftBudgetPct ?? DEFAULT_ADAPTIVE_DRIFT_BUDGET_PCT;
+  const baseDt = dt;                       // the ceiling: adaptive never steps larger
+  let floor = dtFloor ?? DEFAULT_ADAPTIVE_DT_FLOOR_S;
+  if (floor &gt; baseDt) floor = baseDt;      // a floor above the ceiling is degenerate
+  const END_EPS = Math.max(Math.abs(duration), 1) * 1e-12;
+
+  // Step-doubling LOCAL error estimate for a trial step of size h from
+  // (state, t). Returns the committed (two-half-step) state and the per-step
+  // error as a percent of the state&#39;s own magnitude. statePrev is passed as
+  // null: rk4/sIEuler ignore it, and verlet never reaches this runner.
+  const estimate = (state, t, h) =&gt; {
+    const full = integrator(state, t, h, derivState, null, strides);
+    const mid = integrator(state, t, h / 2, derivState, null, strides);
+    const half2 = integrator(mid, t + h / 2, h / 2, derivState, null, strides);
+    let maxDiff = 0;
+    let scale = 0;
+    for (let i = 0; i &lt; state.length; i++) {
+      const d = Math.abs(full[i] - half2[i]);
+      if (d &gt; maxDiff) maxDiff = d;
+      const s = Math.max(Math.abs(state[i]), Math.abs(half2[i]));
+      if (s &gt; scale) scale = s;
+    }
+    const denom = scale &gt; STATE_SCALE_FLOOR ? scale : STATE_SCALE_FLOOR;
+    return { state: half2, errPct: (100 * maxDiff) / denom };
+  };
+
+  let state = state0;
+  let t = 0;
+  let hNext = baseDt;             // dt to TRY next step; grows toward baseDt, never above
+  let minDtReached = baseDt;
+  let maxStepDriftPct = 0;
+  let floorHits = 0;
+
+  if (onSnapshot) onSnapshot(state, t);
+
+  while (duration - t &gt; END_EPS) {
+    const remaining = duration - t;
+    let h = Math.min(hNext, remaining);
+    const clampedToEnd = h &lt; hNext - END_EPS; // final-step clamp shrank the try
+
+    // Accept loop: halve until within budget or pinned at the floor.
+    let res = estimate(state, t, h);
+    while (res.errPct &gt; budgetPct &amp;&amp; h &gt; floor * (1 + 1e-9)) {
+      h = Math.max(h / 2, floor);
+      res = estimate(state, t, h);
+    }
+    let pinnedAtFloor = false;
+    if (res.errPct &gt; budgetPct) {
+      // Could not meet budget even at the floor — accept the floor step and
+      // flag the scene as floor-pinned (stiffer than the floor allows).
+      pinnedAtFloor = true;
+      floorHits++;
+    }
+
+    state = res.state;
+    t += h;
+    // minDtReached reflects STIFFNESS, so exclude the one-off endpoint clamp.
+    if (!clampedToEnd &amp;&amp; h &lt; minDtReached) minDtReached = h;
+    if (res.errPct &gt; maxStepDriftPct) maxStepDriftPct = res.errPct;
+
+    if (onSnapshot) onSnapshot(state, t, h);
+
+    // Growth / hysteresis for the NEXT step. The end-clamp has no successor,
+    // so it never drives growth.
+    if (!clampedToEnd) {
+      if (!pinnedAtFloor &amp;&amp; res.errPct &lt;= budgetPct * GROW_DEADBAND_FRAC) {
+        hNext = Math.min(h * GROWTH_FACTOR, baseDt); // room to spare: grow toward base
+      } else {
+        hNext = h;                                   // deadband or floor-pinned: hold
+      }
+    }
+  }
+
+  return { state, t, stiffness: { minDtReached, floorHits, maxStepDriftPct } };
+}
+</pre>
+          <figcaption>Adaptive step-size control by step-doubling: each trial step is taken once at h and twice at h/2 from the same state, and the largest divergence — scaled by the state&#39;s own magnitude — is a per-step LOCAL error estimate that tracks the actual answer, not just energy. The controller halves h until the error is under budget or pinned at a stiffness floor, then regrows it through a deadband by a growth factor DERIVED so a grow can never overshoot into a reject (1.25⁵ ≈ 3.05 &lt; 4 against RK4&#39;s fifth-order local error) — calculated, not hand-tuned. The hard part is keeping three concerns correct in one integrator-agnostic loop: local-error estimation, anti-thrash hysteresis, and an endpoint clamp that is still budget-checked but excluded from the stiffness readout.</figcaption>
+        </figure>
+      </section>
+
+      <p class="foot"><span class="rule">Skeleton preview</span> · harvested <span class="stat" data-source="code_excerpt_harvest.py: harvest run over physics@28077a1 + parent@12913df" data-verified="2026-07-11" data-provenance="verified" title="source: code_excerpt_harvest.py: harvest run over physics@28077a1 + parent@12913df · verified 2026-07-11">2026-07-11</span> ·
+        excerpts anchored to live source in both repos · no external requests</p>
+    </main>
+  </div>  <a class="nextbar nextband" href="verification.html">
+    <span class="nextbar__text">
+      <span class="nextbar__eyebrow">Next</span>
+      <span class="nextbar__dest nextband__label">Formal&nbsp;Verification</span>
+    </span>
+    <span class="nextbar__arrow nextband__arrow" aria-hidden="true">&rarr;</span>
+  </a>
+</body>
+</html>

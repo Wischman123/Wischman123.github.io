@@ -1,0 +1,14 @@
+{
+  "group": "engine",
+  "purpose": "the single canonical gate-rejection capture reused across the showcase (engine room, story gauntlet, gallery)",
+  "generated": "2026-07-10",
+  "assets": [
+    {
+      "file": "gate_rejection.png",
+      "source": "python scripts/validate_problem_physics.py projectile-C001 --problems-root scripts/fv_triangulation/tests/fixtures/badkey_root (weld gate #2 rejecting the committed seeded-bad-key fixture; a real refusal, sanitized)",
+      "generation_command": "python tools/showcase/render_engine.py --curate",
+      "pii_checked": "2026-07-10",
+      "pii_note": "projectile physics rejection; no roster/student data on the capture"
+    }
+  ]
+}

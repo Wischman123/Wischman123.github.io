@@ -1,0 +1,105 @@
+{
+  "group": "story",
+  "anchor_problem": "energy-K015 (Euler's Hilltop)",
+  "generated": "2026-07-12",
+  "assets": [
+    {
+      "file": "printed_page.png",
+      "source": "problems/output/energy/preview_K015_page1.png",
+      "crop_origin": "verbatim copy of problems/output/energy/preview_K015_page1.png",
+      "generation_command": "python tools/showcase/render_story.py --curate",
+      "pii_checked": "2026-07-12",
+      "pii_note": "physics problem render; scientist bio only, no student data"
+    },
+    {
+      "file": "diagram_engine.png",
+      "source": "problems/output/energy/preview_K015_page1.png",
+      "crop_origin": "PIL crop (60, 205, 800, 565) of problems/output/energy/preview_K015_page1.png",
+      "generation_command": "python tools/showcase/render_story.py --curate",
+      "pii_checked": "2026-07-12",
+      "pii_note": "physics problem render; scientist bio only, no student data"
+    },
+    {
+      "file": "solution_math.png",
+      "source": "problems/output/energy/preview_K015_page4.png",
+      "crop_origin": "PIL crop (330, 440, 1200, 905) of problems/output/energy/preview_K015_page4.png",
+      "generation_command": "python tools/showcase/render_story.py --curate",
+      "pii_checked": "2026-07-12",
+      "pii_note": "physics problem render; scientist bio only, no student data"
+    },
+    {
+      "file": "solution_page.png",
+      "source": "problems/output/energy/preview_K015_v68_page3.png",
+      "crop_origin": "PIL crop (78, 71, 1087, 925) of problems/output/energy/preview_K015_v68_page3.png",
+      "generation_command": "python tools/showcase/render_story.py --curate",
+      "pii_checked": "2026-07-12",
+      "pii_note": "physics solution render (energy-K015 v68 page 3); scientist bio (Leonhard Euler) only, no student data",
+      "docx_version": "v68",
+      "docx_source": "problems/output/energy/preview_energy-K015_eulers_hilltop_v68.docx",
+      "source_render_command": "python site/tools/render_docx_page.py problems/output/energy/preview_energy-K015_eulers_hilltop_v68.docx --page 3 --dpi 150 --keep-pdf  (Word-COM; publicity stream)"
+    },
+    {
+      "file": "solution_zoom.png",
+      "source": "problems/output/energy/preview_K015_v68_page3.png",
+      "crop_origin": "PIL crop (110, 468, 1100, 915) of problems/output/energy/preview_K015_v68_page3.png",
+      "generation_command": "python tools/showcase/render_story.py --curate",
+      "pii_checked": "2026-07-12",
+      "pii_note": "physics solution render (energy-K015 v68 page 3, ΣW=ΔK block); scientist bio (Leonhard Euler) only, no student data",
+      "docx_version": "v68",
+      "docx_source": "problems/output/energy/preview_energy-K015_eulers_hilltop_v68.docx",
+      "source_render_command": "python site/tools/render_docx_page.py problems/output/energy/preview_energy-K015_eulers_hilltop_v68.docx --page 3 --dpi 150 --keep-pdf  (Word-COM; publicity stream)"
+    },
+    {
+      "file": "feedback_front.png",
+      "source": "../publicity/anthropic/application/site/assets/feedback_report_fictional.png",
+      "crop_origin": "verbatim copy of ../publicity/anthropic/application/site/assets/feedback_report_fictional.png",
+      "generation_command": "python tools/showcase/render_story.py --curate",
+      "pii_checked": "2026-07-12",
+      "pii_note": "fictional demo persona 'Average Armadillo' (period 3) only; grade-free FCI narrative feedback; no real student data",
+      "persona": "Average Armadillo",
+      "period": 3,
+      "side": "front (concepts demonstrated + misconceptions named + review directions)",
+      "lineage_source_docx": "physics/_scratch/fci_smoke_out/fci_smoke_smoke_student_reports_v1.docx",
+      "lineage_manifest": "publicity/anthropic/application/site/assets/render_manifest.json"
+    },
+    {
+      "file": "feedback_back.png",
+      "source": "../publicity/anthropic/application/site/assets/feedback_report_back.png",
+      "crop_origin": "verbatim copy of ../publicity/anthropic/application/site/assets/feedback_report_back.png",
+      "generation_command": "python tools/showcase/render_story.py --curate",
+      "pii_checked": "2026-07-12",
+      "pii_note": "fictional demo persona 'Average Armadillo' (period 3) only; grade-free 'your next steps' pointers; no real student data",
+      "persona": "Average Armadillo",
+      "period": 3,
+      "side": "back ('Your next steps' — per-concept Modeling-unit pointers + targeted review questions)",
+      "lineage_source_docx": "physics/_scratch/fci_smoke_out/fci_smoke_smoke_student_reports_v1.docx",
+      "lineage_manifest": "publicity/anthropic/application/site/assets/render_manifest.json"
+    },
+    {
+      "file": "feedback_front_zoom.png",
+      "source": "../publicity/anthropic/application/site/assets/feedback_report_fictional.png",
+      "crop_origin": "PIL crop (55, 50, 1185, 548) of ../publicity/anthropic/application/site/assets/feedback_report_fictional.png",
+      "generation_command": "python tools/showcase/render_story.py --curate",
+      "pii_checked": "2026-07-12",
+      "pii_note": "fictional demo persona 'Average Armadillo' (period 3) only; grade-free FCI narrative feedback (header + concepts-demonstrated list + first revisit entry); no real student data",
+      "persona": "Average Armadillo",
+      "period": 3,
+      "side": "front zoom (name header + 'Concepts You Demonstrated Understanding of' + first 'Concepts You Need to Revisit' entry with its named misconception + review pointer)",
+      "lineage_source_docx": "physics/_scratch/fci_smoke_out/fci_smoke_smoke_student_reports_v1.docx",
+      "lineage_manifest": "publicity/anthropic/application/site/assets/render_manifest.json"
+    },
+    {
+      "file": "feedback_back_zoom.png",
+      "source": "../publicity/anthropic/application/site/assets/feedback_report_back.png",
+      "crop_origin": "PIL crop (55, 50, 1185, 505) of ../publicity/anthropic/application/site/assets/feedback_report_back.png",
+      "generation_command": "python tools/showcase/render_story.py --curate",
+      "pii_checked": "2026-07-12",
+      "pii_note": "fictional demo persona 'Average Armadillo' (period 3) only; grade-free 'your next steps' pointers (header + intro + first concept's targeted questions); no real student data",
+      "persona": "Average Armadillo",
+      "period": 3,
+      "side": "back zoom ('Your next steps' header + self-directed-review intro + first concept's Modeling-unit pointer and targeted review questions)",
+      "lineage_source_docx": "physics/_scratch/fci_smoke_out/fci_smoke_smoke_student_reports_v1.docx",
+      "lineage_manifest": "publicity/anthropic/application/site/assets/render_manifest.json"
+    }
+  ]
+}
