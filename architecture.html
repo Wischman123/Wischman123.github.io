@@ -87,35 +87,36 @@
                   ripple.  A rest phase closes the beat, so it reads as a
                   creature and not a conveyor belt.
 
-     --osc (10s)  the subject plugins.  Those arrows are double-ENDED
-                  (importlib load <-> register_check), so nothing flows one
-                  way: the dashes swing OUT and BACK.  0.1 Hz, with a lurch-
-                  twitch-hang-snap profile whose acceleration keeps changing
-                  sign, i.e. real jerk, not a sine wave.
+     The subject (red) arrows are NOT an independent clock any more.  They are
+     driven BY the core -- see @keyframes sub-breathe.
      =========================================================================== */
-  .diagram{ --beat:6s; --osc:10s; }
+  .diagram{ --beat:6s; }
 
-  /* --- a travelling signal: rounded beads streaming along an arrow --------- */
+  /* --- the beads ARE the wire ---------------------------------------------
+     The solid arrow lines are gone (only their heads remain), so these beads
+     are the only thing drawing the connection.  They can never switch off.
+     At rest they idle -- thin, dim, drifting slowly.  As the wave front passes
+     they brighten and the wire ENGORGES, then settles back to idle. */
   .wave{
-    fill:none; stroke-width:3; stroke-linecap:round;
+    fill:none; stroke-linecap:round;
     stroke-dasharray:2 11;        /* bead period = 13 user units */
-    opacity:0;                    /* dark until the wave front reaches it */
     animation:wave-travel var(--beat) linear infinite both;
     animation-delay:var(--wd,0s);
   }
   .wave--drive{stroke:var(--drive);}
   .wave--driven{stroke:var(--driven);}
 
-  /* Piecewise-linear offsets, so the SPEED is explicit and readable:
-     ramp in (27 px/s) -> surge (71) -> cruise (57) -> decay (33) as it fades. */
+  /* Piecewise-linear offsets, so the SPEED is explicit: idle drift (7 px/s)
+     -> surge (71) -> cruise (57) -> decay, then idle again.  Total travel is
+     130 = 10 whole bead-periods, so the 6s loop wraps seamlessly. */
   @keyframes wave-travel{
-    0%   {stroke-dashoffset:0;    opacity:0;}
-    5%   {stroke-dashoffset:-8;   opacity:.95;}   /* front arrives, snaps bright */
-    12%  {stroke-dashoffset:-38;}                 /* surge */
-    22%  {stroke-dashoffset:-72;}                 /* cruise */
-    28%  {stroke-dashoffset:-92;  opacity:.95;}
-    34%  {stroke-dashoffset:-104; opacity:0;}     /* tail passes; 104 = 8 beads */
-    100% {stroke-dashoffset:-104; opacity:0;}     /* dark for the rest of the beat */
+    0%   {stroke-dashoffset:0;    opacity:.55; stroke-width:2.2;}  /* idle */
+    5%   {stroke-dashoffset:-8;   opacity:1;   stroke-width:3.4;}  /* front arrives */
+    12%  {stroke-dashoffset:-38;               stroke-width:3.4;}  /* surge */
+    22%  {stroke-dashoffset:-72;  opacity:1;   stroke-width:3.2;}  /* cruise */
+    28%  {stroke-dashoffset:-92;               stroke-width:2.8;}
+    34%  {stroke-dashoffset:-104; opacity:.55; stroke-width:2.2;}  /* tail passes */
+    100% {stroke-dashoffset:-130; opacity:.55; stroke-width:2.2;}  /* idle drift */
   }
 
   /* --- the core: inhale, hold, SNAP, ring down, rest ----------------------- */
@@ -160,15 +161,30 @@
     100% {opacity:.55;}
   }
 
-  /* --- subject plugins: 0.1 Hz swing, with jerk ---------------------------- */
-  .flowdash{animation:sub-oscillate var(--osc) linear infinite both; animation-delay:var(--wd,0s);}
-  @keyframes sub-oscillate{
-    0%   {stroke-dashoffset:0;   animation-timing-function:cubic-bezier(.16,.9,.2,1);}  /* violent launch, hard decel */
-    30%  {stroke-dashoffset:-33; animation-timing-function:cubic-bezier(.6,0,.7,1);}    /* recoil — acceleration flips sign */
-    40%  {stroke-dashoffset:-26; animation-timing-function:cubic-bezier(.2,.6,.2,1);}   /* flips again */
-    48%  {stroke-dashoffset:-31; animation-timing-function:cubic-bezier(.9,0,.12,1);}   /* HANGS... then rips back */
-    80%  {stroke-dashoffset:8;   animation-timing-function:cubic-bezier(.35,0,.25,1);}  /* overshoots past home */
-    100% {stroke-dashoffset:0;}                                                          /* settles */
+  /* --- subject plugins: DRIVEN BY THE CORE ---------------------------------
+     The brief: the dashes flow OUTWARD while the core expands and INWARD while
+     it shrinks.  That says the dashes' VELOCITY is the derivative of the core's
+     size -- so their POSITION is the core's size itself.  We therefore drive the
+     offset straight off the scale curve:
+
+         offset = -825 x (scale - 1)          [825 maps the 1.040 peak to -33 units]
+
+     scale:   1.000  1.032  1.040  0.982  1.011  0.997  1.000
+     offset:      0  -26.4  -33.0  +14.9   -9.1   +2.5      0
+
+     Same clock, same keyframe percentages, same easing curves as core-breathe,
+     so these are phase-locked to the membrane by construction rather than by
+     hand-tuning.  The jerk comes along for free: the hold-then-SNAP bezier at
+     45%->50% is what makes the plugins get YANKED back in at the systole.       */
+  .flowdash{animation:sub-breathe var(--beat) linear infinite both;}
+  @keyframes sub-breathe{
+    0%,20%  {stroke-dashoffset:0;     animation-timing-function:cubic-bezier(.4,0,.5,1);}
+    40%     {stroke-dashoffset:-26.4; animation-timing-function:cubic-bezier(.3,0,.3,1);}  /* inflating -> flows OUT */
+    45%     {stroke-dashoffset:-33;   animation-timing-function:cubic-bezier(.85,0,.1,1);} /* hangs at full stretch */
+    50%     {stroke-dashoffset:14.85; animation-timing-function:cubic-bezier(.2,.8,.3,1);} /* SYSTOLE -> yanked IN */
+    55%     {stroke-dashoffset:-9.08; animation-timing-function:cubic-bezier(.3,0,.4,1);}  /* recoil */
+    62%     {stroke-dashoffset:2.48;  animation-timing-function:cubic-bezier(.4,0,.4,1);}  /* ring-down */
+    70%,100%{stroke-dashoffset:0;}                                                          /* rest */
   }
 
   @media (prefers-reduced-motion: reduce){
@@ -559,13 +575,17 @@
           <text class="t-title" x="165" y="355" text-anchor="middle">Thin API · FastAPI</text>
           <text class="t-sub"   x="165" y="374" text-anchor="middle">tools/product/api</text>
         </g>
-        <!-- UI -> API -> core.  Each solid arrow keeps its arrowhead; a .wave
-             overlay rides on top of it carrying the beads.  The --wd delays
-             (0s, .8s) are what make the ripple travel down the chain. -->
-        <path d="M165,264 L165,330" fill="none" stroke="var(--drive)" stroke-width="2" marker-end="url(#ah-drive)"/>
+        <!-- UI -> API -> core.  The LINE is gone; only the head remains.  Each
+             base path is kept but stroked at zero opacity: markers carry their
+             own fill and are painted separately, so the head survives while the
+             line vanishes.  The path's geometry still sets the head's angle, and
+             its stroke-width still sets the head's scale -- so both must stay.
+             The beads on the .wave overlay are now the only visible wire; the
+             --wd delays (0s, .8s) are what make the ripple travel the chain. -->
+        <path d="M165,264 L165,330" fill="none" stroke="var(--drive)" stroke-width="2" stroke-opacity="0" marker-end="url(#ah-drive)"/>
         <path class="wave wave--drive" style="--wd:0s" d="M165,264 L165,330"/>
         <text class="t-tiny" x="176" y="300" text-anchor="start">http only</text>
-        <path d="M260,360 L384,360" fill="none" stroke="var(--drive)" stroke-width="2" marker-end="url(#ah-drive)"/>
+        <path d="M260,360 L384,360" fill="none" stroke="var(--drive)" stroke-width="2" stroke-opacity="0" marker-end="url(#ah-drive)"/>
         <path class="wave wave--drive" style="--wd:.8s" d="M260,360 L384,360"/>
 
         <!-- ===== driven adapters (right, through ports) ===== -->
@@ -589,13 +609,13 @@
         <!-- The systole lands at 45%->50% of the beat = 2.70s..3.00s.  These four
              --wd delays (2.75..3.05s) sit exactly inside it: the squeeze is
              literally what fires them, and the 100ms stagger fans them out. -->
-        <path d="M814,240 L934,177" fill="none" stroke="var(--driven)" stroke-width="2" marker-end="url(#ah-driven)"/>
+        <path d="M814,240 L934,177" fill="none" stroke="var(--driven)" stroke-width="2" stroke-opacity="0" marker-end="url(#ah-driven)"/>
         <path class="wave wave--driven" style="--wd:2.75s" d="M814,240 L934,177"/>
-        <path d="M814,300 L934,275" fill="none" stroke="var(--driven)" stroke-width="2" marker-end="url(#ah-driven)"/>
+        <path d="M814,300 L934,275" fill="none" stroke="var(--driven)" stroke-width="2" stroke-opacity="0" marker-end="url(#ah-driven)"/>
         <path class="wave wave--driven" style="--wd:2.85s" d="M814,300 L934,275"/>
-        <path d="M814,375 L934,373" fill="none" stroke="var(--driven)" stroke-width="2" marker-end="url(#ah-driven)"/>
+        <path d="M814,375 L934,373" fill="none" stroke="var(--driven)" stroke-width="2" stroke-opacity="0" marker-end="url(#ah-driven)"/>
         <path class="wave wave--driven" style="--wd:2.95s" d="M814,375 L934,373"/>
-        <path d="M814,440 L934,471" fill="none" stroke="var(--driven)" stroke-width="2" marker-end="url(#ah-driven)"/>
+        <path d="M814,440 L934,471" fill="none" stroke="var(--driven)" stroke-width="2" stroke-opacity="0" marker-end="url(#ah-driven)"/>
         <path class="wave wave--driven" style="--wd:3.05s" d="M814,440 L934,471"/>
 
         <!-- ===== subject plugins (bottom, dependency inversion) ===== -->
@@ -610,13 +630,15 @@
           <text class="t-sub"   x="758" y="697" text-anchor="middle">K-maps · truth tables</text>
           <text class="t-sub"   x="758" y="712" text-anchor="middle">build.py orchestrator</text>
         </g>
-        <!-- Dependency-inversion links.  These arrows are double-ENDED — the engine
-             loads the plugin AND the plugin registers checks back — so nothing
-             flows one way and the dashes must SWING, not stream.  0.1 Hz (10s),
-             out of phase with each other so the pair never marches in lockstep. -->
-        <path class="flowdash" style="--wd:0s" d="M516,533 L486,646" fill="none" stroke="var(--subject)" stroke-width="1.8"
+        <!-- Dependency-inversion links.  Double-ENDED — the engine loads the plugin
+             AND the plugin registers checks back — so nothing flows one way.
+             These are now SLAVED TO THE CORE (@keyframes sub-breathe): the dashes
+             stream outward while the membrane inflates and are yanked back inward
+             the instant it clamps down.  No --wd on either: both are in phase with
+             the breath, because they are both being driven BY it. -->
+        <path class="flowdash" d="M516,533 L486,646" fill="none" stroke="var(--subject)" stroke-width="1.8"
               stroke-dasharray="5 6" marker-start="url(#ah-sub)" marker-end="url(#ah-sub)"/>
-        <path class="flowdash" style="--wd:-3.4s" d="M684,533 L742,646" fill="none" stroke="var(--subject)" stroke-width="1.8"
+        <path class="flowdash" d="M684,533 L742,646" fill="none" stroke="var(--subject)" stroke-width="1.8"
               stroke-dasharray="5 6" marker-start="url(#ah-sub)" marker-end="url(#ah-sub)"/>
         <text class="t-tiny" x="600" y="628" text-anchor="middle" fill="var(--subject)">importlib load  ⇄  register_check()</text>
 
