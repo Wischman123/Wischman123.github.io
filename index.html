@@ -279,7 +279,6 @@
     letter-spacing: 0.08em;
     color: var(--ink);
   }
-  .arch-link { margin-top: 22px; font-size: 1.02rem; }
 
   /* ---------- footer ---------- */
   .footer { margin-top: 88px; border-top: 1px solid var(--rule); padding: 28px 0 64px; }
@@ -487,64 +486,74 @@
     <h2 id="akey-h">Both are right. Only one is teachable.</h2>
     <p class="prose">The story you just followed ends in an answer key. So here is that
       key — <em>Euler&rsquo;s Hilltop</em>, the same problem — written two ways. On the
-      left, a plain Claude agent handed nothing but the problem statement. On the right,
-      the same problem through the platform. Drag either divider.</p>
+      left, a plain Claude agent handed nothing but the problem statement, working with
+      no access to this repository, and asked — exactly as our engine is — for a diagram
+      built from real, editable Word objects. It built one. On the right, the same
+      problem through the platform. Drag either divider.</p>
     <figure class="fig">
       <div class="wipe" data-wipe
            data-before="assets/k015_key_plain_p1.png"
            data-after="assets/k015_key_system_p1.png"
-           data-before-alt="A plain agent's answer key, page one: a title, a raster matplotlib sketch of the hill whose labels collide with each other, and a table listing every final answer."
+           data-before-alt="A plain agent's answer key, page one: a givens table, and a scene diagram of the ball, track and hill built from real editable Word shapes and drawn to scale."
            data-after-alt="The platform's answer key, page one: a vector scene diagram carrying radial and tangential axes, and two LOL energy bar charts showing six boxes of gravitational energy becoming one of kinetic and five gravitational."
            data-before-label="Plain Claude"
            data-after-label="This platform">
         <noscript>
-          <img src="assets/k015_key_plain_p1.png" alt="A plain agent's answer key for Euler's Hilltop, page one: raster diagram with colliding labels and an answers table." loading="lazy">
+          <img src="assets/k015_key_plain_p1.png" alt="A plain agent's answer key for Euler's Hilltop, page one: a givens table and a to-scale scene diagram in editable Word shapes." loading="lazy">
           <img src="assets/k015_key_system_p1.png" alt="The platform's answer key for Euler's Hilltop, page one: vector diagram with radial and tangential axes and LOL energy bar charts." loading="lazy">
         </noscript>
       </div>
       <figcaption class="figcap"><b>Fig.&nbsp;2</b> — Page one of each answer key for
-        <b>energy-K015</b>, both rendered through real Word (2026-07-12). <b>The physics
+        <b>energy-K015</b>, both rendered through real Word (2026-07-13). <b>The physics
         agrees.</b> Both keys reach v<sub>B</sub>&nbsp;=&nbsp;6.26&nbsp;m/s,
         n&nbsp;=&nbsp;3.9&nbsp;N, and the elegant h<sub>max</sub>&nbsp;=&nbsp;R/2.
         Correctness is not the differentiator, and pretending otherwise would be
-        dishonest. What differs is everything that makes a key <em>usable in a
-        classroom</em>. The plain key draws a raster sketch whose labels overlap — it
-        never looked at its own output — and opens with a table that hands over every
-        result before the student has thought about any of them. The platform&rsquo;s key
-        draws a vector scene carrying the radial and tangential axes the problem actually
-        turns on, and speaks in the <b>LOL energy bars</b> this course teaches: six boxes
-        of gravitational energy at the top of the track, one of them kinetic by the
-        hilltop. <em>The left panel is a control — the agent that wrote it was given the
-        problem and nothing else, and never read a line of this
-        repository.</em></figcaption>
+        dishonest. <b>Neither, it turns out, is editability.</b> Asked for a native Word
+        diagram, the plain agent wrote the OOXML by hand and built one: a hundred-odd real
+        Word shapes, not a single pixel of raster, every label a text box a teacher can
+        retype — and it drew the scene to scale from computed geometry rather than
+        eyeballing it. An earlier version of this figure claimed a plain agent
+        <em>couldn&rsquo;t</em> do that. It could; we had simply never asked it to, and the
+        honest thing is to say so here. What differs is <em>the course</em>. The
+        platform&rsquo;s key carries the radial and tangential axes this problem actually
+        turns on, and speaks in the <b>LOL energy bars</b> the course teaches — six boxes
+        of gravitational energy at the top of the track, one of them kinetic by the hilltop
+        — in the notation students see on the board every day. <em>The left panel is a
+        control: the agent that wrote it was given the problem and nothing else, and never
+        read a line of this repository.</em></figcaption>
     </figure>
     <figure class="fig">
       <div class="wipe" data-wipe
            data-before="assets/k015_key_plain_p2.png"
            data-after="assets/k015_key_system_p2.png"
-           data-before-alt="A plain agent's answer key, page two: a matplotlib energy bar chart in joules, the part-b derivation written as bold plain-text math, and italic teacher notes."
+           data-before-alt="A plain agent's answer key, page two: an energy bar chart labelled in joules, and the part-b derivation typed as a line of ordinary characters."
            data-after-alt="The platform's answer key, page two: a free-body diagram of the ball at the hilltop, and the part-b derivation as a typeset aligned block of real Word equation objects, each line annotated with its reason in the right margin."
            data-before-label="Plain Claude"
            data-after-label="This platform">
         <noscript>
-          <img src="assets/k015_key_plain_p2.png" alt="A plain agent's answer key for Euler's Hilltop, page two: energy bar chart in joules and part-b worked in plain-text math." loading="lazy">
+          <img src="assets/k015_key_plain_p2.png" alt="A plain agent's answer key for Euler's Hilltop, page two: an energy bar chart in joules and part-b typed as ordinary characters." loading="lazy">
           <img src="assets/k015_key_system_p2.png" alt="The platform's answer key for Euler's Hilltop, page two: free-body diagram and part-b as a typeset aligned block with margin annotations." loading="lazy">
         </noscript>
       </div>
       <figcaption class="figcap"><b>Fig.&nbsp;3</b> — Page two: <b>the derivation</b>, where
-        the two keys diverge hardest. Both arrive at the same speed. The plain key states it
-        as a line of bold text — v_B = &radic;(2 &times; 9.8 &times; 2.0) = &radic;39.2 =
-        6.26 m/s — a picture of an equation, which no one can edit,
-        search, or reflow. The platform&rsquo;s key sets <b>real Word equation objects</b>:
-        one continuous aligned block opening from &Sigma;W&nbsp;=&nbsp;&Delta;K, every equals
-        sign stacked, <b>each line annotated in the margin with the reason it is true</b>
-        (<em>frictionless, no external work</em>; <em>mass cancels</em>) — because the point
-        of a key is not the number at the bottom, it is the reasoning a student can follow
-        to get there. It also draws the free-body diagram the problem asks for. And where
-        the plain key hedges into italic <em>teacher notes</em> about awarding credit, and
-        ultimately proposes a <b>10-point scoring rubric</b>, this one proposes no score at
-        all: the classroom it was built for does not grade, and a key reaching for points
-        has misunderstood the assignment.</figcaption>
+        the two keys diverge hardest. Both arrive at the same speed. The plain key types it
+        as a line of ordinary characters — v<sub>B</sub> = &radic;(2 &times; 9.8 &times; 2.0)
+        = &radic;39.2 = 6.3 m/s — a radical sign borrowed from the font, with no true
+        radical and no fraction bar beneath it. The platform&rsquo;s key sets <b>real Word
+        equation objects</b>: one continuous aligned block opening from
+        &Sigma;W&nbsp;=&nbsp;&Delta;K, every equals sign stacked, <b>each line annotated in
+        the margin with the reason it is true</b> (<em>frictionless, no external work</em>;
+        <em>mass cancels</em>) — because the point of a key is not the number at the bottom,
+        it is the reasoning a student can follow to get there. The plain key draws energy
+        bars too, but reads them out in joules; the platform&rsquo;s speaks in the whole
+        boxes students reason with before they touch a number. <b>And it is here that the
+        real difference lives.</b> The plain agent, unasked, wrote its own verifier, read
+        the shapes back out of its finished document, and repaired two collided labels — it
+        is careful. But it has no copy of Word to open its own file, and cannot know whether
+        Word will accept it. A previous run of this same experiment produced a document that
+        was valid by every structural check and that Word refused to open at all. Every page
+        the platform ships is rendered through real Word before it reaches a student. That
+        is not cleverness. It is the feedback loop.</figcaption>
     </figure>
   </section>
 
@@ -554,7 +563,7 @@
     <div class="readout">
       <div class="row">
         <!-- FIG10-TILE-START (generated by tools/loc_full_arc.py) -->
-        <span class="val">1,561,711</span>
+        <span class="val">1,577,800</span>
         <span class="lab"><b>first-party lines directed</b> — directed, not hand-typed</span>
         <span class="date">verified 2026-07-12</span>
         <!-- FIG10-TILE-END -->
@@ -588,7 +597,7 @@
 
     <figure class="fig chart-fig">
       <!-- FIG10-SVG-START (generated by tools/loc_full_arc.py) -->
-      <svg viewBox="0 0 640 240" role="img" aria-label="Two measured series of first-party lines of code. The solid curve is code COMMITTED to the four git-tracked project repositories (physics, tools, research, dotfiles), recomputed from git history under one counting rule, rising from near zero at the mid-March 2026 first commits to 1.27 million by 2026-07-12, marked with an open circle. The dashed curve is the WORKING TREE across every tracked directory -- committed code plus work on disk not yet committed -- reaching 1.56 million, the headline figure above the chart. It begins on 2026-05-28 because that is the first snapshot in the line-count tracker; a working tree cannot be reconstructed from git history for dates before it was recorded. The 290,894-line gap between the two is uncommitted work plus directories outside those four repositories. Current pace: about 13,838 committed lines per day over the last 31 days.">
+      <svg viewBox="0 0 640 240" role="img" aria-label="Two measured series of first-party lines of code. The solid curve is code COMMITTED to the four git-tracked project repositories (physics, tools, research, dotfiles), recomputed from git history under one counting rule, rising from near zero at the mid-March 2026 first commits to 1.27 million by 2026-07-12, marked with an open circle. The dashed curve is the WORKING TREE across every tracked directory -- committed code plus work on disk not yet committed -- reaching 1.58 million, the headline figure above the chart. It begins on 2026-05-28 because that is the first snapshot in the line-count tracker; a working tree cannot be reconstructed from git history for dates before it was recorded. The 306,983-line gap between the two is uncommitted work plus directories outside those four repositories. Current pace: about 96,866 committed lines per week over the last 31 days.">
       <line class="ch-grid" x1="40" y1="200" x2="620" y2="200"></line>
       <line class="ch-grid" x1="40" y1="150" x2="620" y2="150"></line>
       <line class="ch-grid" x1="40" y1="101" x2="620" y2="101"></line>
@@ -599,14 +608,14 @@
       <text class="ch-lab" x="34" y="54" text-anchor="end">1.50M</text>
       <path class="ch-area" d="M40,200 L75,197 L111,196 L146,194 L181,191 L217,185 L252,178 L287,170 L322,161 L358,152 L393,144 L428,127 L464,116 L499,105 L534,101 L570,93 L605,80 L620,74 L620,200 L40,200 Z"></path>
       <path class="ch-line" d="M40,200 L75,197 L111,196 L146,194 L181,191 L217,185 L252,178 L287,170 L322,161 L358,152 L393,144 L428,127 L464,116 L499,105 L534,101 L570,93 L605,80 L620,74"></path>
-      <path class="ch-line" stroke-dasharray="5 3" d="M393.0,127.8 L413.2,119.8 L418.3,115.4 L423.3,110.7 L443.5,101.0 L453.6,97.4 L458.6,99.9 L463.7,99.6 L473.7,96.2 L478.8,92.4 L488.9,87.6 L509.0,85.5 L529.2,83.3 L554.4,79.9 L559.5,79.3 L574.6,74.2 L579.7,71.9 L589.7,68.5 L604.9,61.1 L609.9,54.5 L615.0,49.2 L620.0,44.7"></path>
+      <path class="ch-line" stroke-dasharray="5 3" d="M393.0,127.8 L413.2,119.8 L418.3,115.4 L423.3,110.7 L443.5,101.0 L453.6,97.4 L458.6,99.9 L463.7,99.6 L473.7,96.2 L478.8,92.4 L488.9,87.6 L509.0,85.5 L529.2,83.3 L554.4,79.9 L559.5,79.3 L574.6,74.2 L579.7,71.9 L589.7,68.5 L604.9,61.1 L609.9,54.5 L615.0,49.2 L620.0,43.1"></path>
       <circle class="ch-dot" cx="40" cy="200" r="3"></circle>
       <circle class="ch-open" cx="393.0" cy="127.8" r="2.5"></circle>
       <circle class="ch-open" cx="620" cy="74" r="3.5"></circle>
-      <circle class="ch-dot" cx="620" cy="45" r="4"></circle>
-      <text class="ch-lab-strong" x="610" y="37" text-anchor="end">1.56M <tspan class="ch-lab">working tree, all dirs</tspan></text>
+      <circle class="ch-dot" cx="620" cy="43" r="4"></circle>
+      <text class="ch-lab-strong" x="610" y="35" text-anchor="end">1.58M <tspan class="ch-lab">working tree, all dirs</tspan></text>
       <text class="ch-lab-strong" x="610" y="141" text-anchor="end">1.27M <tspan class="ch-lab">committed, 4 repos</tspan></text>
-      <text class="ch-lab-strong" x="50" y="80">+13,838 <tspan class="ch-lab">committed lines/day — last 31 days</tspan></text>
+      <text class="ch-lab-strong" x="50" y="80">+96,866 <tspan class="ch-lab">committed lines/week — last 31 days</tspan></text>
       <text class="ch-lab" x="40" y="218" text-anchor="start">03-19</text>
       <text class="ch-lab" x="146" y="218" text-anchor="middle">04-09</text>
       <text class="ch-lab" x="287" y="218" text-anchor="middle">05-07</text>
@@ -616,7 +625,7 @@
     </svg>
       <!-- FIG10-SVG-END -->
       <!-- FIG10-CAP-START (generated by tools/loc_full_arc.py) -->
-      <figcaption class="figcap"><b>Fig.&nbsp;4</b> — First-party lines of code over the platform&rsquo;s life, under one counting rule (2026-07-12). <b>Solid:</b> code <b>committed</b> to the four git repositories whose history reaches back to the mid-March first commit (physics, tools, research, dotfiles), recomputed by checking out every historical commit and counting it — 1,270,817 lines, marked with an open circle. <b>Dashed:</b> the <b>working tree</b> across every tracked directory — committed code plus work on disk not yet committed — reaching the 1,561,711 headline above. It begins May&nbsp;28, not in March, because that is the first snapshot in the line-count tracker: git records commits, so a past <em>working tree</em> simply was never written down, and drawing it before it was measured would be inventing data. The 290,894-line gap between the two is uncommitted work plus directories outside those four repos. 1,213,923 of the headline&rsquo;s lines sit in physics, tools, dotfiles — the repositories behind the work shown on this page. <em>Scratch and run-artifact directories are excluded from both series.</em></figcaption>
+      <figcaption class="figcap"><b>Fig.&nbsp;4</b> — First-party lines of code over the platform&rsquo;s life, under one counting rule (2026-07-12). <b>Solid:</b> code <b>committed</b> to the four git repositories whose history reaches back to the mid-March first commit (physics, tools, research, dotfiles), recomputed by checking out every historical commit and counting it — 1,270,817 lines, marked with an open circle. <b>Dashed:</b> the <b>working tree</b> across every tracked directory — committed code plus work on disk not yet committed — reaching the 1,577,800 headline above. It begins May&nbsp;28, not in March, because that is the first snapshot in the line-count tracker: git records commits, so a past <em>working tree</em> simply was never written down, and drawing it before it was measured would be inventing data. The 306,983-line gap between the two is uncommitted work plus directories outside those four repos. 1,229,741 of the headline&rsquo;s lines sit in physics, tools, dotfiles — the repositories behind the work shown on this page. <em>Scratch and run-artifact directories are excluded from both series.</em></figcaption>
       <!-- FIG10-CAP-END -->
     </figure>
   </section>
@@ -632,8 +641,6 @@
       <li><span class="kw">Local-first grading</span> A deterministic pipeline on scanned paper — no model calls in the grading path.</li>
       <li><span class="kw">Dated claims</span> Every number on this page carries the day it was verified.</li>
     </ul>
-    <p class="arch-link"><a href="architecture.html">The whole system, drawn
-    as a hexagon — read the architecture page &rarr;</a></p>
   </section>
 
 </main>
