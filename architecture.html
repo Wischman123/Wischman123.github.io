@@ -81,39 +81,47 @@
      one causal chain runs end to end.  Nothing fires "because it is time"; every
      stage fires because the previous one reached it.
 
+     BOTH HEXAGONS ARE THE SAME MACHINE.  Each one CHARGES by growing, and emits
+     its wave not on impact but on the REBOUND -- the compression is the stroke.
+     That symmetry is the whole point: L2 does it to L1, and L1 does it right back.
+
        0.00s  the Teacher UI fires.  The ask travels UI -> API -> core.
-       1.20s  the membrane (L2) begins to INFLATE, its rim glowing brighter as it
+       1.35s  the membrane (L2) begins to INFLATE, its rim glowing brighter as it
               fills.  It is CHARGING -- the glow is stored energy.
-       2.80s  full.  The instant it BEGINS TO SHRINK it discharges that glow as a
+       3.15s  full.  The instant it BEGINS TO SHRINK it discharges that glow as a
               compression wave, launched inward across the annulus.
-       3.64s  the wave STRIKES L1 -- and THAT is what makes L1 grow.  Mind the
-              sign: a CONTRACTION wave makes the inner body BULGE, the way
-              squeezing a shell of incompressible fluid pushes its middle out.
-              L1 does not follow the membrane; it is KICKED by the wave and rings.
-       4.48s  L1's answer -- a reverse wave -- arrives back at the membrane...
-       4.50s  ...and THAT is what opens the ports and discharges the adapters.
-       6.80s  quiet.  The beat rests, and refills.
+       3.99s  the wave STRIKES L1, and L1 ABSORBS it -- it flares as it swallows
+              the front, and begins to swell.  Mind the sign: a CONTRACTION wave
+              makes the inner body BULGE, the way squeezing a shell of
+              incompressible fluid pushes its middle out.
+       4.67s  L1 is FULL.  It has held the energy for 0.68s.  Now it compresses --
+              and, exactly as the membrane did, the compression is what EMITS its
+              own wavefront, outward.  Not on impact: on the rebound.
+       5.51s  L1's reply reaches the membrane...
+       5.56s  ...and THAT is what opens the ports and discharges the adapters.
+       7.54s  quiet.  The beat rests, and refills.
 
      Every delay below is a FRACTION of --beat, never an absolute time, so the
      whole creature -- wave, breath, springs, wavefronts, ports -- slows or
      quickens together and stays in phase.  Change --beat, change everything.
-     (An earlier version wrote these as bare seconds and quietly broke that
-     promise: retiming the beat left the choreography behind.)
 
-     The two springs (L1, and the subject arrows) are NOT hand-keyframed -- see
-     the GENERATED block below.
+     --t-reply is NOT a free parameter.  It is L1's peak, which is decided by L1's
+     spring (T_n, zeta) in the generator, which PRINTS the value to put here.  Set
+     it by hand and L1 will emit while it is still swelling, which is the exact
+     bug this round fixed.
      =========================================================================== */
   .diagram{
-    --beat:8s;
+    --beat:9s;
     /* the choreography, as fractions of one beat */
-    --t-api:      .100;   /* the ask reaches the API                  0.80s */
-    --t-apicard:  .138;   /*   ...and lights it up                    1.10s */
-    --t-inport:   .144;   /* the driving port opens                   1.15s */
-    --t-emit:     .350;   /* the membrane discharges its wave INWARD  2.80s */
-    --t-strike:   .455;   /* the wave lands on L1; L1 replies         3.64s */
-    --t-ports:    .556;   /* the reply reaches the membrane; ports open 4.45s */
-    --t-out:      .563;   /* the adapters are discharged              4.50s */
-    --t-outcard:  .713;   /* the beads land                           5.70s */
+    --t-api:      .089;   /* the ask reaches the API                   0.80s */
+    --t-apicard:  .122;   /*   ...and lights it up                     1.10s */
+    --t-inport:   .128;   /* the driving port opens                    1.15s */
+    --t-emit:     .350;   /* L2 is full; its COMPRESSION emits inward  3.15s */
+    --t-strike:   .443;   /* the front lands; L1 ABSORBS it, swells    3.99s */
+    --t-reply:    .518;   /* L1 is full; its COMPRESSION emits outward 4.67s */
+    --t-ports:    .612;   /* the reply reaches the membrane; ports open 5.51s */
+    --t-out:      .618;   /* the adapters are discharged               5.56s */
+    --t-outcard:  .744;   /* the beads land                            6.70s */
   }
 
   /* --- the beads ARE the wire ---------------------------------------------
@@ -136,12 +144,12 @@
      longer only because there is MORE STORY, not because anything slowed down.
      Total travel is 130 = 10 whole bead-periods, so the loop wraps seamlessly. */
   @keyframes wave-travel{
-    0%   {stroke-dashoffset:0;    opacity:.55; stroke-width:2.2;}  /* idle */
-    4%   {stroke-dashoffset:-8;   opacity:1;   stroke-width:3.4;}  /* front arrives */
-    9%   {stroke-dashoffset:-38;               stroke-width:3.4;}  /* surge */
-    16%  {stroke-dashoffset:-72;  opacity:1;   stroke-width:3.2;}  /* cruise */
-    21%  {stroke-dashoffset:-92;               stroke-width:2.8;}
-    25%  {stroke-dashoffset:-104; opacity:.55; stroke-width:2.2;}  /* tail passes */
+    0%    {stroke-dashoffset:0;    opacity:.55; stroke-width:2.2;}  /* idle */
+    3.5%  {stroke-dashoffset:-8;   opacity:1;   stroke-width:3.4;}  /* front arrives */
+    8%    {stroke-dashoffset:-38;               stroke-width:3.4;}  /* surge */
+    14%   {stroke-dashoffset:-72;  opacity:1;   stroke-width:3.2;}  /* cruise */
+    18.5% {stroke-dashoffset:-92;               stroke-width:2.8;}
+    22%   {stroke-dashoffset:-104; opacity:.55; stroke-width:2.2;}  /* tail passes */
     100% {stroke-dashoffset:-130; opacity:.55; stroke-width:2.2;}  /* idle drift */
   }
 
@@ -159,9 +167,9 @@
     44%     {transform:scale(1.008); animation-timing-function:cubic-bezier(.3,0,.4,1);}  /* recoil */
     49%     {transform:scale(0.995); animation-timing-function:cubic-bezier(.4,0,.4,1);}
     54%     {transform:scale(1.000); animation-timing-function:cubic-bezier(.3,0,.3,1);}
-    57%     {transform:scale(1.014); animation-timing-function:cubic-bezier(.4,0,.3,1);}  /* L1's REPLY lands */
-    61%     {transform:scale(0.998); animation-timing-function:cubic-bezier(.4,0,.4,1);}
-    66%,100%{transform:scale(1);}                                                          /* rest */
+    60%     {transform:scale(1.014); animation-timing-function:cubic-bezier(.4,0,.3,1);}  /* L1's REPLY lands */
+    64%     {transform:scale(0.998); animation-timing-function:cubic-bezier(.4,0,.4,1);}
+    69%,100%{transform:scale(1);}                                                          /* rest */
   }
 
   /* The RIM CHARGES.  A wide soft stroke on the membrane that brightens and
@@ -259,137 +267,156 @@
      TIE the picture to the physics: the inward front's 0.84s flight is exactly
      the delay the generator uses for L1's kick, so what you SEE arriving is what
      MAKES L1 move.  Change one and you must change the other (T_STRIKE). */
-  @keyframes wave-in{                                    /* L2 discharges inward */
-    0%    {transform:scale(1.02);   opacity:0;}
-    1.5%  {transform:scale(0.95);   opacity:.75;}
-    7%    {transform:scale(0.68);   opacity:.95;}
-    10%   {transform:scale(0.50);   opacity:1;}
-    10.5% {transform:scale(0.4583); opacity:.4;}         /* STRIKES L1 at 0.84s */
-    11.5% {transform:scale(0.44);   opacity:0;}          /* absorbed */
-    100%  {transform:scale(0.44);   opacity:0;}
+  @keyframes wave-in{                          /* L2's compression, travelling in */
+    0%     {transform:scale(1.02);   opacity:0;}
+    1.3%   {transform:scale(0.95);   opacity:.75;}
+    6%     {transform:scale(0.68);   opacity:.95;}
+    8.8%   {transform:scale(0.50);   opacity:1;}
+    9.33%  {transform:scale(0.4583); opacity:.5;}        /* STRIKES L1 at 0.84s */
+    10.3%  {transform:scale(0.42);   opacity:0;}         /* SWALLOWED — it does not
+                                                            bounce; L1 eats it, and
+                                                            answers later, itself */
+    100%   {transform:scale(0.42);   opacity:0;}
   }
-  @keyframes wave-out{                                   /* L1 answers outward */
-    0%    {transform:scale(0.4583); opacity:0;}
-    1%    {transform:scale(0.49);   opacity:.85;}
-    5%    {transform:scale(0.63);   opacity:.65;}
-    9%    {transform:scale(0.82);   opacity:.4;}
-    10.5% {transform:scale(1.02);   opacity:0;}          /* reaches the membrane */
-    100%  {transform:scale(1.02);   opacity:0;}
+  @keyframes wave-out{                         /* L1's compression, travelling out */
+    0%     {transform:scale(0.4583); opacity:0;}
+    0.9%   {transform:scale(0.49);   opacity:.85;}
+    4.5%   {transform:scale(0.63);   opacity:.65;}
+    8%     {transform:scale(0.82);   opacity:.4;}
+    9.33%  {transform:scale(1.02);   opacity:0;}         /* reaches the membrane */
+    100%   {transform:scale(1.02);   opacity:0;}
+  }
+
+  /* --- L1 ABSORBS ----------------------------------------------------------
+     L1 does not merely get pushed: it SWALLOWS the wavefront.  It flares as the
+     front lands, holds that charge for the 0.68s it spends swollen, and spends
+     it as it compresses -- at which moment it emits its own front.  Exactly the
+     membrane's rim-charge, one layer in.  Same machine, smaller scale. */
+  .l1shell{animation:l1-absorb var(--beat) linear infinite both;
+           animation-delay:calc(var(--beat) * var(--t-strike));}
+  @keyframes l1-absorb{
+    0%      {fill-opacity:.16;}
+    1%      {fill-opacity:.42;}   /* SWALLOWS the front — flares */
+    5%      {fill-opacity:.38;}
+    7.6%    {fill-opacity:.36;}   /* FULL, holding the charge */
+    11%     {fill-opacity:.24;}   /* compressing — spending it as the reply */
+    14%     {fill-opacity:.17;}
+    18%,100%{fill-opacity:.16;}
   }
 
   /* >>> GENERATED by tools/showcase_anim/gen_core_springs.py -- DO NOT HAND-EDIT */
-  /* L1 -- IMPULSE-KICKED spring (T_n=1.6s zeta=0.26). Quiet until the wave lands at 3.64s, then it GROWS and rings. */
+  /* L1 -- IMPULSE-KICKED spring (T_n=2.2s zeta=0.28). Quiet until the wave lands at 3.99s, then it GROWS and rings. */
   @keyframes core-inner{
-    0%{transform:scale(1.0000);}
-    2%{transform:scale(0.9994);}
-    4%{transform:scale(0.9992);}
-    6%{transform:scale(0.9993);}
-    8%{transform:scale(0.9996);}
-    10%{transform:scale(1.0000);}
-    12%{transform:scale(1.0002);}
-    14%{transform:scale(1.0003);}
-    16%{transform:scale(1.0003);}
-    18%{transform:scale(1.0002);}
-    20%{transform:scale(1.0000);}
+    0%{transform:scale(1.0010);}
+    2%{transform:scale(1.0014);}
+    4%{transform:scale(1.0013);}
+    6%{transform:scale(1.0010);}
+    8%{transform:scale(1.0005);}
+    10%{transform:scale(1.0001);}
+    12%{transform:scale(0.9997);}
+    14%{transform:scale(0.9995);}
+    16%{transform:scale(0.9994);}
+    18%{transform:scale(0.9995);}
+    20%{transform:scale(0.9997);}
     22%{transform:scale(0.9999);}
-    24%{transform:scale(0.9999);}
-    26%{transform:scale(0.9999);}
-    28%{transform:scale(0.9999);}
-    30%{transform:scale(1.0000);}
-    32%{transform:scale(1.0000);}
+    24%{transform:scale(1.0001);}
+    26%{transform:scale(1.0002);}
+    28%{transform:scale(1.0002);}
+    30%{transform:scale(1.0002);}
+    32%{transform:scale(1.0001);}
     34%{transform:scale(1.0001);}
-    36%{transform:scale(1.0001);}
-    38%{transform:scale(1.0000);}
-    40%{transform:scale(1.0000);}
-    42%{transform:scale(1.0000);}
-    44%{transform:scale(1.0000);}
-    46%{transform:scale(1.0003);}
-    48%{transform:scale(1.0163);}
-    50%{transform:scale(1.0421);}
-    52%{transform:scale(1.0548);}
-    54%{transform:scale(1.0485);}
-    56%{transform:scale(1.0288);}
-    58%{transform:scale(1.0054);}
-    60%{transform:scale(0.9867);}
-    62%{transform:scale(0.9777);}
+    36%{transform:scale(1.0000);}
+    38%{transform:scale(0.9999);}
+    40%{transform:scale(0.9999);}
+    42%{transform:scale(0.9999);}
+    44%{transform:scale(0.9999);}
+    46%{transform:scale(1.0064);}
+    48%{transform:scale(1.0294);}
+    50%{transform:scale(1.0489);}
+    52%{transform:scale(1.0550);}
+    54%{transform:scale(1.0477);}
+    56%{transform:scale(1.0317);}
+    58%{transform:scale(1.0126);}
+    60%{transform:scale(0.9955);}
+    62%{transform:scale(0.9836);}
     64%{transform:scale(0.9784);}
-    66%{transform:scale(0.9859);}
-    68%{transform:scale(0.9960);}
-    70%{transform:scale(1.0045);}
-    72%{transform:scale(1.0092);}
-    74%{transform:scale(1.0096);}
-    76%{transform:scale(1.0067);}
-    78%{transform:scale(1.0025);}
-    80%{transform:scale(0.9986);}
-    82%{transform:scale(0.9963);}
-    84%{transform:scale(0.9958);}
-    86%{transform:scale(0.9968);}
-    88%{transform:scale(0.9986);}
-    90%{transform:scale(1.0003);}
-    92%{transform:scale(1.0015);}
-    94%{transform:scale(1.0018);}
-    96%{transform:scale(1.0015);}
-    98%{transform:scale(1.0007);}
-    100%{transform:scale(1.0000);}
+    66%{transform:scale(0.9794);}
+    68%{transform:scale(0.9847);}
+    70%{transform:scale(0.9922);}
+    72%{transform:scale(0.9995);}
+    74%{transform:scale(1.0051);}
+    76%{transform:scale(1.0082);}
+    78%{transform:scale(1.0086);}
+    80%{transform:scale(1.0070);}
+    82%{transform:scale(1.0043);}
+    84%{transform:scale(1.0012);}
+    86%{transform:scale(0.9987);}
+    88%{transform:scale(0.9970);}
+    90%{transform:scale(0.9965);}
+    92%{transform:scale(0.9969);}
+    94%{transform:scale(0.9979);}
+    96%{transform:scale(0.9991);}
+    98%{transform:scale(1.0002);}
+    100%{transform:scale(1.0010);}
   }
   /* subject arrows -- displacement-driven spring (T_n=2.4s zeta=0.2; damping raised from 0.10, 6 reversals not 6). */
   @keyframes sub-breathe{
-    0%{stroke-dashoffset:8.16;}
-    2%{stroke-dashoffset:9.52;}
-    4%{stroke-dashoffset:11.22;}
-    6%{stroke-dashoffset:12.94;}
-    8%{stroke-dashoffset:14.39;}
-    10%{stroke-dashoffset:15.40;}
-    12%{stroke-dashoffset:15.86;}
-    14%{stroke-dashoffset:15.79;}
-    16%{stroke-dashoffset:15.28;}
-    18%{stroke-dashoffset:14.37;}
-    20%{stroke-dashoffset:12.74;}
-    22%{stroke-dashoffset:9.68;}
-    24%{stroke-dashoffset:4.60;}
-    26%{stroke-dashoffset:-2.55;}
-    28%{stroke-dashoffset:-11.14;}
-    30%{stroke-dashoffset:-20.11;}
-    32%{stroke-dashoffset:-28.25;}
-    34%{stroke-dashoffset:-34.68;}
-    36%{stroke-dashoffset:-39.64;}
-    38%{stroke-dashoffset:-41.91;}
-    40%{stroke-dashoffset:-34.77;}
-    42%{stroke-dashoffset:-19.09;}
-    44%{stroke-dashoffset:-1.62;}
-    46%{stroke-dashoffset:14.14;}
-    48%{stroke-dashoffset:27.04;}
-    50%{stroke-dashoffset:36.45;}
-    52%{stroke-dashoffset:41.41;}
-    54%{stroke-dashoffset:41.34;}
-    56%{stroke-dashoffset:36.41;}
-    58%{stroke-dashoffset:26.45;}
-    60%{stroke-dashoffset:14.17;}
-    62%{stroke-dashoffset:3.64;}
-    64%{stroke-dashoffset:-3.48;}
-    66%{stroke-dashoffset:-6.79;}
-    68%{stroke-dashoffset:-6.44;}
-    70%{stroke-dashoffset:-3.05;}
-    72%{stroke-dashoffset:2.36;}
-    74%{stroke-dashoffset:8.63;}
-    76%{stroke-dashoffset:14.62;}
-    78%{stroke-dashoffset:19.42;}
-    80%{stroke-dashoffset:22.46;}
-    82%{stroke-dashoffset:23.51;}
-    84%{stroke-dashoffset:22.73;}
-    86%{stroke-dashoffset:20.51;}
-    88%{stroke-dashoffset:17.43;}
-    90%{stroke-dashoffset:14.12;}
-    92%{stroke-dashoffset:11.13;}
-    94%{stroke-dashoffset:8.90;}
-    96%{stroke-dashoffset:7.66;}
-    98%{stroke-dashoffset:7.45;}
-    100%{stroke-dashoffset:8.16;}
+    0%{stroke-dashoffset:14.45;}
+    2%{stroke-dashoffset:16.54;}
+    4%{stroke-dashoffset:17.70;}
+    6%{stroke-dashoffset:17.86;}
+    8%{stroke-dashoffset:17.15;}
+    10%{stroke-dashoffset:15.86;}
+    12%{stroke-dashoffset:14.36;}
+    14%{stroke-dashoffset:12.97;}
+    16%{stroke-dashoffset:11.95;}
+    18%{stroke-dashoffset:11.31;}
+    20%{stroke-dashoffset:10.40;}
+    22%{stroke-dashoffset:8.07;}
+    24%{stroke-dashoffset:3.34;}
+    26%{stroke-dashoffset:-3.95;}
+    28%{stroke-dashoffset:-12.99;}
+    30%{stroke-dashoffset:-22.37;}
+    32%{stroke-dashoffset:-30.51;}
+    34%{stroke-dashoffset:-36.41;}
+    36%{stroke-dashoffset:-40.54;}
+    38%{stroke-dashoffset:-41.55;}
+    40%{stroke-dashoffset:-30.98;}
+    42%{stroke-dashoffset:-10.73;}
+    44%{stroke-dashoffset:9.72;}
+    46%{stroke-dashoffset:25.71;}
+    48%{stroke-dashoffset:36.24;}
+    50%{stroke-dashoffset:41.43;}
+    52%{stroke-dashoffset:41.19;}
+    54%{stroke-dashoffset:35.84;}
+    56%{stroke-dashoffset:26.86;}
+    58%{stroke-dashoffset:15.27;}
+    60%{stroke-dashoffset:2.40;}
+    62%{stroke-dashoffset:-9.09;}
+    64%{stroke-dashoffset:-14.98;}
+    66%{stroke-dashoffset:-13.78;}
+    68%{stroke-dashoffset:-7.08;}
+    70%{stroke-dashoffset:2.63;}
+    72%{stroke-dashoffset:12.85;}
+    74%{stroke-dashoffset:21.48;}
+    76%{stroke-dashoffset:27.07;}
+    78%{stroke-dashoffset:29.03;}
+    80%{stroke-dashoffset:27.59;}
+    82%{stroke-dashoffset:23.64;}
+    84%{stroke-dashoffset:18.37;}
+    86%{stroke-dashoffset:13.07;}
+    88%{stroke-dashoffset:8.80;}
+    90%{stroke-dashoffset:6.22;}
+    92%{stroke-dashoffset:5.56;}
+    94%{stroke-dashoffset:6.62;}
+    96%{stroke-dashoffset:8.89;}
+    98%{stroke-dashoffset:11.72;}
+    100%{stroke-dashoffset:14.45;}
   }
   /* <<< END GENERATED */
 
   @media (prefers-reduced-motion: reduce){
-    .flowdash,.wave,.corebody,.coreinner,.pulse,.card,.port,.ripple{animation:none !important;}
+    .flowdash,.wave,.corebody,.coreinner,.l1shell,.pulse,.card,.port,.ripple{animation:none !important;}
     .wave{opacity:.55;}          /* show the beads, held still */
     .port{opacity:1;}            /* valves drawn open */
     .corebody,.coreinner{transform:none;}
@@ -773,7 +800,7 @@
              membrane 0.85s late, overshoots it, and rings.  The chevrons ride
              WITH it -- they mark L1's boundary, so they must not drift off it. -->
         <g class="coreinner">
-          <polygon points="600,230 695.26,285 695.26,395 600,450 504.74,395 504.74,285"
+          <polygon class="l1shell" points="600,230 695.26,285 695.26,395 600,450 504.74,395 504.74,285"
                    fill="var(--mech)" fill-opacity=".16" stroke="var(--mech)" stroke-width="1.8"/>
           <!-- inward chevrons (L2 depends on L1) -->
           <g stroke="var(--mech)" stroke-width="1.6" fill="none" opacity=".65">
@@ -794,7 +821,7 @@
              is what fires the ports. -->
         <g class="ripples">
           <polygon class="ripple ripple--in"  style="--wd:calc(var(--beat) * var(--t-emit))"   points="600,100 807.85,220 807.85,460 600,580 392.15,460 392.15,220"/>
-          <polygon class="ripple ripple--out" style="--wd:calc(var(--beat) * var(--t-strike))" points="600,100 807.85,220 807.85,460 600,580 392.15,460 392.15,220"/>
+          <polygon class="ripple ripple--out" style="--wd:calc(var(--beat) * var(--t-reply))" points="600,100 807.85,220 807.85,460 600,580 392.15,460 392.15,220"/>
         </g>
 
         <!-- The gate's label card paints AFTER the core, so the hexagon's top
