@@ -77,18 +77,19 @@
   .foot .paths{display:block;margin-top:8px;word-break:break-word;}
 
   /* ===========================================================================
-     THE DIAGRAM BREATHES — two clocks, because it draws two different things.
+     THE DIAGRAM BREATHES.  ONE clock -- --beat (6s) -- drives the whole organism.
 
-     --beat (6s)  the peristaltic wave.  Teacher UI fires -> the API relays ->
-                  the core INHALES until it is visibly distended -> it clamps
-                  down (systole) -> and that squeeze is what drives the four
-                  driven ports.  Every green/yellow element is the SAME 6s
-                  animation sampled at a different --wd delay; the delay IS the
-                  ripple.  A rest phase closes the beat, so it reads as a
-                  creature and not a conveyor belt.
+     The peristaltic wave: Teacher UI fires -> the API relays -> the core INHALES
+     until it is visibly distended -> it clamps down (systole) -> and that squeeze
+     is what discharges the four driven ports.  Every green/yellow element is the
+     SAME 6s animation sampled at a different --wd delay; the delay IS the ripple.
+     A rest phase closes the beat, so it reads as a creature, not a conveyor belt.
 
-     The subject (red) arrows are NOT an independent clock any more.  They are
-     driven BY the core -- see @keyframes sub-breathe.
+     Nothing has an independent clock.  The membrane (L2) is the sole driver; the
+     inner hexagon (L1) and the subject arrows are damped springs hanging off it,
+     each lagging, overshooting and ringing on its own time constant.  Change
+     --beat and the entire creature -- wave, breath, springs, wavefronts -- slows
+     or quickens together, staying in phase.
      =========================================================================== */
   .diagram{ --beat:6s; }
 
@@ -161,37 +162,188 @@
     100% {opacity:.55;}
   }
 
-  /* --- subject plugins: DRIVEN BY THE CORE ---------------------------------
-     The brief: the dashes flow OUTWARD while the core expands and INWARD while
-     it shrinks.  That says the dashes' VELOCITY is the derivative of the core's
-     size -- so their POSITION is the core's size itself.  We therefore drive the
-     offset straight off the scale curve:
+  /* --- the compound spring -------------------------------------------------
+     The membrane (L2) is the DRIVER.  Two things hang off it, and both LAG it,
+     overshoot it, and are still ringing when the next beat arrives:
 
-         offset = -825 x (scale - 1)          [825 maps the 1.040 peak to -33 units]
+         membrane (0s)  ->  inner hexagon (0.85s)  ->  subject arrows (1.14s)
 
-     scale:   1.000  1.032  1.040  0.982  1.011  0.997  1.000
-     offset:      0  -26.4  -33.0  +14.9   -9.1   +2.5      0
+     Each is a damped harmonic oscillator driven by the membrane's displacement:
 
-     Same clock, same keyframe percentages, same easing curves as core-breathe,
-     so these are phase-locked to the membrane by construction rather than by
-     hand-tuning.  The jerk comes along for free: the hold-then-SNAP bezier at
-     45%->50% is what makes the plugins get YANKED back in at the systole.       */
+         y'' + 2*zeta*wn*y' + wn^2*y  =  wn^2 * (scale_outer(t) - 1)
+
+     The disturbance reaches L1 BEFORE it reaches the plugins -- it propagates
+     outward in TIME exactly as it does in SPACE.  That consistency is free from
+     the physics; hand-timed keyframes would have to maintain it by hand.
+
+     Lag, overshoot and ring-down are three coupled consequences of two numbers
+     (T_n, zeta).  Tune them by eye and you fight yourself -- adding lag kills
+     the overshoot, adding overshoot kills the lag.  So the keyframes below are
+     NOT hand-written: they are integrated to steady state (RK4) and spliced in
+     by tools/showcase_anim/gen_core_springs.py --write.  Steady state is also
+     what guarantees offset(0%) == offset(100%), so the loop never jumps.
+
+     To retune: edit INNER_TN/INNER_ZETA/RED_TN/RED_ZETA in that script, run it
+     with --write, done.  Do not hand-edit between the sentinels.               */
+  .coreinner{
+    transform-box:view-box; transform-origin:600px 340px;
+    animation:core-inner var(--beat) linear infinite both;
+  }
   .flowdash{animation:sub-breathe var(--beat) linear infinite both;}
-  @keyframes sub-breathe{
-    0%,20%  {stroke-dashoffset:0;     animation-timing-function:cubic-bezier(.4,0,.5,1);}
-    40%     {stroke-dashoffset:-26.4; animation-timing-function:cubic-bezier(.3,0,.3,1);}  /* inflating -> flows OUT */
-    45%     {stroke-dashoffset:-33;   animation-timing-function:cubic-bezier(.85,0,.1,1);} /* hangs at full stretch */
-    50%     {stroke-dashoffset:14.85; animation-timing-function:cubic-bezier(.2,.8,.3,1);} /* SYSTOLE -> yanked IN */
-    55%     {stroke-dashoffset:-9.08; animation-timing-function:cubic-bezier(.3,0,.4,1);}  /* recoil */
-    62%     {stroke-dashoffset:2.48;  animation-timing-function:cubic-bezier(.4,0,.4,1);}  /* ring-down */
-    70%,100%{stroke-dashoffset:0;}                                                          /* rest */
+
+  /* --- the wave you can SEE ------------------------------------------------
+     A hexagonal wavefront, filled with a radial gradient that is transparent
+     inside and glows at its rim, so scaling it sweeps a soft band through the
+     annulus.  Azure travels IN (L2's push); it is absorbed at L1, and violet
+     travels back OUT (L1's answer).  1.0 -> 0.4583 is exactly the outer hex's
+     radius (240) mapped onto the inner hex's (110), so the front lands ON L1.
+     Its 0.84s inward flight is timed to the inner hexagon's 0.85s spring lag:
+     what you SEE arriving is what MAKES the inner hexagon move.                */
+  .ripple{
+    transform-box:view-box; transform-origin:600px 340px;
+    opacity:0; pointer-events:none;
+    animation-duration:var(--beat); animation-timing-function:linear;
+    animation-iteration-count:infinite; animation-fill-mode:both;
+    animation-delay:var(--wd,0s);
+  }
+  .ripple--in {fill:url(#wavefront-in);  animation-name:wave-in;}
+  .ripple--out{fill:url(#wavefront-out); animation-name:wave-out;}
+
+  @keyframes wave-in{                                    /* L2 pushes inward */
+    0%   {transform:scale(1.02);   opacity:0;}
+    2%   {transform:scale(0.95);   opacity:.75;}
+    9%   {transform:scale(0.68);   opacity:.95;}
+    13%  {transform:scale(0.50);   opacity:1;}
+    14%  {transform:scale(0.4583); opacity:.4;}          /* strikes L1 at 0.84s */
+    15%  {transform:scale(0.44);   opacity:0;}           /* absorbed */
+    100% {transform:scale(0.44);   opacity:0;}
+  }
+  @keyframes wave-out{                                   /* L1 answers outward */
+    0%   {transform:scale(0.4583); opacity:0;}
+    1%   {transform:scale(0.49);   opacity:.85;}
+    8%   {transform:scale(0.63);   opacity:.6;}
+    16%  {transform:scale(0.82);   opacity:.35;}
+    22%  {transform:scale(1.02);   opacity:0;}           /* reabsorbed at the membrane */
+    100% {transform:scale(1.02);   opacity:0;}
   }
 
+  /* >>> GENERATED by tools/showcase_anim/gen_core_springs.py -- DO NOT HAND-EDIT */
+  /* L1 inner hexagon -- driven spring, T_n=2.0s zeta=0.1, lags the membrane by 0.85s */
+  @keyframes core-inner{
+    0%{transform:scale(0.9847);}
+    2%{transform:scale(0.9880);}
+    4%{transform:scale(0.9927);}
+    6%{transform:scale(0.9981);}
+    8%{transform:scale(1.0033);}
+    10%{transform:scale(1.0077);}
+    12%{transform:scale(1.0107);}
+    14%{transform:scale(1.0121);}
+    16%{transform:scale(1.0117);}
+    18%{transform:scale(1.0098);}
+    20%{transform:scale(1.0067);}
+    22%{transform:scale(1.0029);}
+    24%{transform:scale(0.9991);}
+    26%{transform:scale(0.9960);}
+    28%{transform:scale(0.9945);}
+    30%{transform:scale(0.9953);}
+    32%{transform:scale(0.9987);}
+    34%{transform:scale(1.0046);}
+    36%{transform:scale(1.0125);}
+    38%{transform:scale(1.0215);}
+    40%{transform:scale(1.0305);}
+    42%{transform:scale(1.0383);}
+    44%{transform:scale(1.0445);}
+    46%{transform:scale(1.0486);}
+    48%{transform:scale(1.0498);}
+    50%{transform:scale(1.0440);}
+    52%{transform:scale(1.0315);}
+    54%{transform:scale(1.0162);}
+    56%{transform:scale(1.0010);}
+    58%{transform:scale(0.9878);}
+    60%{transform:scale(0.9776);}
+    62%{transform:scale(0.9710);}
+    64%{transform:scale(0.9685);}
+    66%{transform:scale(0.9701);}
+    68%{transform:scale(0.9756);}
+    70%{transform:scale(0.9839);}
+    72%{transform:scale(0.9938);}
+    74%{transform:scale(1.0038);}
+    76%{transform:scale(1.0126);}
+    78%{transform:scale(1.0190);}
+    80%{transform:scale(1.0224);}
+    82%{transform:scale(1.0225);}
+    84%{transform:scale(1.0196);}
+    86%{transform:scale(1.0142);}
+    88%{transform:scale(1.0073);}
+    90%{transform:scale(0.9999);}
+    92%{transform:scale(0.9930);}
+    94%{transform:scale(0.9876);}
+    96%{transform:scale(0.9843);}
+    98%{transform:scale(0.9833);}
+    100%{transform:scale(0.9847);}
+  }
+  /* subject arrows -- driven spring, T_n=2.4s zeta=0.1, lags by 1.14s, still 43% in motion at 5.5s */
+  @keyframes sub-breathe{
+    0%{stroke-dashoffset:9.84;}
+    2%{stroke-dashoffset:15.84;}
+    4%{stroke-dashoffset:20.82;}
+    6%{stroke-dashoffset:24.37;}
+    8%{stroke-dashoffset:26.23;}
+    10%{stroke-dashoffset:26.34;}
+    12%{stroke-dashoffset:24.79;}
+    14%{stroke-dashoffset:21.83;}
+    16%{stroke-dashoffset:17.82;}
+    18%{stroke-dashoffset:13.21;}
+    20%{stroke-dashoffset:8.48;}
+    22%{stroke-dashoffset:4.06;}
+    24%{stroke-dashoffset:0.29;}
+    26%{stroke-dashoffset:-2.78;}
+    28%{stroke-dashoffset:-5.32;}
+    30%{stroke-dashoffset:-7.68;}
+    32%{stroke-dashoffset:-10.27;}
+    34%{stroke-dashoffset:-13.38;}
+    36%{stroke-dashoffset:-17.11;}
+    38%{stroke-dashoffset:-21.35;}
+    40%{stroke-dashoffset:-25.84;}
+    42%{stroke-dashoffset:-30.23;}
+    44%{stroke-dashoffset:-34.55;}
+    46%{stroke-dashoffset:-38.72;}
+    48%{stroke-dashoffset:-41.87;}
+    50%{stroke-dashoffset:-39.86;}
+    52%{stroke-dashoffset:-32.16;}
+    54%{stroke-dashoffset:-21.63;}
+    56%{stroke-dashoffset:-9.98;}
+    58%{stroke-dashoffset:1.77;}
+    60%{stroke-dashoffset:13.13;}
+    62%{stroke-dashoffset:23.56;}
+    64%{stroke-dashoffset:32.27;}
+    66%{stroke-dashoffset:38.49;}
+    68%{stroke-dashoffset:41.65;}
+    70%{stroke-dashoffset:41.54;}
+    72%{stroke-dashoffset:38.34;}
+    74%{stroke-dashoffset:32.54;}
+    76%{stroke-dashoffset:24.86;}
+    78%{stroke-dashoffset:16.13;}
+    80%{stroke-dashoffset:7.25;}
+    82%{stroke-dashoffset:-0.93;}
+    84%{stroke-dashoffset:-7.68;}
+    86%{stroke-dashoffset:-12.45;}
+    88%{stroke-dashoffset:-14.90;}
+    90%{stroke-dashoffset:-14.94;}
+    92%{stroke-dashoffset:-12.71;}
+    94%{stroke-dashoffset:-8.57;}
+    96%{stroke-dashoffset:-3.02;}
+    98%{stroke-dashoffset:3.32;}
+    100%{stroke-dashoffset:9.84;}
+  }
+  /* <<< END GENERATED */
+
   @media (prefers-reduced-motion: reduce){
-    .flowdash,.wave,.corebody,.pulse,.card,.port{animation:none !important;}
+    .flowdash,.wave,.corebody,.coreinner,.pulse,.card,.port,.ripple{animation:none !important;}
     .wave{opacity:.55;}          /* show the beads, held still */
     .port{opacity:1;}            /* valves drawn open */
-    .corebody{transform:none;}
+    .corebody,.coreinner{transform:none;}
+    .ripple{display:none;}       /* the wavefront is motion; with no motion it is noise */
   }
 
   /* entry hand-off: this used to fade index.html's WARM paper into this page's
@@ -506,6 +658,24 @@
           <marker id="ah-sub" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
             <path d="M0,0 L10,5 L0,10 z" fill="var(--subject)"/>
           </marker>
+
+          <!-- The wavefronts.  userSpaceOnUse (not the default bounding-box) so
+               the gradient is a true CIRCLE about the hex centre rather than an
+               ellipse stretched to the hex's 416x480 box.  Transparent inside,
+               glowing at the rim: scaling the polygon sweeps that soft band
+               through the annulus, which is the visible "sound wave". -->
+          <radialGradient id="wavefront-in" gradientUnits="userSpaceOnUse" cx="600" cy="340" r="240">
+            <stop offset="0%"   stop-color="var(--core)" stop-opacity="0"/>
+            <stop offset="72%"  stop-color="var(--core)" stop-opacity="0"/>
+            <stop offset="92%"  stop-color="var(--core)" stop-opacity=".70"/>
+            <stop offset="100%" stop-color="var(--core)" stop-opacity="0"/>
+          </radialGradient>
+          <radialGradient id="wavefront-out" gradientUnits="userSpaceOnUse" cx="600" cy="340" r="240">
+            <stop offset="0%"   stop-color="var(--mech)" stop-opacity="0"/>
+            <stop offset="72%"  stop-color="var(--mech)" stop-opacity="0"/>
+            <stop offset="92%"  stop-color="var(--mech)" stop-opacity=".70"/>
+            <stop offset="100%" stop-color="var(--mech)" stop-opacity="0"/>
+          </radialGradient>
         </defs>
 
         <!-- column headers -->
@@ -523,6 +693,8 @@
              Everything that is part of the membrane lives in .corebody and
              scales about the hexagon's centre (600,340).  The TEXT is left
              outside the group on purpose — scaling type makes it shimmer. -->
+        <!-- L2, the MEMBRANE: the driver.  Everything glued to the outer shell
+             lives here and scales with it about the hex centre (600,340). -->
         <g class="corebody">
           <!-- soft glow behind the core; brightens as the membrane fills -->
           <polygon class="pulse" points="600,100 807.85,220 807.85,460 600,580 392.15,460 392.15,220"
@@ -530,9 +702,6 @@
           <!-- L2 outer hex -->
           <polygon points="600,100 807.85,220 807.85,460 600,580 392.15,460 392.15,220"
                    fill="var(--core)" fill-opacity=".10" stroke="var(--core)" stroke-width="2"/>
-          <!-- L1 inner hex -->
-          <polygon points="600,230 695.26,285 695.26,395 600,450 504.74,395 504.74,285"
-                   fill="var(--mech)" fill-opacity=".16" stroke="var(--mech)" stroke-width="1.8"/>
 
           <!-- port notches = valves.  The driving port opens as the wave enters;
                the four driven ports open on the squeeze that fires them. -->
@@ -541,12 +710,34 @@
           <rect class="port" style="--wd:2.75s" x="802" y="288" width="12" height="24" rx="2" fill="var(--core)"/>
           <rect class="port" style="--wd:2.85s" x="802" y="363" width="12" height="24" rx="2" fill="var(--core)"/>
           <rect class="port" style="--wd:2.95s" x="802" y="428" width="12" height="24" rx="2" fill="var(--core)"/>
+        </g>
 
+        <!-- L1, the SECOND MASS: no longer welded to L2.  It has its own spring
+             and its own clock (@keyframes core-inner), so it answers the
+             membrane 0.85s late, overshoots it, and rings.  The chevrons ride
+             WITH it -- they mark L1's boundary, so they must not drift off it. -->
+        <g class="coreinner">
+          <polygon points="600,230 695.26,285 695.26,395 600,450 504.74,395 504.74,285"
+                   fill="var(--mech)" fill-opacity=".16" stroke="var(--mech)" stroke-width="1.8"/>
           <!-- inward chevrons (L2 depends on L1) -->
           <g stroke="var(--mech)" stroke-width="1.6" fill="none" opacity=".65">
             <path d="M590,246 L600,254 L610,246"/>
             <path d="M590,240 L600,248 L610,240"/>
           </g>
+        </g>
+
+        <!-- The visible wave in the annulus.  Siblings of the two hexes, NOT
+             children -- nesting them would compound the membrane's scale onto
+             their own and the front would no longer land on L1.
+             Two round trips per beat, launched by the membrane's two events:
+               inflation onset (1.20s) and the systole (2.70s).
+             Each azure front flies inward for 0.84s, is absorbed at L1, and a
+             violet front leaves L1 in reply 0.84s later. -->
+        <g class="ripples">
+          <polygon class="ripple ripple--in"  style="--wd:1.20s" points="600,100 807.85,220 807.85,460 600,580 392.15,460 392.15,220"/>
+          <polygon class="ripple ripple--out" style="--wd:2.04s" points="600,100 807.85,220 807.85,460 600,580 392.15,460 392.15,220"/>
+          <polygon class="ripple ripple--in"  style="--wd:2.70s" points="600,100 807.85,220 807.85,460 600,580 392.15,460 392.15,220"/>
+          <polygon class="ripple ripple--out" style="--wd:3.54s" points="600,100 807.85,220 807.85,460 600,580 392.15,460 392.15,220"/>
         </g>
 
         <!-- The gate's label card paints AFTER the core, so the hexagon's top
