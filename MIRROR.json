@@ -320,7 +320,7 @@
       "rule": "pages"
     },
     "src/index.html": {
-      "sha256": "baf871239d5dca15f7aaa591e47bf7c8ee9d1d8299573bdc973494d90c96c861",
+      "sha256": "cfcf9de48879278eec2b06492d98c09ecbd498502516cc5221135d007a4d2b73",
       "rule": "pages"
     },
     "src/plain-vs-engine.html": {
