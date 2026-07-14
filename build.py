@@ -3,6 +3,7 @@ r"""build.py — the site build. HERMETIC: it runs in CI, with NO access to phys
 
     python build.py --check                 # stages 0-6: assemble _site/ + THE GATE
     python build.py --smoke --base-url URL  # stage 7: post-deploy alarm
+    python build.py --determinism           # stage 8: build twice, byte-identical
 
 WHAT THIS PROGRAM IS — AND WHAT IT DELIBERATELY IS NOT
 ======================================================
@@ -80,6 +81,7 @@ import json
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent
@@ -328,6 +330,78 @@ def stage_gate() -> None:
     print("\n  GATE GREEN — the artifact is deployable.")
 
 
+def _assemble_all() -> None:
+    """Stages 0-5 — everything that WRITES _site/, none of the gate."""
+    stage_validate()
+    stage_assemble()
+    stage_vendor_and_assert()
+    stage_nojekyll()
+
+
+def stage_determinism() -> None:
+    """D2 era-2 check: build twice; the two _site/ trees must be BYTE-identical,
+    honoring the ONE named exclusion (`mirror_manifest.DETERMINISM_EXCLUDED_KEYS`
+    — `generated_at`, compared via `canonical_json_bytes`, the same rule D1
+    named once and every determinism consumer honors).
+
+    TODAY THIS IS TWO BUILDS, BECAUSE THERE IS ONE MODE. When E2 lands the
+    analytics flag this check becomes THREE builds — twice in the default mode
+    (this comparison, unchanged), then once with the flag flipped, asserting the
+    only deltas are the analytics <script> nodes (one per HTML file that
+    receives the tag: every pages.yaml page PLUS the injected copies under
+    _site/sim/** and the vendored plain-vs-engine.html — and nothing else).
+    Extending and re-running it is a named item in E2.2's Done-when — owned
+    there, not merely anticipated here. (A FOURTH build is warranted only if
+    the analytics snippet ever embeds a per-build value such as a nonce; today
+    it must not.) Determinism is a property of the BUILD, not of the flag —
+    proving it twice per flag value buys nothing.
+    """
+    _hdr(8, "DETERMINISM — the same source must build the same bytes, twice")
+    _assemble_all()
+    with tempfile.TemporaryDirectory(prefix="showcase_det_") as td:
+        first = Path(td) / "first"
+        shutil.copytree(SITE, first)
+        _assemble_all()
+
+        a = {p.relative_to(first).as_posix(): p
+             for p in sorted(first.rglob("*")) if p.is_file()}
+        b = {p.relative_to(SITE).as_posix(): p
+             for p in sorted(SITE.rglob("*")) if p.is_file()}
+        diffs: list[str] = []
+        excluded = 0
+        for rel in sorted(set(a) | set(b)):
+            pa, pb = a.get(rel), b.get(rel)
+            if pa is None or pb is None:
+                diffs.append(f"{rel}: present in only one of the two builds")
+                continue
+            if pa.read_bytes() == pb.read_bytes():
+                continue
+            if rel.endswith(".json") and (
+                mirror_manifest.canonical_json_bytes(pa)
+                == mirror_manifest.canonical_json_bytes(pb)
+            ):
+                excluded += 1  # differs ONLY in the named excluded key(s)
+                continue
+            diffs.append(f"{rel}: bytes differ between two builds of the "
+                         f"SAME source")
+        if diffs:
+            for d in diffs:
+                print(f"  {d}", file=sys.stderr)
+            raise BuildError(
+                f"THE BUILD IS NOT DETERMINISTIC — {len(diffs)} file(s) "
+                f"differ across two runs. The zero-diff guardrail is only "
+                f"viable on a byte-deterministic build: no timestamps (dates "
+                f"come from the committed JSON), sorted iteration, "
+                f"locale-independent formatting. Find the nondeterminism; do "
+                f"not widen the exclusion list."
+            )
+        print(f"\n  DETERMINISTIC — {len(a)} files byte-identical across two "
+              f"builds"
+              + (f" ({excluded} JSON file(s) forgiven ONLY on "
+                 f"{mirror_manifest.DETERMINISM_EXCLUDED_KEYS})" if excluded
+                 else ""))
+
+
 def stage_smoke(base_url: str) -> int:
     _hdr(7, "POST-DEPLOY SMOKE — an alarm, not a gate")
     rc = _py(["tools/verify_live.py", "--base-url", base_url,
@@ -352,6 +426,9 @@ def main(argv: list[str] | None = None) -> int:
                     help="stages 0-6: assemble _site/ and run THE GATE (default)")
     ap.add_argument("--smoke", action="store_true",
                     help="stage 7 only: crawl the LIVE site (post-deploy alarm)")
+    ap.add_argument("--determinism", action="store_true",
+                    help="era-2 check: assemble _site/ TWICE and assert the "
+                         "trees are byte-identical (generated_at excluded)")
     ap.add_argument("--base-url", default="https://wischman123.github.io",
                     help="stage 7's target")
     args = ap.parse_args(argv)
@@ -359,6 +436,11 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.smoke:
             return stage_smoke(args.base_url)
+        if args.determinism:
+            stage_determinism()
+            total = sum(1 for p in SITE.rglob("*") if p.is_file())
+            print(f"\nDETERMINISM OK — _site/: {total} files, reproducible.")
+            return 0
         stage_validate()
         stage_assemble()
         stage_vendor_and_assert()

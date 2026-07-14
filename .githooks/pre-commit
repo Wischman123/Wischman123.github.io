@@ -1,0 +1,8 @@
+#!/bin/sh
+# D2 (showcase_site_architecture_v1): no generated HTML enters this repo's
+# source. ONE implementation — check_source_html.py — shared with the CI half,
+# which re-runs the same rules over the pushed commit range (so --no-verify
+# only moves a red from your terminal to the workflow).
+#
+# Enable once per clone:  git config core.hooksPath .githooks
+exec python3 "$(git rev-parse --show-toplevel)/check_source_html.py" --staged

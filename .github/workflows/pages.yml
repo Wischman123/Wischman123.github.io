@@ -40,10 +40,31 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # The source-discipline check diffs the PUSHED COMMIT RANGE (never a
+          # scan of the tracked tree — the old published pages are still
+          # tracked as the D1.1 rollback target until D1.2, so a state scan
+          # would be red on every push). A ranged diff needs history.
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
+      - name: No generated HTML in source (D2 — commit-range scoped)
+        # The CI half of .githooks/pre-commit: ONE implementation
+        # (check_source_html.py), re-scoped from "staged" to "pushed range".
+        # "Staged" is not a concept CI has. workflow_dispatch has no range at
+        # all, so there is nothing to check (the commits it builds were all
+        # checked by the pushes that created them).
+        if: github.event_name != 'workflow_dispatch'
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            RANGE="${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
+          else
+            RANGE="${{ github.event.before }}..${{ github.sha }}"
+          fi
+          python check_source_html.py --range "$RANGE"
 
       - name: Install the build's only dependency
         # stage 0 validates the committed JSON against the VENDORED pydantic model.
@@ -61,6 +82,14 @@ jobs:
 
       - name: Build + THE GATE (build.py stages 0-6)
         run: python build.py --check
+
+      - name: Double-build determinism (D2 — era-2 check)
+        # Two more assemblies of _site/, byte-compared under the ONE named
+        # exclusion (generated_at). Deterministic => the tree this leaves
+        # behind is identical to the gated one above, so the upload below
+        # ships exactly what the gate proved. E2.2 extends this to the
+        # three-build matrix when the analytics flag exists.
+        run: python build.py --determinism
 
       - name: Upload the Pages artifact
         uses: actions/upload-pages-artifact@v3
