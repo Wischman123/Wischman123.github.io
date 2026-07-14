@@ -24,21 +24,38 @@
         "x": 0,
         "y": 0
       },
-      "radius_m": 0.47
+      "radius_m": 0.47,
+      "render_shape": {
+        "role": "central_body",
+        "label": "Ceres"
+      }
     },
     {
       "id": "dawn",
       "type": "particle",
       "mass_kg": 1,
       "position_m": {
-        "x": 1,
-        "y": 0
+        "x": 0.5403023058681398,
+        "y": -0.8414709848078965
       },
       "velocity_m_per_s": {
-        "x": 0,
-        "y": 1
+        "x": 0.8414709848078965,
+        "y": 0.5403023058681398
       },
-      "radius_m": 0.012
+      "radius_m": 0.012,
+      "render_shape": {
+        "role": "spacecraft",
+        "velocity_vector": {
+          "label": "v_D",
+          "lead_s": 0.35,
+          "role": "velocity"
+        },
+        "exhaust": {
+          "label": "exhaust",
+          "window_s": 0.5,
+          "role": "exhaust"
+        }
+      }
     },
     {
       "id": "debris",
@@ -46,12 +63,20 @@
       "mass_kg": 0.005,
       "radius_m": 0.012,
       "position_m": {
-        "x": 0.00349909350907281,
-        "y": 1.1486994979177856
+        "x": 0.9684878660525786,
+        "y": 0.6177006018135722
       },
       "velocity_m_per_s": {
-        "x": 0.973810186359295,
-        "y": -0.05409209684125502
+        "x": 0.480634959168513,
+        "y": -0.848659101184278
+      },
+      "render_shape": {
+        "role": "debris",
+        "velocity_vector": {
+          "label": "v_debris",
+          "lead_s": 0.35,
+          "role": "incoming"
+        }
       }
     }
   ],
@@ -67,11 +92,21 @@
       ]
     }
   ],
-  "constraints": [],
+  "constraints": [
+    {
+      "id": "debris_weld",
+      "type": "body_rod",
+      "body_a": "dawn",
+      "body_b": "debris",
+      "length_m": 0.024,
+      "k_constraint": 117.18111436774718,
+      "activate_on_contact": true
+    }
+  ],
   "simulation": {
-    "duration_s": 5.931587148702239,
+    "duration_s": 13.219583339526485,
     "integrator": "rk4",
-    "dt_s": 0.000999930402680755,
+    "dt_s": 0.0009999684825663,
     "adaptive_dt": false
   },
   "outputs": [
@@ -123,18 +158,18 @@
   "expected": {
     "tolerance_band": "v1.0",
     "values": {
-      "dawn:position.x": -0.175244313718875,
-      "dawn:position.y": -1.3597918501952038,
-      "dawn:velocity.x": 0.7828865939751453,
-      "dawn:velocity.y": -0.026766092312033612,
-      "debris:position.x": -0.1559980728220969,
-      "debris:position.y": -1.372148176002697,
-      "debris:velocity.x": 0.7828865939751453,
-      "debris:velocity.y": -0.026766092312033612,
-      "energy.K": 0.30834799103092264,
-      "energy.U_g": -0.7329951300875621,
-      "energy.U_thermal": 0.006130641988876584,
-      "energy.total": -0.5019746477065263
+      "dawn:position.x": -1.4006189655895898,
+      "dawn:position.y": -0.0006712428010926517,
+      "dawn:velocity.x": 0.00022074536553207623,
+      "dawn:velocity.y": -0.7634409596804641,
+      "debris:position.x": -1.4207979281056895,
+      "debris:position.y": 0.012322646440840954,
+      "debris:velocity.x": 0.006398843894921754,
+      "debris:velocity.y": -0.7538493277703849,
+      "energy.K": 0.2928418982962521,
+      "energy.U_g": -0.7174889895735156,
+      "energy.U_thermal": 0.006130655406821894,
+      "energy.total": -0.5019745865092051
     }
   },
   "maneuvers": [
@@ -152,6 +187,46 @@
         "dawn",
         "debris"
       ]
+    }
+  ],
+  "annotations": [
+    {
+      "type": "orbit_path",
+      "world": {
+        "x": 0,
+        "y": 0
+      },
+      "radius_m": 1,
+      "dashed": true
+    },
+    {
+      "type": "position_label",
+      "text": "A",
+      "world": {
+        "x": 1,
+        "y": 0
+      }
+    },
+    {
+      "type": "position_label",
+      "text": "C",
+      "world": {
+        "x": -1.4007191631128895,
+        "y": 0
+      }
+    },
+    {
+      "type": "radius_line",
+      "label": "r₁",
+      "p1": {
+        "x": 0,
+        "y": 0
+      },
+      "p2": {
+        "x": -0.5481856346334988,
+        "y": -0.8363566882505742
+      },
+      "dashed": true
     }
   ]
 }

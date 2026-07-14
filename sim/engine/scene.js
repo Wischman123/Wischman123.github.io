@@ -378,13 +378,35 @@ export function loadScene(json) {
       // participant guard the string path uses: a typo'd body_a/body_b ABORTS
       // at load rather than warn-once free-falling to a silent zero force.
       assertParticipantsResolve([cj.body_a, cj.body_b], bodies, 'body_rod constraint');
+      // orbit_weld_on_contact — a weld-on-impact rod DETECTS contact, and contact is
+      // undetectable between point bodies: contactGeom's depth = rA + rB − r can never
+      // exceed 0 when both radii are 0. Such a rod would sleep FOREVER and the scene
+      // would run to completion looking like "the weld silently didn't work". Abort at
+      // LOAD with the fix named, rather than shipping a guaranteed no-op. (Plain rods
+      // are exempt — they never consult contact.)
+      if (cj.activate_on_contact === true) {
+        const rA = bodies.find((b) => b.id === cj.body_a);
+        const rB = bodies.find((b) => b.id === cj.body_b);
+        for (const [b, key] of [[rA, cj.body_a], [rB, cj.body_b]]) {
+          if (!(b && b.radius > 0)) {
+            throw new Error(
+              `body_rod constraint "${cj.id}" sets activate_on_contact but body ` +
+              `"${key}" has no positive radius_m. Contact between point bodies is ` +
+              `undetectable (contactGeom depth = rA + rB − r is never > 0), so this ` +
+              `rod would never weld — a silent no-op. Give both bodies a radius_m.`
+            );
+          }
+        }
+      }
       constraints.push(new CtorC({
         id: cj.id,
         body_a: cj.body_a,
         body_b: cj.body_b,
         length_m: cj.length_m,
         ...(cj.k_constraint !== undefined ? { k_constraint: cj.k_constraint } : {}),
-        ...(cj.c_damping !== undefined ? { c_damping: cj.c_damping } : {})
+        ...(cj.c_damping !== undefined ? { c_damping: cj.c_damping } : {}),
+        ...(cj.activate_on_contact !== undefined
+          ? { activate_on_contact: cj.activate_on_contact } : {})
       }));
     }
   }
@@ -395,6 +417,15 @@ export function loadScene(json) {
     fields,
     k_contact: DEFAULT_K_CONTACT,
     c_damping: DEFAULT_C_DAMPING,
+    // orbit_weld_on_contact: the set of body pairs a contact-activated body_rod has
+    // WELDED (keys from forces.js::weldPairKey). Written by the rod's step-3 resolve();
+    // read by PerfectlyInelasticMerge, which stands down for a welded pair (its capture
+    // is done, and a co-moving pair's ΔK degrades into ±1e-16 cancellation noise that
+    // trips its strict negative-ΔK guard). Per-RUN state — CLEARED on reset (runner.js),
+    // like wallImpulse and circuitState, so a timeline scrub replays un-welded. Empty for
+    // every scene without a weld ⇒ the merge's `has()` is a miss and the tick is
+    // byte-identical.
+    weldedPairs: new Set(),
     // Phase S item S1: thread the circuit topology so a registered
     // circuit producer can iterate its elements when the tracker
     // dispatches `contributeDiagnostics`. Undefined for non-circuit
@@ -730,6 +761,35 @@ export function loadScene(json) {
       // a gas-in-a-box sets hasBoxWall and opts OUT (walls are external impulse).
       collisionResolvers.push(new ElasticGasCollisions({ applies_to: cj.applies_to }));
     }
+  }
+
+  // orbit_weld_on_contact — a body_rod with activate_on_contact is DORMANT until its two
+  // bodies touch, and that "have they touched yet?" gate must be evaluated ONCE PER TICK
+  // on the COMMITTED post-integration state. It cannot live in the constraint's applyTo:
+  // applyTo runs four times per tick inside RK4, on TRIAL sub-states the integrator may
+  // discard, so a k2/k4 overshoot would weld the rod on a state that never happened.
+  //
+  // The step-3 slot is exactly where per-tick decisions on committed state belong, and
+  // the rod already implements that slot's contract — `resolve(sceneCtx, tracker)`. So
+  // register it in collisionResolvers and it is dispatched by BOTH the live runner
+  // (SimRunner._advanceOne step 3a) and the headless validator (applyCollisionResolvers,
+  // below). That dual dispatch is REQUIRED, not incidental: activation changes
+  // band-checked dynamics, so a weld that fired only in the browser would make
+  // --check-against a lie — the same reasoning collisions.js gives for keeping the merge
+  // resolvers out of the observation-only discreteUpdates list.
+  //
+  // It is NOT a collision (it applies no impulse and books no energy); it shares the list
+  // because it shares the SLOT and the CONTRACT.
+  //
+  // ORDER IS LOAD-BEARING — the welds are APPENDED, so they run AFTER every collision
+  // resolver, and that is required. On the contact tick the merge must fire FIRST (the
+  // real inelastic capture: v_cm + ΔK → U_thermal) and the rod must latch SECOND. The
+  // latch makes the merge stand down (collisions.js), so putting the welds first would
+  // suppress the merge on the very tick it is supposed to do its one job — the capture
+  // would never happen, no heat would be booked, and the pair would weld while still
+  // carrying their full 1.57-canonical relative velocity. Append; never unshift.
+  for (const c of constraints) {
+    if (c.activateOnContact === true) collisionResolvers.push(c);
   }
 
   // dawn_last_burn_live_sim_v1 D2: scheduled impulsive-Δv burn resolvers. A burn

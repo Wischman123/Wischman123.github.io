@@ -37,7 +37,7 @@
 // and silently skip the merge on the second scrub. With no latch, every replay
 // re-detects contact and re-fires correctly.
 
-import { contactGeom } from './forces.js';
+import { contactGeom, weldPairKey } from './forces.js';
 
 // Single source of truth for the collision-resolution modes the loader can
 // dispatch. Lockstepped against scene.schema.json $defs.collision.mode.enum by
@@ -87,6 +87,29 @@ export class PerfectlyInelasticMerge {
     const a = bodies.find((x) => x.id === this.applies_to[0]);
     const b = bodies.find((x) => x.id === this.applies_to[1]);
     if (!a || !b) return;
+
+    // STAND DOWN once this pair has been WELDED (orbit_weld_on_contact). A
+    // contact-activated body_rod has taken ownership of the pair's relative motion, and
+    // the merge's job — the one-time inelastic capture — is already done. Three reasons
+    // this is a guard and not an optimisation:
+    //
+    //   1. PHYSICS. Re-firing would be re-colliding an already-welded rigid object with
+    //      itself. There is no second collision to resolve.
+    //   2. NUMERICS. This is the one that actually bites. A welded pair is co-moving, so
+    //      vRel ≈ 0 and kBefore ≈ kAfter — and ΔK = kBefore − kAfter becomes a difference
+    //      of two nearly-identical floats. Catastrophic cancellation makes it come out at
+    //      ±1e-16, i.e. NOISE AROUND ZERO, and the (correct, strict) negative-ΔK guard
+    //      below then throws and kills the run. Observed: the Dawn full-orbit coast died
+    //      at step 10514 with ΔK = −1.11e-16.
+    //   3. ENERGY. The rod's micro-oscillation would otherwise make the pair register as
+    //      "approaching" on half of every cycle, bleeding a slow spurious trickle into
+    //      U_thermal for the rest of the run.
+    //
+    // The ordering that makes this correct is guaranteed at load: scene.js appends the
+    // weld rods to collisionResolvers AFTER the collision resolvers, so on the contact
+    // tick the merge fires FIRST (doing the real capture) and the rod latches SECOND.
+    // The suppression therefore begins on the tick AFTER the capture, never on it.
+    if (sceneCtx.weldedPairs?.has(weldPairKey(a.id, b.id))) return;
 
     const g = contactGeom(a, b);
     // Merge only on real contact (depth > 0) AND while approaching (vRel < 0).
