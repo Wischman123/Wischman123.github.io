@@ -42,6 +42,10 @@ const VALID_ANNOTATION_TYPES = new Set(['position_label', 'measure_line', 'radiu
 // allowlist below, the EMBED (which boots through this validator, not Ajv) would
 // wave through an unknown role or a literal `color` hex that Ajv rejects.
 const VALID_ANNOTATION_ROLES = new Set(['velocity', 'exhaust', 'incoming']);
+// HOW an exhaust plume is painted (render_shape.exhaust.glyph). Absent ⇒ 'arrow' —
+// the printed page's labelled vector. Lockstepped with scene.schema.json's
+// render_shape/exhaust/glyph enum (schema_browser_lockstep.test.js).
+const VALID_EXHAUST_GLYPHS = new Set(['arrow', 'flame']);
 // dawn_last_burn_live_sim_v1 D2 — scheduled-burn heading enum. Must stay lockstep
 // with scene.schema.json $defs.maneuver.properties.direction.oneOf[0].enum AND
 // with MANEUVER_DIRECTIONS (sim/engine/maneuvers.js) — asserted by
@@ -732,7 +736,7 @@ function validateManeuver(m, base, push) {
 // validates ONLY the channels this phase adds. schema_browser_lockstep.test.js gates
 // each channel's role enum against VALID_ANNOTATION_ROLES.
 const RENDER_SHAPE_VELOCITY_VECTOR_KEYS = new Set(['label', 'lead_s', 'role']);
-const RENDER_SHAPE_EXHAUST_KEYS = new Set(['label', 'window_s', 'role']);
+const RENDER_SHAPE_EXHAUST_KEYS = new Set(['label', 'window_s', 'role', 'glyph']);
 function validateRenderShape(rs, base, push) {
   if (typeof rs !== 'object' || rs === null) return;  // Ajv owns the top-level shape
   const nonEmptyStr = (v) => typeof v === 'string' && v.length > 0;
@@ -775,6 +779,11 @@ function validateRenderShape(rs, base, push) {
       }
       if (ex.label !== undefined && !nonEmptyStr(ex.label)) {
         push(`${base}/exhaust/label`, 'must be a non-empty string when present');
+      }
+      // Absent ⇒ 'arrow' (printed-page parity). Only an EXPLICIT bad value is an error,
+      // so every pre-flame scene still validates untouched.
+      if (ex.glyph !== undefined && !VALID_EXHAUST_GLYPHS.has(ex.glyph)) {
+        push(`${base}/exhaust/glyph`, `must be one of ${[...VALID_EXHAUST_GLYPHS].join(', ')}`);
       }
     }
   }

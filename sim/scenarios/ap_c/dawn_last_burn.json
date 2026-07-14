@@ -53,7 +53,8 @@
         "exhaust": {
           "label": "exhaust",
           "window_s": 0.5,
-          "role": "exhaust"
+          "role": "exhaust",
+          "glyph": "flame"
         }
       }
     },
@@ -104,9 +105,9 @@
     }
   ],
   "simulation": {
-    "duration_s": 13.219583339526485,
+    "duration_s": 53.65956429364771,
     "integrator": "rk4",
-    "dt_s": 0.0009999684825663,
+    "dt_s": 0.0009999918802394282,
     "adaptive_dt": false
   },
   "outputs": [
@@ -158,18 +159,18 @@
   "expected": {
     "tolerance_band": "v1.0",
     "values": {
-      "dawn:position.x": -1.4006189655895898,
-      "dawn:position.y": -0.0006712428010926517,
-      "dawn:velocity.x": 0.00022074536553207623,
-      "dawn:velocity.y": -0.7634409596804641,
-      "debris:position.x": -1.4207979281056895,
-      "debris:position.y": 0.012322646440840954,
-      "debris:velocity.x": 0.006398843894921754,
-      "debris:velocity.y": -0.7538493277703849,
-      "energy.K": 0.2928418982962521,
-      "energy.U_g": -0.7174889895735156,
-      "energy.U_thermal": 0.006130655406821894,
-      "energy.total": -0.5019745865092051
+      "dawn:position.x": -1.4007704663895661,
+      "dawn:position.y": -0.0005112738881869219,
+      "dawn:velocity.x": 0.0002677279351478492,
+      "dawn:velocity.y": -0.7633850182940344,
+      "debris:position.x": -1.3904516395344575,
+      "debris:position.y": -0.022179569138572566,
+      "debris:velocity.x": -0.0029756860765022645,
+      "debris:velocity.y": -0.7649287619727417,
+      "energy.K": 0.29284119116863927,
+      "energy.U_g": -0.7174882827525774,
+      "energy.U_thermal": 0.00613059793507903,
+      "energy.total": -0.5019746442876226
     }
   },
   "maneuvers": [

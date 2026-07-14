@@ -194,7 +194,12 @@ const THEME_DEFAULT = {
   // drawAnnotations early-returns on `annotationLayer`, so neither is ever read
   // unless the worksheet theme is active.
   orbitPath: '#cccccc',       // LGC tools/claude_tools/diagrams/style.py:LGC — dashed orbit
-  arrowRoleColor: {}          // vector_arrow role → colour (worksheet-only)
+  arrowRoleColor: {},         // vector_arrow role → colour (worksheet-only)
+  // Flame palette for an exhaust channel with `glyph: 'flame'` (worksheet-only, like
+  // arrowRoleColor). EMPTY here ⇒ _drawExhaustFlame early-returns ⇒ zero pixels. Inert
+  // twice over, in fact: the whole exhaust leg is gated on `annotationLayer`, false
+  // here. Byte-identical for every scene in the default look.
+  flameColor: []
 };
 
 const THEME_WORKSHEET = {
@@ -240,7 +245,23 @@ const THEME_WORKSHEET = {
     velocity: '#2980b9',                // BLC — v₀ at A, v_D at C
     exhaust:  '#e74c3c',                // RC  — the retrograde exhaust plume
     incoming: '#e74c3c'                 // RC  — the head-on debris arrow
-  }
+  },
+  // Flame palette for an exhaust channel with `glyph: 'flame'` — the layers of a real
+  // plume, COOLEST FIRST: the outer shell is drawn first and the hot core last, so the
+  // core lands on top. Ordered, not named, so a theme can carry any number of layers.
+  //
+  // The colours live HERE, in the theme, for the same reason arrowRoleColor does: a
+  // scene declares the SEMANTIC channel (exhaust, glyph flame) and the theme owns the
+  // palette. A hex on the scene would be the bug this split exists to prevent.
+  //
+  // RC red is kept as the outer shell so the flame still reads as the printed page's
+  // exhaust RC — the fire is a richer glyph for the same annotation, not a new colour
+  // vocabulary.
+  flameColor: [
+    '#e74c3c',                          // RC  — cooled outer shell
+    '#f39c12',                          // orange — mid plume
+    '#ffe08a'                           // pale hot core
+  ]
 };
 
 const BODY_RADIUS_PX = 10;       // visual size; world size is mass-agnostic
@@ -267,6 +288,25 @@ const ANN_SUB_DROP_PX = 2.5;     // subscript baseline drop below the base run
 // plume matches the printed F001 exhaust arrow (0.35·r₀, diagrams_F.py). The plume
 // is schematic — only visible in the brief burn window, where |v| ≈ v_p is ~constant.
 const ANN_EXHAUST_LEAD_S = 0.35;
+
+// orbit_weld_on_contact follow-on — the FLAME glyph (`render_shape.exhaust.glyph:
+// 'flame'`). Same anchor, direction and length basis as the exhaust ARROW; only the
+// glyph differs. Nested teardrops, COOLEST FIRST (outer shell drawn first, hot core
+// last so it lands on top) — index i takes THEME.flameColor[i].
+const ANN_FLAME_LAYERS = [
+  { lenFrac: 1.00, halfFrac: 0.30 },   // outer shell — full plume length
+  { lenFrac: 0.70, halfFrac: 0.18 },   // mid plume
+  { lenFrac: 0.40, halfFrac: 0.09 }    // hot core, tight against the nozzle
+];
+// Throttle: the plume is FULL length at t_burn and tapers to this fraction at the
+// window edges, so the engine visibly lights, swells and dies rather than popping on
+// and off at full size for a whole second.
+const ANN_FLAME_MIN_SCALE = 0.35;
+// Flicker — [amplitude, angular frequency] pairs summed as sines of the SIM TIME.
+// Deliberately NOT Math.random: the draw must be a pure function of sim state, so a
+// timeline scrub replays the identical fire and the golden draw-call lists stay
+// reproducible. Two incommensurate frequencies read as irregular to the eye.
+const ANN_FLAME_FLICKER = [[0.10, 47], [0.05, 83]];
 
 // D1 FINDING F4 — the subscript contract, as a PURE function (the decision point,
 // unit-tested directly rather than through the canvas).
@@ -685,6 +725,16 @@ const CONNECTOR_RENDER_ENTRIES = [
     // primitive as the anchor rod.
     className: 'BodyRodConstraint', type: 'body_rod', source: 'constraints',
     draw(self, c, bodyById, loaded) {
+      // A WELD is not a bar. An `activate_on_contact` rod models a bond that forms
+      // when two bodies TOUCH (docking, capture, sticking-on-impact) — no strut
+      // exists, so there is nothing to draw. Drawing one is not merely decorative
+      // noise, it is FALSE: while the rod is dormant the two bodies can be a whole
+      // orbit apart, and the bar reads as a physical tether that is holding them
+      // together — the exact opposite of the dormancy the primitive guarantees.
+      // Post-weld the pair is touching (rod length = r_a + r_b), so the bar would
+      // be hidden inside the two glyphs anyway: suppressing it costs no true signal
+      // at any instant of the run. A plain rod (double pendulum) IS a bar and draws.
+      if (c.activateOnContact) return;
       const bodyA = bodyById.get(c.body_a);
       const bodyB = bodyById.get(c.body_b);
       if (!bodyA || !bodyB) return;
@@ -2270,7 +2320,7 @@ export class Canvas2DRenderer {
   // AWAY from the scene centre, italic by default (it is a physics variable), with a
   // trailing _<sub> rendered as a real lowered run (splitSubscript — F4: "v_D" has
   // no Unicode spelling, so the run is the only way to draw it).
-  _drawArrowLabel(a, p1, p2, nx, ny, color, centerPx) {
+  _drawArrowLabel(a, p1, p2, nx, ny, color, centerPx, padPx = null) {
     const ctx = this.ctx;
     const mx = (p1.x + p2.x) / 2;
     const my = (p1.y + p2.y) / 2;
@@ -2282,7 +2332,10 @@ export class Canvas2DRenderer {
       ox = -ox;
       oy = -oy;
     }
-    const pad = ANN_TICK_HALF_PX + ANN_LABEL_PAD_PX;
+    // padPx overrides the ⊥ standoff. An ARROW is a 1.5px line, so the default pad
+    // clears it; a FLAME is a filled teardrop tens of pixels wide at the belly, and the
+    // default pad drops the label INSIDE the fire. The flame passes its own half-width.
+    const pad = padPx ?? (ANN_TICK_HALF_PX + ANN_LABEL_PAD_PX);
     const lx = mx + ox * pad;
     const ly = my + oy * pad;
     const { base, sub } = splitSubscript(a.label);
@@ -2714,8 +2767,93 @@ export class Canvas2DRenderer {
       x: body.position.x - dv.x * lenWorld,              // anti-parallel to the Δv
       y: body.position.y - dv.y * lenWorld,
     };
+    // THE GLYPH FORK. The printed page draws the exhaust as a labelled ARROW, so that
+    // stays the DEFAULT (parity — an absent `glyph` key is byte-identical to D7 for
+    // every existing scene). A scene that wants the engine to visibly FIRE opts into
+    // 'flame'. Identical anchor, identical anti-parallel heading, identical length
+    // basis — the fork is purely how the same plume is painted.
+    if (ex.glyph === 'flame') {
+      this._drawExhaustFlame(body, ex, tip, burn, simTime, centerPx);
+      return;
+    }
     this._drawVectorArrow(
       { p1: body.position, p2: tip, label: ex.label, role: ex.role }, centerPx);
+  }
+
+  // The FLAME glyph — fire out of the engine bell, drawn as nested teardrops from the
+  // craft's EDGE (never its centre: a plume anchored at the dot's middle reads as fire
+  // coming out of the middle of the spacecraft) along the same anti-Δv heading the
+  // arrow uses.
+  //
+  // HONEST LIMIT, inherited from the arrow: the engine's burn is IMPULSIVE — one Δv
+  // applied at t_burn. The plume is SCHEMATIC. The throttle ramp below makes it light,
+  // swell and die across the window, which is what a real engine firing over that
+  // window would look like; the physics underneath is still the instantaneous kick.
+  // The fire is an honest picture of the burn, not a second model of it — it reads
+  // nothing back into the state vector.
+  _drawExhaustFlame(body, ex, tipWorld, burn, simTime, centerPx) {
+    const ctx = this.ctx;
+    const colors = this.style.flameColor;
+    if (!colors || colors.length === 0) return;   // theme carries no flame palette
+
+    const p1 = this.worldToPx(body.position);
+    const p2 = this.worldToPx(tipWorld);
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+    const full = Math.hypot(dx, dy);
+    if (full < 1) return;                         // sub-pixel plume: no direction to draw
+    const sx = dx / full;                         // unit ALONG the plume, away from the craft
+    const sy = dy / full;
+    const nx = -sy;                               // unit ⊥ the plume
+    const ny = sx;
+
+    // Throttle (1 at t_burn → ANN_FLAME_MIN_SCALE at the window edges) and flicker, both
+    // pure functions of simTime. Math.max guards the edges against float overshoot.
+    const u = 1 - Math.abs(simTime - burn.t_burn) / ex.window_s;
+    const throttle = ANN_FLAME_MIN_SCALE + (1 - ANN_FLAME_MIN_SCALE) * Math.max(0, u);
+    let flicker = 1;
+    for (const [amp, freq] of ANN_FLAME_FLICKER) flicker += amp * Math.sin(simTime * freq);
+
+    // Start at the drawn disk's edge — _bodyRadiusPx is THE body-radius decision point,
+    // so the nozzle tracks the glyph under bodyRadiusToScale instead of re-deriving it.
+    const r = this._bodyRadiusPx(body);
+    const ox = p1.x + sx * r;
+    const oy = p1.y + sy * r;
+    const len = Math.max(1, (full - r) * throttle * flicker);
+
+    ctx.save();
+    ctx.setLineDash([]);
+    for (let i = 0; i < ANN_FLAME_LAYERS.length; i++) {
+      const { lenFrac, halfFrac } = ANN_FLAME_LAYERS[i];
+      const L = len * lenFrac;
+      const w = len * halfFrac;
+      const tx = ox + sx * L;                     // this layer's tip
+      const ty = oy + sy * L;
+      const cx = ox + sx * L * 0.55;              // control point, mid-plume — the belly
+      const cy = oy + sy * L * 0.55;
+      // Teardrop: bulge out along one flank to the tip, then back down the other.
+      ctx.beginPath();
+      ctx.moveTo(ox, oy);
+      ctx.quadraticCurveTo(cx + nx * w, cy + ny * w, tx, ty);
+      ctx.quadraticCurveTo(cx - nx * w, cy - ny * w, ox, oy);
+      ctx.closePath();
+      ctx.fillStyle = colors[Math.min(i, colors.length - 1)];
+      ctx.fill();
+    }
+    ctx.restore();
+
+    // Same label path as the arrow (midpoint, offset ⊥ AWAY from the scene centre) — the
+    // annotation is still "exhaust"; only its glyph changed.
+    if (ex.label) {
+      const color = this.style.arrowRoleColor?.[ex.role] ?? this.style.annMeasure;
+      // Stand the label off by the OUTER layer's half-width at the belly — the widest
+      // the fire ever gets — plus the normal pad, so it clears the flame at full
+      // throttle instead of being swallowed by it. Derived from the same `len` the
+      // teardrops were built from, so it tracks the flicker and can never drift.
+      const clearPx = len * ANN_FLAME_LAYERS[0].halfFrac + ANN_TICK_HALF_PX + ANN_LABEL_PAD_PX;
+      this._drawArrowLabel(
+        { label: ex.label, role: ex.role }, p1, p2, nx, ny, color, centerPx, clearPx);
+    }
   }
 
   // Default body glyph: the 10px disk (+ charge sign for charges). Returns
