@@ -1145,6 +1145,18 @@ export class CurrentInFieldForce extends Force {
 // velocity (vRel < 0 ⟺ the bodies are approaching). vRel is symmetric:
 // computing it from B's perspective (swap roles, n flips) yields the same
 // value — which is what makes the pair force equal-and-opposite.
+// The canonical key for a WELDED body pair (orbit_weld_on_contact). Order-independent,
+// so the rod that SETS the latch (constraints.js) and the merge that READS it
+// (collisions.js) cannot disagree about which pair is which.
+//
+// It lives HERE, beside contactGeom, because forces.js is the one module BOTH of those
+// already import — so the two sides share one definition with no new import edge and no
+// cycle. Duplicating the key formula in each module instead would be exactly the kind of
+// silently-drifting second definition the engine avoids everywhere else.
+export function weldPairKey(idA, idB) {
+  return idA < idB ? `${idA}|${idB}` : `${idB}|${idA}`;
+}
+
 export function contactGeom(bodyA, bodyB) {
   const dx = bodyA.position.x - bodyB.position.x;
   const dy = bodyA.position.y - bodyB.position.y;

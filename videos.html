@@ -130,7 +130,6 @@
      (physics/tools/showcase/inject_site_rail.py): ONE rail component for the
      whole site. The bare back-link that used to open this page went with it —
      see the .back note in the stylesheet above. -->
-<!-- SITERAIL BEGIN -->
 <style>
 /* ---------- the site rail: ONE left rail, every page ----------
    THE ONE SOURCE for the .siterail component AND the .nextbar next-page banner.
@@ -363,8 +362,7 @@
 /* The band's own bottom padding already carries the gap to whatever follows, so
    the footer's top margin would double it. Collapse it only in that adjacency —
    a standalone .footer keeps its own. */
-.arch-fade + .footer{margin-top:0;}
-</style>
+.arch-fade + .footer{margin-top:0;}</style>
 <aside class="siterail" aria-label="Site navigation">
   <div class="siterail__inner">
     <a class="siterail__mark" href="index.html"><span>Brendan</span><span>Wischweh</span></a>    <nav class="siterail__zone siterail__zone--page" aria-label="On this page">
@@ -406,7 +404,6 @@
   }
 })();
 </script>
-<!-- SITERAIL END -->
 <div class="wrap">
 
 <header>

@@ -384,7 +384,6 @@
      footer. It is an ordinary content block now, on the ordinary rhythm. */
 </style>
 
-<!-- SITERAIL BEGIN -->
 <style>
 /* ---------- the site rail: ONE left rail, every page ----------
    THE ONE SOURCE for the .siterail component AND the .nextbar next-page banner.
@@ -617,8 +616,7 @@
 /* The band's own bottom padding already carries the gap to whatever follows, so
    the footer's top margin would double it. Collapse it only in that adjacency —
    a standalone .footer keeps its own. */
-.arch-fade + .footer{margin-top:0;}
-</style>
+.arch-fade + .footer{margin-top:0;}</style>
 <aside class="siterail" aria-label="Site navigation">
   <div class="siterail__inner">
     <a class="siterail__mark" href="index.html"><span>Brendan</span><span>Wischweh</span></a>    <nav class="siterail__zone siterail__zone--page" aria-label="On this page">
@@ -660,7 +658,6 @@
   }
 })();
 </script>
-<!-- SITERAIL END -->
 <div class="preview-note">
   <strong>Work in progress</strong> — this portfolio is being actively built out and refined; some sections are still landing. Last&nbsp;updated <span class="wip-updated">2026-07-13 10:08 AM CT</span>.
 </div>
@@ -739,10 +736,7 @@
         against my stated values.</p>
       </div>
     </div>
-  </section>
-
-  <!-- STORY BEGIN -->
-<style>
+  </section><style>
   /* ---------- local shape overrides (NOT a palette adapter — see the header) ----
      Colour tokens come straight from the site's theme.css; redefining one here
      would cycle against its compat alias. These two are pure geometry: the
@@ -1119,9 +1113,9 @@
           <b>Euler&rsquo;s Hilltop</b>, after <b>Leonhard Euler</b>, whose equations of motion
           describe the very curve the ball crests &mdash; with a short biography that ships
           right on the printed page.</p>
-        <p>That finished problem lands as one row among many &mdash; <span class="stat" data-source="data/_inventory.json (rows)" data-verified="2026-07-13" data-provenance="verified" title="source: data/_inventory.json (rows) · verified 2026-07-13">413</span> of
-          them &mdash; feeding a bank of <span class="stat" data-source="sum of data/problems/frq/*.json record counts" data-verified="2026-07-13" data-provenance="verified" title="source: sum of data/problems/frq/*.json record counts · verified 2026-07-13">51</span> free-response and
-          <span class="stat" data-source="sum of data/problems/mc/*.json record counts" data-verified="2026-07-13" data-provenance="verified" title="source: sum of data/problems/mc/*.json record counts · verified 2026-07-13">72</span> multiple-choice problems, <span class="stat" data-source="data/problems/frq/energy.json (record count)" data-verified="2026-07-13" data-provenance="verified" title="source: data/problems/frq/energy.json (record count) · verified 2026-07-13">50</span> in the
+        <p>That finished problem lands as one row among many &mdash; <span class="stat" data-stat="inventory.rows_total" data-source="data/_inventory.json (rows)" data-verified="2026-07-13" data-provenance="verified" title="source: data/_inventory.json (rows) · verified 2026-07-13">413</span> of
+          them &mdash; feeding a bank of <span class="stat" data-stat="problems.frq_total" data-source="sum of data/problems/frq/*.json record counts" data-verified="2026-07-13" data-provenance="verified" title="source: sum of data/problems/frq/*.json record counts · verified 2026-07-13">51</span> free-response and
+          <span class="stat" data-stat="problems.mc_total" data-source="sum of data/problems/mc/*.json record counts" data-verified="2026-07-13" data-provenance="verified" title="source: sum of data/problems/mc/*.json record counts · verified 2026-07-13">72</span> multiple-choice problems, <span class="stat" data-stat="problems.frq_by_unit.energy" data-source="data/problems/frq/energy.json (record count)" data-verified="2026-07-13" data-provenance="verified" title="source: data/problems/frq/energy.json (record count) · verified 2026-07-13">50</span> in the
           energy unit alone.</p>
       </li>
 
@@ -1134,17 +1128,17 @@
           the live simulation, and formal verification of the engine itself. The physics is the
           <em>first</em> gate, not an afterthought.</p>
         <p class="muted">It is one small addition to a repository grown across
-          <span class="stat" data-source="git rev-list --count HEAD (physics repo)" data-verified="2026-07-13" data-provenance="verified" title="source: git rev-list --count HEAD (physics repo) · verified 2026-07-13">1,705</span> commits since <span class="stat" data-source="git log --reverse --format=%cI (physics repo)" data-verified="2026-07-13" data-provenance="verified" title="source: git log --reverse --format=%cI (physics repo) · verified 2026-07-13">2026-03-19</span> &mdash;
-          <span class="stat" data-source="tools/loc_history/history.json (latest entry)" data-verified="2026-07-13" data-provenance="verified" title="source: tools/loc_history/history.json (latest entry) · verified 2026-07-13">1,617,947</span> lines of first-party code.</p>
+          <span class="stat" data-stat="repo.commit_count" data-source="git rev-list --count HEAD (physics repo)" data-verified="2026-07-13" data-provenance="verified" title="source: git rev-list --count HEAD (physics repo) · verified 2026-07-13">1,705</span> commits since <span class="stat" data-stat="repo.first_commit_date" data-source="git log --reverse --format=%cI (physics repo)" data-verified="2026-07-13" data-provenance="verified" title="source: git log --reverse --format=%cI (physics repo) · verified 2026-07-13">2026-03-19</span> &mdash;
+          <span class="stat" data-stat="loc.first_party_lines" data-source="tools/loc_history/history.json (latest entry)" data-verified="2026-07-13" data-provenance="verified" title="source: tools/loc_history/history.json (latest entry) · verified 2026-07-13">1,617,947</span> lines of first-party code.</p>
       </li>
 
       <li class="beat" data-frame="gauntlet" id="beat-gauntlet">
         <p class="beat__n">The gauntlet</p>
         <h3>Then the build tries to stop it</h3>
-        <p><span class="stat" data-source="tools/showcase/gate_registry.yaml (HAND-CURATED census)" data-verified="2026-07-13" data-provenance="verified" title="source: tools/showcase/gate_registry.yaml (HAND-CURATED census) · verified 2026-07-13">43</span> build-blocking gates stand between a draft and a
-          shippable page: <span class="stat" data-source="tools/showcase/gate_registry.yaml (HAND-CURATED census) — tier==data-validation" data-verified="2026-07-13" data-provenance="verified" title="source: tools/showcase/gate_registry.yaml (HAND-CURATED census) — tier==data-validation · verified 2026-07-13">25</span> data validators,
-          <span class="stat" data-source="tools/showcase/gate_registry.yaml (HAND-CURATED census) — tier==git-hook" data-verified="2026-07-13" data-provenance="verified" title="source: tools/showcase/gate_registry.yaml (HAND-CURATED census) — tier==git-hook · verified 2026-07-13">12</span> git-hook checks, and <span class="stat" data-source="tools/showcase/gate_registry.yaml (HAND-CURATED census) — tier==static-lint" data-verified="2026-07-13" data-provenance="verified" title="source: tools/showcase/gate_registry.yaml (HAND-CURATED census) — tier==static-lint · verified 2026-07-13">6</span> static
-          lints, backed by <span class="stat" data-source="tools/metacognition/cli.py list --kind invariant" data-verified="2026-07-13" data-provenance="verified" title="source: tools/metacognition/cli.py list --kind invariant · verified 2026-07-13">10</span> standing invariants.</p>
+        <p><span class="stat" data-stat="gates.total" data-source="tools/showcase/gate_registry.yaml (HAND-CURATED census)" data-verified="2026-07-13" data-provenance="verified" title="source: tools/showcase/gate_registry.yaml (HAND-CURATED census) · verified 2026-07-13">43</span> build-blocking gates stand between a draft and a
+          shippable page: <span class="stat" data-stat="gates.by_tier.data-validation" data-source="tools/showcase/gate_registry.yaml (HAND-CURATED census) — tier==data-validation" data-verified="2026-07-13" data-provenance="verified" title="source: tools/showcase/gate_registry.yaml (HAND-CURATED census) — tier==data-validation · verified 2026-07-13">25</span> data validators,
+          <span class="stat" data-stat="gates.by_tier.git-hook" data-source="tools/showcase/gate_registry.yaml (HAND-CURATED census) — tier==git-hook" data-verified="2026-07-13" data-provenance="verified" title="source: tools/showcase/gate_registry.yaml (HAND-CURATED census) — tier==git-hook · verified 2026-07-13">12</span> git-hook checks, and <span class="stat" data-stat="gates.by_tier.static-lint" data-source="tools/showcase/gate_registry.yaml (HAND-CURATED census) — tier==static-lint" data-verified="2026-07-13" data-provenance="verified" title="source: tools/showcase/gate_registry.yaml (HAND-CURATED census) — tier==static-lint · verified 2026-07-13">6</span> static
+          lints, backed by <span class="stat" data-stat="invariants.total" data-source="tools/metacognition/cli.py list --kind invariant" data-verified="2026-07-13" data-provenance="verified" title="source: tools/metacognition/cli.py list --kind invariant · verified 2026-07-13">10</span> standing invariants.</p>
         <p class="muted">Here is what the gauntlet actually said to an early draft of the
           hilltop problem &mdash; four real gates, four real refusals.</p>
       </li>
@@ -1155,8 +1149,8 @@
         <p>Clear the gauntlet and the diagram engine takes over &mdash; the shared library
           that draws the track, the curved crest, the height bar, the velocity arrow. Fix a
           label once and the next forty problems inherit the fix.</p>
-        <p class="muted">It is one node in an import graph of <span class="stat" data-source="tools/showcase/out/import_graph.json (import_graph_dump.py)" data-verified="2026-07-13" data-provenance="verified" title="source: tools/showcase/out/import_graph.json (import_graph_dump.py) · verified 2026-07-13">433</span>
-          modules wired by <span class="stat" data-source="tools/showcase/out/import_graph.json (import_graph_dump.py)" data-verified="2026-07-13" data-provenance="verified" title="source: tools/showcase/out/import_graph.json (import_graph_dump.py) · verified 2026-07-13">1,144</span> edges, <span class="stat" data-source="data/catalog_manifest.json (regenerated this run) — nodes[kind==lib]" data-verified="2026-07-13" data-provenance="verified" title="source: data/catalog_manifest.json (regenerated this run) — nodes[kind==lib] · verified 2026-07-13">76</span> of them
+        <p class="muted">It is one node in an import graph of <span class="stat" data-stat="import_graph.nodes_total" data-source="tools/showcase/out/import_graph.json (import_graph_dump.py)" data-verified="2026-07-13" data-provenance="verified" title="source: tools/showcase/out/import_graph.json (import_graph_dump.py) · verified 2026-07-13">433</span>
+          modules wired by <span class="stat" data-stat="import_graph.edges_total" data-source="tools/showcase/out/import_graph.json (import_graph_dump.py)" data-verified="2026-07-13" data-provenance="verified" title="source: tools/showcase/out/import_graph.json (import_graph_dump.py) · verified 2026-07-13">1,144</span> edges, <span class="stat" data-stat="catalog.nodes_by_kind.lib" data-source="data/catalog_manifest.json (regenerated this run) — nodes[kind==lib]" data-verified="2026-07-13" data-provenance="verified" title="source: data/catalog_manifest.json (regenerated this run) — nodes[kind==lib] · verified 2026-07-13">76</span> of them
           shared library files.</p>
       </li>
 
@@ -1169,8 +1163,8 @@
           exactly as the printed page will set it up, and runs the whole story: down the ramp,
           through the valley, up over the crest. The energy bars trade kinetic for
           gravitational as the ball climbs. It crests, the normal force dies, and it leaves the
-          surface &mdash; no code says when. <span class="stat" data-source="node sim/scripts/dump_registry.js (scenario registry)" data-verified="2026-07-13" data-provenance="verified" title="source: node sim/scripts/dump_registry.js (scenario registry) · verified 2026-07-13">104</span> scenarios are registered
-          and <span class="stat" data-source="tools/sim_coverage.py --json" data-verified="2026-07-13" data-provenance="verified" title="source: tools/sim_coverage.py --json · verified 2026-07-13">39</span> weld their physics to an independent check; this run is
+          surface &mdash; no code says when. <span class="stat" data-stat="sim.scenes_total" data-source="node sim/scripts/dump_registry.js (scenario registry)" data-verified="2026-07-13" data-provenance="verified" title="source: node sim/scripts/dump_registry.js (scenario registry) · verified 2026-07-13">104</span> scenarios are registered
+          and <span class="stat" data-stat="sim.coverage_welded" data-source="tools/sim_coverage.py --json" data-verified="2026-07-13" data-provenance="verified" title="source: tools/sim_coverage.py --json · verified 2026-07-13">39</span> weld their physics to an independent check; this run is
           held to the same energy books, and the exhibit page opens the welded fixture itself.</p>
         <a class="go" href="deep/sims.html">Open the sim exhibit</a>
       </li>
@@ -1234,11 +1228,11 @@
       <li class="beat" data-frame="correct" id="beat-correct">
         <p class="beat__n">How it stays correct</p>
         <h3>None of this is trusted on faith</h3>
-        <p><span class="stat" data-source="tools/sim_coverage.py --json" data-verified="2026-07-13" data-provenance="verified" title="source: tools/sim_coverage.py --json · verified 2026-07-13">39</span> problems weld their answer to an independent solver
-          &mdash; <span class="stat" data-source="tools/sim_coverage.py --json" data-verified="2026-07-13" data-provenance="verified" title="source: tools/sim_coverage.py --json · verified 2026-07-13">100%</span> of the modelable set &mdash; and the wider
+        <p><span class="stat" data-stat="sim.coverage_welded" data-source="tools/sim_coverage.py --json" data-verified="2026-07-13" data-provenance="verified" title="source: tools/sim_coverage.py --json · verified 2026-07-13">39</span> problems weld their answer to an independent solver
+          &mdash; <span class="stat" data-stat="sim.coverage_modelable" data-source="tools/sim_coverage.py --json" data-verified="2026-07-13" data-provenance="verified" title="source: tools/sim_coverage.py --json · verified 2026-07-13">100%</span> of the modelable set &mdash; and the wider
           engine is guarded by formal-verification passes across
-          <span class="stat stat--pinned" data-source="hand-pinned from the live index display at wischman123.github.io on 2026-07-09; no machine-readable repo source located (probe 2026-07-09)" data-verified="2026-07-13" data-provenance="hand-pinned" title="source: hand-pinned from the live index display at wischman123.github.io on 2026-07-09; no machine-readable repo source located (probe 2026-07-09) · verified 2026-07-13 (hand-pinned)">831<span class="stat__pin" aria-hidden="true">†</span></span> functions, <span class="stat stat--pinned" data-source="hand-pinned from the live index display at wischman123.github.io on 2026-07-09; no machine-readable repo source located (probe 2026-07-09)" data-verified="2026-07-13" data-provenance="hand-pinned" title="source: hand-pinned from the live index display at wischman123.github.io on 2026-07-09; no machine-readable repo source located (probe 2026-07-09) · verified 2026-07-13 (hand-pinned)">641<span class="stat__pin" aria-hidden="true">†</span></span> property-checked,
-          <span class="stat stat--pinned" data-source="hand-pinned from the live index display at wischman123.github.io on 2026-07-09; no machine-readable repo source located (probe 2026-07-09)" data-verified="2026-07-13" data-provenance="hand-pinned" title="source: hand-pinned from the live index display at wischman123.github.io on 2026-07-09; no machine-readable repo source located (probe 2026-07-09) · verified 2026-07-13 (hand-pinned)">581<span class="stat__pin" aria-hidden="true">†</span></span> against stated laws.</p>
+          <span class="stat stat--pinned" data-stat="fv_aggregate.functions" data-source="hand-pinned from the live index display at wischman123.github.io on 2026-07-09; no machine-readable repo source located (probe 2026-07-09)" data-verified="2026-07-13" data-provenance="hand-pinned" title="source: hand-pinned from the live index display at wischman123.github.io on 2026-07-09; no machine-readable repo source located (probe 2026-07-09) · verified 2026-07-13 (hand-pinned)">831<span class="stat__pin" aria-hidden="true">†</span></span> functions, <span class="stat stat--pinned" data-stat="fv_aggregate.property_checked" data-source="hand-pinned from the live index display at wischman123.github.io on 2026-07-09; no machine-readable repo source located (probe 2026-07-09)" data-verified="2026-07-13" data-provenance="hand-pinned" title="source: hand-pinned from the live index display at wischman123.github.io on 2026-07-09; no machine-readable repo source located (probe 2026-07-09) · verified 2026-07-13 (hand-pinned)">641<span class="stat__pin" aria-hidden="true">†</span></span> property-checked,
+          <span class="stat stat--pinned" data-stat="fv_aggregate.laws" data-source="hand-pinned from the live index display at wischman123.github.io on 2026-07-09; no machine-readable repo source located (probe 2026-07-09)" data-verified="2026-07-13" data-provenance="hand-pinned" title="source: hand-pinned from the live index display at wischman123.github.io on 2026-07-09; no machine-readable repo source located (probe 2026-07-09) · verified 2026-07-13 (hand-pinned)">581<span class="stat__pin" aria-hidden="true">†</span></span> against stated laws.</p>
         <p class="muted">The formal-verification totals carry a &dagger;: read from the live
           index and hand-pinned until a machine source is wired in.</p>
       </li>
@@ -1375,9 +1369,7 @@
   // Click anywhere in the overlay — image, padding, or backdrop — closes it.
   box.addEventListener('click', closeBox);
 })();
-</script>
-<!-- STORY END -->
-<!-- ANSWER-KEY COMPARISON — PARKED, NOT DELETED (2026-07-13).
+</script><!-- ANSWER-KEY COMPARISON — PARKED, NOT DELETED (2026-07-13).
      "The same problem, answered twice" (Figs. 2-3, the K015 plain-vs-platform
      sliders) lived HERE. It was taken off the live site to be reworked, and is
      preserved verbatim — with its styles, and openable in a browser — at:

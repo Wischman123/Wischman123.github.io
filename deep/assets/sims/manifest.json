@@ -28,7 +28,7 @@
       "file": "k015_eulers_hilltop_full.poster.png",
       "source": "booted sim exhibit: sim/index.html?scene=k015_eulers_hilltop_full&embed=1&theme=worksheet (real simulator, overlays on: lol)",
       "generation_command": "node tools/showcase/scripts/shoot_posters.mjs --scenes k015_eulers_hilltop_full --themes k015_eulers_hilltop_full=worksheet (viewport 960x600@2x, seek 1.5922s)",
-      "pii_checked": "2026-07-13",
+      "pii_checked": "2026-07-14",
       "scene_sha": "e0bec0fb7a581034742f3398c48aadacb52084dfe64f9c17e2d134f65983798a",
       "theme": "worksheet",
       "shot_spec": null
@@ -37,7 +37,7 @@
       "file": "coulomb_two_body.poster.png",
       "source": "booted sim exhibit: sim/index.html?scene=coulomb_two_body&embed=1 (real simulator, no forced overlay)",
       "generation_command": "node tools/showcase/scripts/shoot_posters.mjs --scenes coulomb_two_body (viewport 960x600@2x, seek 7.4099s)",
-      "pii_checked": "2026-07-13",
+      "pii_checked": "2026-07-14",
       "scene_sha": "8cf31f996824dab4f9736abaf2c07909cf0a643580a338b60576026304d78a4a",
       "theme": null,
       "shot_spec": null
@@ -46,7 +46,7 @@
       "file": "rlc_underdamped_1.poster.png",
       "source": "booted sim exhibit: sim/index.html?scene=rlc_underdamped_1&embed=1 (real simulator, no forced overlay)",
       "generation_command": "node tools/showcase/scripts/shoot_posters.mjs --scenes rlc_underdamped_1 (viewport 960x600@2x, seek 6s)",
-      "pii_checked": "2026-07-13",
+      "pii_checked": "2026-07-14",
       "scene_sha": "4473a86438f896d76d32882457368134de7ddcc2961021192f9ea93cbe3d950f",
       "theme": null,
       "shot_spec": null
@@ -62,11 +62,11 @@
     },
     {
       "file": "dawn_last_burn.poster.png",
-      "source": "booted sim exhibit: sim/index.html?scene=dawn_last_burn&embed=1 (real simulator, no forced overlay)",
-      "generation_command": "node tools/showcase/scripts/shoot_posters.mjs --scenes dawn_last_burn (viewport 960x600@2x, seek 2.9658s)",
-      "pii_checked": "2026-07-13",
-      "scene_sha": "9de5a8c7ea03d64e5afef0fbd97b416b9cd97e2b51aa81879f02ea1e88b0b3e4",
-      "theme": null,
+      "source": "booted sim exhibit: sim/index.html?scene=dawn_last_burn&embed=1&theme=worksheet (real simulator, no forced overlay)",
+      "generation_command": "node tools/showcase/scripts/shoot_posters.mjs --scenes dawn_last_burn --themes dawn_last_burn=worksheet (viewport 960x600@2x, seek 26.8298s)",
+      "pii_checked": "2026-07-14",
+      "scene_sha": "d717ddf424fb6ab4783befb7c944e89532404b23a90615a798a4f5ea775e4ded",
+      "theme": "worksheet",
       "shot_spec": null
     }
   ]

@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>The platform, running on this page — physics systems</title>
+<link rel="stylesheet" href="assets/site.css?v=2">
+</head>
+<body class="wing">
+
+<!-- Site layout: canonical left rail (same component as index.html) + content.
+     The rail is the desktop nav; below 1100px it hides and the in-hero
+     .wing-nav takes over (see site.css). -->
+<div class="layout">
+<aside class="rail" aria-label="Systems wing navigation">
+  <div class="rail-inner">
+    <a class="mark" href="index.html">Brendan<br>Wischweh</a>
+    <a class="nav" href="#t1c-library-learns">The library learns</a>
+    <a class="nav" href="#t1d-gate-says-no">The gate says no</a>
+    <a class="nav" href="#t1a-field-lab">Electric Field Lab</a>
+    <a class="nav" href="#t1b-simulator">Simulator</a>
+    <a class="nav" href="#t1e-numbers">Numbers with receipts</a>
+    <a class="nav ext" href="architecture.html">Architecture &#8599;</a>
+  </div>
+</aside>
+<div class="content">
+
+<header class="wing-hero" id="top">
+  <div class="wrap">
+    <p class="eyebrow">The systems wing</p>
+    <h1>The Platform is running on this page.</h1>
+    <p class="subtitle">these are NOT slides of the platform</p>
+    <p class="lede">Every exhibit below is the real thing: a library that
+    regenerates instead of patching, a gate that says no, field lines traced by
+    this page's own math, a simulator embedded live, and numbers that carry the
+    day they were counted. Read the plain version first; open the depth if you
+    want the mechanism.</p>
+    <nav class="wing-nav" aria-label="Exhibits">
+      <a href="#t1c-library-learns">The library learns</a>
+      <a href="#t1d-gate-says-no">The gate says no</a>
+      <a href="#t1a-field-lab">Electric Field Lab</a>
+      <a href="#t1b-simulator">Simulator</a>
+      <a href="#t1e-numbers">Numbers with receipts</a>
+      <a href="architecture.html">Architecture &rarr;</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- ===================== T1-c — The library learns ================== -->
+  <section class="exhibit" id="t1c-library-learns" aria-labelledby="t1c-h">
+    <p class="system-tag">S-diagram</p>
+    <h2 id="t1c-h">The library learns</h2>
+    <p class="plain">Drag the handle. On the left is a diagram the engine drew
+    before a library fix; on the right, the same problem after. Nothing about
+    this one page was hand-corrected — the fix landed in the shared diagram
+    library and <em>every</em> affected problem re-derived. Slide back and forth
+    to compare.</p>
+
+    <div class="wipe" data-wipe data-crop-bottom
+         data-before="assets/d1_before_regeneration.png"
+         data-after="assets/d1_after_regeneration.png"
+         data-before-alt="Problem diagram rendered before the library fix."
+         data-after-alt="The same problem re-rendered after the library fix."
+         data-before-label="Before" data-after-label="After">
+      <noscript>
+        <img src="assets/d1_before_regeneration.png"
+             alt="Problem diagram rendered before the library fix.">
+        <img src="assets/d1_after_regeneration.png"
+             alt="The same problem re-rendered after the library fix.">
+      </noscript>
+    </div>
+
+    <details>
+      <summary>Why regenerate instead of patch</summary>
+      <div class="depth">
+        <p>A one-file correction fixes one artifact and leaves every sibling
+        wrong. The platform's rule is the opposite: a fix is a change to a
+        shared library function, after which every artifact that depended on it
+        re-derives and old versions retire. The before/after here is a single
+        pair, but the same regeneration ran across the whole affected set — the
+        library learned once, and everything downstream inherited it.</p>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== T1-d — The gate says no ==================== -->
+  <section class="exhibit" id="t1d-gate-says-no" aria-labelledby="t1d-h">
+    <p class="system-tag">S-verify / S-generator</p>
+    <h2 id="t1d-h">The gate says no</h2>
+    <p class="plain">The system drafts a problem; it will not ship one that
+    fails a check. Here is a real rejection, replayed: a generated problem is
+    turned away by a completeness gate, the fix lands in the library, the
+    problem is regenerated, and only then does it pass. The transcript is
+    readable with JavaScript off — the animation is just typing on top of text
+    that is already there.</p>
+
+    <div class="term" data-term aria-label="Terminal replay of a real gate
+      rejection, library fix, regeneration, and pass">
+      <span data-ty="input">python scripts/validate_problem_physics.py energy_k017</span>
+      <span data-ty>REJECTED  check_solution_structure: energy-conservation solution has no free-body diagram</span>
+      <span data-ty>REJECTED  check_fbd_presence: a &Sigma;F = ma solution needs an FBD (none found)</span>
+      <span data-ty="comment"># the fix belongs in the shared library, not this one problem file</span>
+      <span data-ty="input">python build_problem.py energy_k017 --regenerate</span>
+      <span data-ty>validate physics ... ok</span>
+      <span data-ty>render diagram ... ok    build FBD group ... ok</span>
+      <span data-ty="ok">PASS  all gates green — artifact admitted to the review queue</span>
+      <button type="button" class="term__replay" data-term-replay>Replay</button>
+    </div>
+
+    <details>
+      <summary>The same rejection, in the live product UI</summary>
+      <div class="depth">
+        <p>The gate is not a demo script — it is the real floor that runs when
+        the Teacher Portal drafts problems. Below, a fictional
+        &ldquo;Energy Conservation&rdquo; unit was submitted; one draft was
+        admitted and the other dropped, and the portal rendered the real gate
+        reason for the drop.</p>
+        <p><img src="assets/gate_rejection_ui.png"
+          alt="Teacher Portal result page listing one admitted draft and one
+          dropped draft, with the gate reason: missing free-body diagram.">
+        </p>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== T1-a — Field lab, live ===================== -->
+  <section class="exhibit" id="t1a-field-lab" aria-labelledby="t1a-h">
+    <p class="system-tag">S-diagram / S-sim bridge</p>
+    <h2 id="t1a-h">Electric Field Lab</h2>
+    <p class="plain">Drag either charge. The electric field lines re-trace as you
+    move it — this is not a picture, it is the same Electric field line integrator
+    the platform uses to draw diagrams, running in your browser. Select a charge
+    and use the <kbd>&larr;</kbd> <kbd>&rarr;</kbd> <kbd>&uarr;</kbd>
+    <kbd>&darr;</kbd> keys to nudge it; <kbd>Tab</kbd> switches which charge is
+    focused. Drag the two together and the lines stay well-behaved — a
+    minimum-separation clamp keeps the field finite.</p>
+
+    <div class="fieldlab">
+      <canvas id="fieldlab-canvas" role="img"
+        aria-label="Two point charges, plus two and minus one, with electric
+        field lines traced from the positive charge. Drag a charge or use the
+        arrow keys to move it and the field re-traces. Tap a charge, or use the
+        plus and minus keys, to set its strength from minus three to plus three.
+        Click empty space or use the Add charge button to add a negative charge;
+        select a charge and press Delete to remove an added one."></canvas>
+    </div>
+    <p class="hint">Idle until you touch it — nothing animates on its own.</p>
+    <p class="fieldlab-controls">Drag a charge, tap it to set its strength
+      (<kbd>−3</kbd> to <kbd>+3</kbd>), or click empty space to add another.
+      <button type="button" id="fieldlab-add">Add a − charge</button>
+      Select a charge and press <kbd>Delete</kbd> to remove an added one; the
+      <kbd>+</kbd> / <kbd>−</kbd> keys change its charge.</p>
+
+    <details>
+      <summary>How the live math is pinned to the library</summary>
+      <div class="depth">
+        <p>The tracer in <code>assets/field_tracer.js</code> is a port of the
+        platform's own reference implementation,
+        <code>physics/lib/charges.py</code>&rsquo;s <code>compute_field_line</code>
+        — the same fixed-step Euler integration along the unit field direction.
+        A build-time check (<code>tools/test_field_tracer.py</code>) drives this
+        browser tracer from the parameters recorded in a
+        <code>charges.py</code>-generated fixture and asserts the polylines match
+        within tolerance, so the interactive exhibit cannot silently drift from
+        the library it demonstrates. When it last ran, the two agreed to the
+        last floating-point bit.</p>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== T1-b — A simulator, in the page ============ -->
+  <section class="exhibit" id="t1b-simulator" aria-labelledby="t1b-h">
+    <p class="system-tag">S-sim</p>
+    <h2 id="t1b-h">A simulator, in the page</h2>
+    <p class="plain">Three live scenes from the platform's physics simulator,
+    embedded as lab instruments. Each rests on a static poster until you press
+    <b>Run scene</b> — nothing moves offscreen or before you ask. Once running,
+    click the scene to pause or resume it, or press <b>↺</b> to replay from the
+    start. All three are genuinely different simulations: a two-body Coulomb orbit
+    on the left, an underdamped RLC circuit on the right, and below them a
+    spacecraft firing a single engine burn.</p>
+
+    <div class="sim-embed__grid">
+      <div>
+        <div class="sim-embed" data-sim-embed
+             data-src="sim/index.html?scene=coulomb_two_body"
+             data-poster="assets/poster_coulomb.png"
+             data-label="Coulomb two-body orbit, live">
+          <noscript>
+            <img src="assets/poster_coulomb.png"
+                 alt="Static preview of the Coulomb two-body orbit scene.">
+            <p><a href="sim/index.html?scene=coulomb_two_body">Open the live
+            Coulomb scene &rarr;</a></p>
+          </noscript>
+        </div>
+        <p class="sim-embed__cap">Coulomb two-body orbit. <a class="sim-embed__full"
+           href="sim/index.html?scene=coulomb_two_body" target="_blank"
+           rel="noopener">Open the full simulator &#8599;</a></p>
+      </div>
+      <div>
+        <div class="sim-embed" data-sim-embed
+             data-src="sim/index.html?scene=rlc_underdamped_1"
+             data-poster="assets/poster_rlc.png"
+             data-label="Underdamped RLC circuit, live">
+          <noscript>
+            <img src="assets/poster_rlc.png"
+                 alt="Static preview of the underdamped RLC circuit scene.">
+            <p><a href="sim/index.html?scene=rlc_underdamped_1">Open the live
+            RLC scene &rarr;</a></p>
+          </noscript>
+        </div>
+        <p class="sim-embed__cap">Underdamped RLC circuit. <a class="sim-embed__full"
+           href="sim/index.html?scene=rlc_underdamped_1" target="_blank"
+           rel="noopener">Open the full simulator &#8599;</a></p>
+      </div>
+      <!-- D5 — the Dawn burn scene spans the full grid width: an orbit needs the
+           horizontal room, and a third half-card would orphan in the 1fr 1fr row. -->
+      <div class="sim-embed__wide">
+        <div class="sim-embed" data-sim-embed
+             data-src="sim/index.html?scene=dawn_last_burn"
+             data-poster="assets/poster_dawn.png"
+             data-label="Dawn's orbit-changing burn at Ceres, live">
+          <noscript>
+            <img src="assets/poster_dawn.png"
+                 alt="Static preview of the Dawn orbit-burn scene: the spacecraft
+                      and a debris fragment on their paths around Ceres.">
+            <p><a href="sim/index.html?scene=dawn_last_burn">Open the live
+            Dawn scene &rarr;</a></p>
+          </noscript>
+        </div>
+        <p class="sim-embed__cap">Dawn's last burn at Ceres. <a class="sim-embed__full"
+           href="sim/index.html?scene=dawn_last_burn" target="_blank"
+           rel="noopener">Open the full simulator &#8599;</a></p>
+      </div>
+    </div>
+
+    <p class="plain">The third scene is the one my students actually get on
+    paper. The spacecraft circles Ceres, fires a single forward burn, and the
+    circle opens into an ellipse; it coasts out to the far point, where a piece
+    of debris runs into it and sticks. That is a homework problem from the
+    printed set — and the simulation is not a cartoon of it. Its burn size, the
+    distance it reaches, and its final speed are each measured off the running
+    simulation and checked against the answer the problem is solved with by hand:
+    every one lands within <b>0.08%</b>. The energy books close across both the
+    burn and the collision at the same time.</p>
+
+    <details>
+      <summary>What else the simulator can model</summary>
+      <div class="depth">
+        <p>These three are a sample. The catalog holds
+        <b data-stat="scenes_published">62</b> published scenes across two
+        families — <b data-stat="scenes_first_year">19</b> first-year mechanics
+        and <b data-stat="scenes_ap_c">43</b> AP-C electromagnetism — every one
+        counted from <code>physics/sim/scenarios/_registry.js</code> and
+        cross-checked against a Node emitter so the number cannot be padded. The
+        embed itself is the vendored app driven by a <code>?scene=</code> URL
+        parameter behind an accessibility wrapper that respects reduced-motion
+        and pauses when scrolled offscreen.</p>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== T1-e — Numbers with receipts =============== -->
+  <section class="exhibit" id="t1e-numbers" aria-labelledby="t1e-h">
+    <p class="system-tag">cross-cutting</p>
+    <h2 id="t1e-h">Numbers with receipts</h2>
+    <p class="plain">Every figure here is recounted from its named source at
+    build time — not typed by hand, not estimated — and each carries the day it
+    was verified. Open the receipts to see the exact counting command behind
+    each one.</p>
+
+    <div class="readout">
+      <div class="row">
+        <span class="val" data-stat="scenes_published">62</span>
+        <span class="lab"><b>published simulator scenes</b> across two families,
+        cross-asserted against a Node emitter</span>
+        <span class="date" data-stat-date="scenes_published">verified 2026-07-13</span>
+      </div>
+      <div class="row">
+        <span class="val" data-stat="laws">581</span>
+        <span class="lab"><b>physics relations proved</b> and enforced as
+        property-test laws</span>
+        <span class="date" data-stat-date="laws">verified 2026-07-13</span>
+      </div>
+      <div class="row">
+        <span class="val" data-stat="fv_property_checked">641</span>
+        <span class="lab"><b>load-bearing functions property-checked</b> under
+        those proved laws</span>
+        <span class="date" data-stat-date="fv_property_checked">verified 2026-07-13</span>
+      </div>
+      <div class="row">
+        <span class="val" data-stat="fv_untested">0</span>
+        <span class="lab"><b>silently untested</b> — every remaining function is
+        documented infeasible-to-test, not ignored</span>
+        <span class="date" data-stat-date="fv_untested">verified 2026-07-13</span>
+      </div>
+      <div class="row">
+        <span class="val" data-stat="loc_first_party">1,617,947</span>
+        <span class="lab"><b>first-party lines directed</b> across the platform's
+        repositories</span>
+        <span class="date" data-stat-date="loc_first_party">verified 2026-07-13</span>
+      </div>
+    </div>
+
+    <details>
+      <summary>The receipts — how each number is counted</summary>
+      <div class="depth">
+        <ul>
+          <li><b>Published scenes</b> — <code>published (published != false)
+          scenes in _registry.js, cross-asserted vs the Node emitter
+          catalog</code></li>
+          <li><b>Proved laws</b> — <code>count id="law_NNN" entries in
+          tools/claude_tools/formal_verification/registry.py</code></li>
+          <li><b>Property-checked</b> — <code>count classification: fields in
+          docs/formal_verification/codebase_fv_inventory_v1.yaml</code></li>
+          <li><b>First-party lines</b> — <code>latest
+          entries[-1].first_party_total.lines in
+          tools/loc_history/history.json</code></li>
+        </ul>
+        <p>All of these regenerate when
+        <code>tools/build_showcase.py</code> runs, and a deploy-time guard
+        refuses to push a changed figure without an explicit acknowledgement —
+        so a number cannot drift onto the public page unnoticed.</p>
+      </div>
+    </details>
+  </section>
+
+</main>
+
+<footer class="wing-foot">
+  <div class="wrap">
+    <p>Brendan Wischweh &nbsp;&middot;&nbsp;
+    <a href="mailto:Mr.Wischweh@gmail.com">Mr.Wischweh@gmail.com</a></p>
+    <p>Built with Claude Code — this wing included. Every figure is dated and
+    recounted at build time; all student names shown anywhere on the site are
+    fictional. <a href="index.html">&larr; Back to the overview</a></p>
+  </div>
+</footer>
+
+</div><!-- .content -->
+</div><!-- .layout -->
+
+<!-- Field lab (T1-a): ES-module import of the same tracer the build-time
+     reference check pins to charges.py. Same-origin, self-contained. -->
+<script type="module">
+  import { initFieldLab } from "./assets/field_tracer.js";
+  const canvas = document.getElementById("fieldlab-canvas");
+  // Expose the controller so the screenshot harness can mechanically assert
+  // T1-a (drag re-traces, keyboard nudges, no NaN at coincident drag).
+  if (canvas) {
+    window.__fieldlab = initFieldLab(canvas, {});
+    const addBtn = document.getElementById("fieldlab-add");
+    if (addBtn && window.__fieldlab) {
+      addBtn.addEventListener("click", () => {
+        const idx = window.__fieldlab.addCharge(-1);
+        if (typeof idx === "number" && idx >= 0) window.__fieldlab.editCharge(idx);
+      });
+    }
+  }
+</script>
+<!-- Progressive-enhancement modules (each degrades gracefully with JS off). -->
+<script src="assets/js/wipe_slider.js" defer></script>
+<script src="assets/terminal_replay.js" defer></script>
+<script src="assets/js/sim_embed_gesture.js" defer></script>
+<script src="assets/sim_embed.js" defer></script>
+
+<!-- Rail scrollspy (progressive enhancement) — mirrors index.html: highlights
+     the current exhibit in the left rail via aria-current as you scroll. -->
+<script>
+(function () {
+  if (!('IntersectionObserver' in window)) return;
+  var links = {};
+  document.querySelectorAll('.rail a.nav[href^="#"]').forEach(function (a) {
+    links[a.getAttribute('href').slice(1)] = a;
+  });
+  var spy = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (!e.isIntersecting) return;
+      Object.keys(links).forEach(function (id) { links[id].removeAttribute('aria-current'); });
+      var link = links[e.target.id];
+      if (link) link.setAttribute('aria-current', 'true');
+    });
+  }, { rootMargin: '-35% 0px -55% 0px' });
+  ['t1c-library-learns', 't1d-gate-says-no', 't1a-field-lab', 't1b-simulator', 't1e-numbers']
+    .forEach(function (id) { var el = document.getElementById(id); if (el) spy.observe(el); });
+})();
+</script>
+
+</body>
+</html>

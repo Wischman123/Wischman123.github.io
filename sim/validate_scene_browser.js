@@ -30,9 +30,22 @@ const VALID_FORCE_TYPES = new Set(['gravity', 'spring', 'drag', 'friction', 'rol
 // (sim/__tests__/schema_browser_lockstep.test.js pair 5).
 const VALID_CONSTRAINT_TYPES = new Set(['rod', 'string', 'body_rod']);
 // k015_worksheet_parity_live_sim_v1 W4 — worksheet-annotation record types.
+// dawn_worksheet_parity_live_sim_v1 D2 added orbit_path + vector_arrow.
 // Must stay lockstep with scene.schema.json $defs.annotation.properties.type.enum
 // (sim/__tests__/schema_browser_lockstep.test.js pair 8).
-const VALID_ANNOTATION_TYPES = new Set(['position_label', 'measure_line', 'radius_line', 'text_label']);
+const VALID_ANNOTATION_TYPES = new Set(['position_label', 'measure_line', 'radius_line', 'text_label', 'orbit_path', 'vector_arrow']);
+// dawn_worksheet_parity_live_sim_v1 D2 — vector_arrow SEMANTIC roles (never a hex
+// colour; the worksheet theme maps role→colour). Must stay lockstep with
+// scene.schema.json $defs.annotation.oneOf[vector_arrow].properties.role.enum
+// (sim/__tests__/schema_browser_lockstep.test.js — the role pair). Widening
+// VALID_ANNOTATION_TYPES alone is NOT enough: without this Set + the per-type key
+// allowlist below, the EMBED (which boots through this validator, not Ajv) would
+// wave through an unknown role or a literal `color` hex that Ajv rejects.
+const VALID_ANNOTATION_ROLES = new Set(['velocity', 'exhaust', 'incoming']);
+// HOW an exhaust plume is painted (render_shape.exhaust.glyph). Absent ⇒ 'arrow' —
+// the printed page's labelled vector. Lockstepped with scene.schema.json's
+// render_shape/exhaust/glyph enum (schema_browser_lockstep.test.js).
+const VALID_EXHAUST_GLYPHS = new Set(['arrow', 'flame']);
 // dawn_last_burn_live_sim_v1 D2 — scheduled-burn heading enum. Must stay lockstep
 // with scene.schema.json $defs.maneuver.properties.direction.oneOf[0].enum AND
 // with MANEUVER_DIRECTIONS (sim/engine/maneuvers.js) — asserted by
@@ -355,6 +368,12 @@ function validateBody(b, base, push) {
   if (b.applied_acceleration_m_per_s2 !== undefined && !isVec2(b.applied_acceleration_m_per_s2)) {
     push(`${base}/applied_acceleration_m_per_s2`, 'optional {x, y} object with finite numbers');
   }
+  // dawn_worksheet_parity_live_sim_v1 D7 — the two NEW render_shape channels
+  // (velocity_vector / exhaust) are validated in lockstep with Ajv. The rest of
+  // render_shape stays Ajv-only, as it always has been (brief §3).
+  if (b.render_shape !== undefined) {
+    validateRenderShape(b.render_shape, `${base}/render_shape`, push);
+  }
 }
 
 function validateSurface(s, base, push) {
@@ -578,18 +597,60 @@ function validateConstraint(c, base, push) {
       (typeof c.c_damping !== 'number' || !Number.isFinite(c.c_damping) || c.c_damping < 0)) {
     push(`${base}/c_damping`, 'must be a finite number ≥ 0');
   }
+  // orbit_weld_on_contact — activate_on_contact: a BODY_ROD-ONLY channel (the rod
+  // sleeps until its two bodies touch, then latches welded). Mirrors the schema's
+  // allOf guard (scene.schema.json $defs.constraint): reject a non-boolean, and
+  // reject the key outright on 'rod' (single body — nothing to touch) and 'string'
+  // (one-sided: it pulls, never pushes, so a contact weld is meaningless). Rejecting
+  // rather than silently ignoring is the point — a scene author who writes
+  // activate_on_contact on a string has a WRONG mental model, and a silent no-op
+  // would ship that misconception to the live embed.
+  if (c.activate_on_contact !== undefined) {
+    if (typeof c.activate_on_contact !== 'boolean') {
+      push(`${base}/activate_on_contact`, 'must be a boolean');
+    }
+    if (c.type === 'rod' || c.type === 'string') {
+      push(`${base}/activate_on_contact`,
+        `not allowed on type "${c.type}" — body_rod only (a rod has no partner body to ` +
+        `contact; a string is one-sided and cannot hold a weld)`);
+    }
+  }
 }
 
 // k015_worksheet_parity_live_sim_v1 W4 — mirror scene.schema.json $defs.annotation.
 // position_label {text, world}; measure_line {label, p1, p2, ticks?};
-// radius_line {label, p1, p2, dashed?}; text_label {text, world, italic?}. Every
-// reject message names the offending field so a broken worksheet layer surfaces
-// in the embed banner exactly as it does at the CLI.
+// radius_line {label, p1, p2, dashed?}; text_label {text, world, italic?}.
+// dawn_worksheet_parity_live_sim_v1 D2 added orbit_path {world, radius_m, dashed?}
+// and vector_arrow {p1, p2, label?, role, italic?}. Every reject message names the
+// offending field so a broken worksheet layer surfaces in the embed banner exactly
+// as it does at the CLI.
+//
+// dawn_worksheet_parity_live_sim_v1 D2 — per-type key allowlist, one Set per
+// discriminated-union branch, mirroring the schema's per-branch
+// additionalProperties: false (cf. MANEUVER_KEYS at :620). VALID_ANNOTATION_TYPES
+// gates the `type` field ONLY; without THIS loop the EMBED — the thing that ships —
+// would wave through a stray key (e.g. a literal `color` hex) that Ajv rejects,
+// leaving the no-hex-in-scenes anti-target enforced only at the CLI.
+const ANNOTATION_KEYS = {
+  position_label: new Set(['type', 'text', 'world']),
+  text_label:     new Set(['type', 'text', 'world', 'italic']),
+  measure_line:   new Set(['type', 'label', 'p1', 'p2', 'ticks']),
+  radius_line:    new Set(['type', 'label', 'p1', 'p2', 'dashed']),
+  orbit_path:     new Set(['type', 'world', 'radius_m', 'dashed']),
+  vector_arrow:   new Set(['type', 'p1', 'p2', 'label', 'role', 'italic']),
+};
 function validateAnnotation(a, base, push) {
   if (typeof a !== 'object' || a === null) { push(base, 'must be an object'); return; }
   if (!VALID_ANNOTATION_TYPES.has(a.type)) {
     push(`${base}/type`, `must be one of ${[...VALID_ANNOTATION_TYPES].join(', ')}`);
     return;
+  }
+  // additionalProperties: false — reject a stray/misspelled field (e.g. a literal
+  // `color` hex on a vector_arrow) so the two validators agree; see the schema's
+  // per-branch closure and validate_scene_browser_annotations.test.js.
+  const allowedKeys = ANNOTATION_KEYS[a.type];
+  for (const k of Object.keys(a)) {
+    if (!allowedKeys.has(k)) push(`${base}/${k}`, 'unknown key (additionalProperties: false)');
   }
   const nonEmptyStr = (v) => typeof v === 'string' && v.length > 0;
   if (a.type === 'position_label' || a.type === 'text_label') {
@@ -607,6 +668,28 @@ function validateAnnotation(a, base, push) {
     }
     if (a.type === 'radius_line' && a.dashed !== undefined && typeof a.dashed !== 'boolean') {
       push(`${base}/dashed`, 'must be a boolean when present');
+    }
+  } else if (a.type === 'orbit_path') {
+    if (!isVec2(a.world)) push(`${base}/world`, 'required {x, y} object with finite numbers');
+    if (typeof a.radius_m !== 'number' || !Number.isFinite(a.radius_m) || a.radius_m <= 0) {
+      push(`${base}/radius_m`, 'must be a finite number > 0');
+    }
+    if (a.dashed !== undefined && typeof a.dashed !== 'boolean') {
+      push(`${base}/dashed`, 'must be a boolean when present');
+    }
+  } else if (a.type === 'vector_arrow') {
+    if (!isVec2(a.p1)) push(`${base}/p1`, 'required {x, y} object with finite numbers');
+    if (!isVec2(a.p2)) push(`${base}/p2`, 'required {x, y} object with finite numbers');
+    // `role` is SEMANTIC — the theme owns the palette. A literal hex here is caught
+    // as an unknown-role reject (not a colour), so no palette literal reaches a scene.
+    if (!VALID_ANNOTATION_ROLES.has(a.role)) {
+      push(`${base}/role`, `must be one of ${[...VALID_ANNOTATION_ROLES].join(', ')}`);
+    }
+    if (a.label !== undefined && !nonEmptyStr(a.label)) {
+      push(`${base}/label`, 'must be a non-empty string when present');
+    }
+    if (a.italic !== undefined && typeof a.italic !== 'boolean') {
+      push(`${base}/italic`, 'must be a boolean when present');
     }
   }
 }
@@ -639,6 +722,70 @@ function validateManeuver(m, base, push) {
   const vec = isVec2(m.direction);
   if (!named && !vec) {
     push(`${base}/direction`, `must be one of ${[...VALID_MANEUVER_DIRECTIONS].join(', ')} or an explicit {x, y} vector`);
+  }
+}
+
+// dawn_worksheet_parity_live_sim_v1 D7 — the two NEW worksheet-only render_shape
+// channels, validated in the browser twin so the iframe embed rejects a malformed
+// velocity_vector / exhaust exactly as Ajv does (the schema/validator lockstep
+// discipline; cf. MANEUVER_KEYS / ANNOTATION_KEYS). Each channel is a closed object
+// (additionalProperties: false) and its `role` is SEMANTIC — reusing the SAME
+// VALID_ANNOTATION_ROLES vocabulary as vector_arrow, so a literal hex here is caught
+// as an unknown-role reject and no palette literal reaches a scene. The pre-existing
+// render_shape fields (kind/role/label/length_m) stay Ajv-only as before — this
+// validates ONLY the channels this phase adds. schema_browser_lockstep.test.js gates
+// each channel's role enum against VALID_ANNOTATION_ROLES.
+const RENDER_SHAPE_VELOCITY_VECTOR_KEYS = new Set(['label', 'lead_s', 'role']);
+const RENDER_SHAPE_EXHAUST_KEYS = new Set(['label', 'window_s', 'role', 'glyph']);
+function validateRenderShape(rs, base, push) {
+  if (typeof rs !== 'object' || rs === null) return;  // Ajv owns the top-level shape
+  const nonEmptyStr = (v) => typeof v === 'string' && v.length > 0;
+  const vv = rs.velocity_vector;
+  if (vv !== undefined) {
+    if (typeof vv !== 'object' || vv === null) {
+      push(`${base}/velocity_vector`, 'must be an object {role, lead_s, label?}');
+    } else {
+      for (const k of Object.keys(vv)) {
+        if (!RENDER_SHAPE_VELOCITY_VECTOR_KEYS.has(k)) {
+          push(`${base}/velocity_vector/${k}`, 'unknown key (additionalProperties: false)');
+        }
+      }
+      if (!VALID_ANNOTATION_ROLES.has(vv.role)) {
+        push(`${base}/velocity_vector/role`, `must be one of ${[...VALID_ANNOTATION_ROLES].join(', ')}`);
+      }
+      if (typeof vv.lead_s !== 'number' || !Number.isFinite(vv.lead_s) || vv.lead_s <= 0) {
+        push(`${base}/velocity_vector/lead_s`, 'must be a finite number > 0 (arrow length = |v|·lead_s)');
+      }
+      if (vv.label !== undefined && !nonEmptyStr(vv.label)) {
+        push(`${base}/velocity_vector/label`, 'must be a non-empty string when present');
+      }
+    }
+  }
+  const ex = rs.exhaust;
+  if (ex !== undefined) {
+    if (typeof ex !== 'object' || ex === null) {
+      push(`${base}/exhaust`, 'must be an object {role, window_s, label?}');
+    } else {
+      for (const k of Object.keys(ex)) {
+        if (!RENDER_SHAPE_EXHAUST_KEYS.has(k)) {
+          push(`${base}/exhaust/${k}`, 'unknown key (additionalProperties: false)');
+        }
+      }
+      if (!VALID_ANNOTATION_ROLES.has(ex.role)) {
+        push(`${base}/exhaust/role`, `must be one of ${[...VALID_ANNOTATION_ROLES].join(', ')}`);
+      }
+      if (typeof ex.window_s !== 'number' || !Number.isFinite(ex.window_s) || ex.window_s <= 0) {
+        push(`${base}/exhaust/window_s`, 'must be a finite number > 0 (the burn-window half-width in seconds)');
+      }
+      if (ex.label !== undefined && !nonEmptyStr(ex.label)) {
+        push(`${base}/exhaust/label`, 'must be a non-empty string when present');
+      }
+      // Absent ⇒ 'arrow' (printed-page parity). Only an EXPLICIT bad value is an error,
+      // so every pre-flame scene still validates untouched.
+      if (ex.glyph !== undefined && !VALID_EXHAUST_GLYPHS.has(ex.glyph)) {
+        push(`${base}/exhaust/glyph`, `must be one of ${[...VALID_EXHAUST_GLYPHS].join(', ')}`);
+      }
+    }
   }
 }
 

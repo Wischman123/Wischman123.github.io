@@ -60,6 +60,12 @@
 
 import { zero } from './vec.js';
 import { DEFAULT_K_CONSTRAINT } from './constants.js';
+// The engine's ONE definition of "are these two bodies touching?" — already shared
+// by the penalty ContactForce (B1) and the perfectly-inelastic merge resolver (B4).
+// BodyRodConstraint's activate_on_contact weld reuses it rather than introducing a
+// second, drift-prone notion of contact. (No import cycle: forces.js imports only
+// vec / constants / fluids — it never imports this module.)
+import { contactGeom, weldPairKey } from './forces.js';
 
 const ARC_SHAPES = new Set(['circular_arc', 'curved']);
 const VALID_SHAPES = new Set(['flat', 'inclined', 'circular_arc', 'curved', 'circular_arc_concave']);
@@ -531,9 +537,64 @@ export class StringConstraint {
 // RodConstraint's single-body literal 632, wrong for μ ≠ 1). The chaos scene
 // deliberately sets c_damping = 0 (energy-clean UNDAMPED) — verified stable
 // because ω_c·dt = √(k/μ)·dt ≈ 0.447 ≪ 2 at the scene's dt (brief §5–6).
+// ----- activate_on_contact: the WELD-ON-IMPACT channel (orbit_weld_on_contact) -----
+//
+// Optional. Absent/false ⇒ the rod is active from t=0 and this class is BYTE-IDENTICAL
+// to what it was before the flag existed (the double pendulum's bob↔bob link is the
+// existing consumer and must not move by one bit). True ⇒ the rod is DORMANT — it
+// applies exactly zero force — until body_a and body_b first TOUCH, at which point it
+// latches rigidly welded for the rest of the run.
+//
+// WHY the primitive exists (docs/physics_briefs/orbit_weld_on_contact_brief.md).
+// The perfectly-inelastic merge resolver (collisions.js) fires only while a pair is
+// in contact AND APPROACHING (`vRel < 0`). That guard is what makes it latch-free and
+// replay-safe — but it also makes it ONE-SIDED: it can stop two bodies converging, and
+// it can never pull two bodies back together. Two gravity-bound point particles stuck
+// at radius r sit at slightly DIFFERENT radii, so the tidal gradient 2GM·Σr/r³ shears
+// them apart; the instant that shear makes them recede the merge stops firing and
+// NOTHING restores them. They drift out of contact range and the merge can never
+// re-fire. A rigid rod is the missing piece precisely because it is TWO-SIDED — but a
+// rod active from t=0 would TETHER the two bodies across the whole approach, which for
+// an orbital intercept destroys the back-propagated trajectory that makes them meet at
+// all. Hence: sleep, then weld.
+//
+// THREE implementation facts, each load-bearing:
+//
+//  (a) The latch is set in the runner's STEP-3 slot, never inside applyTo(). applyTo
+//      runs FOUR times per tick (once per RK4 sub-stage) on TRIAL states the integrator
+//      may discard — a k2/k4 trial that overshoots into contact would weld the rod on a
+//      state that never happened. So this class also implements `resolve(sceneCtx)`, the
+//      SAME contract the collision resolvers use, which the runner calls once per tick on
+//      the COMMITTED post-integration state (after syncBodies). scene.js registers a
+//      contact-activated rod in `collisionResolvers`, so the latch is evaluated on the
+//      LIVE path and the HEADLESS path alike (activation changes band-checked dynamics —
+//      a weld that existed only in the browser would make --check-against a lie).
+//
+//  (b) reset() CLEARS the latch. This is a deliberate departure from collisions.js's
+//      "resolvers are STATELESS — no latch" rule, and it is principled. That rule exists
+//      because an "already merged, don't re-merge" latch would leak across a timeline
+//      scrub and silently SKIP the merge on replay. A weld latch is the mirror image: it
+//      must be cleared on reset so the replay starts un-welded, re-contacts, and re-welds.
+//      The runner already clears exactly this class of per-run state (circuitState,
+//      wallImpulse, inductionFluxState); the constraint latch joins them.
+//
+//  (c) BOTH bodies need a positive radius_m. Contact is undetectable between point
+//      bodies (contactGeom's depth = rA + rB − r is never > 0 at rA = rB = 0), so an
+//      activate_on_contact rod between two radius-less bodies would sleep FOREVER —
+//      a silent no-op that looks like "the weld didn't work". scene.js asserts the radii
+//      at LOAD time rather than letting the scene run and quietly do nothing.
+//
+// STIFFNESS WARNING for scenes in a scaled frame. k_constraint's default
+// (DEFAULT_K_CONSTRAINT = 1e5) is tuned for SI-scale pendulums (N/m, ~1 kg bodies). The
+// penalty mode rings at ω = √(k/μ), and RK4 needs ω·dt well under 2. In a CANONICAL
+// frame (GM=1, r0=1) with a light debris fragment (μ ≈ 5e-3), the default gives
+// ω·dt ≈ 4.5 — PAST the stability limit; the integrator blows up. A scaled-frame scene
+// MUST set k_constraint explicitly, sized between the rigidity floor (stretch under the
+// peak tidal load stays a small fraction of the separation) and the stability ceiling
+// (ω·dt ≤ 0.5). The brief derives both bounds; the archetype computes them.
 export class BodyRodConstraint {
   constructor({ id, body_a, body_b, length_m,
-    k_constraint = DEFAULT_K_CONSTRAINT, c_damping }) {
+    k_constraint = DEFAULT_K_CONSTRAINT, c_damping, activate_on_contact = false }) {
     this.id = id;
     this.body_a = body_a;
     this.body_b = body_b;
@@ -546,16 +607,76 @@ export class BodyRodConstraint {
     // Rigid rod does zero net work — no U_thermal / no potential channel.
     this.energyKey = null;
     this._warnedMissingPartner = false;
+    // The weld channel. `_active` is the LATCH; it starts true for a plain rod, so an
+    // unflagged constraint never consults the latch machinery at all and stays
+    // byte-identical. `_active` is the ONLY mutable per-run state on this object, and
+    // reset() is the ONLY thing that clears it.
+    this.activateOnContact = activate_on_contact === true;
+    this._active = !this.activateOnContact;
   }
 
   appliesTo(bodyId) {
     return bodyId === this.body_a || bodyId === this.body_b;
   }
 
+  // Step-3 resolver contract — `resolve(sceneCtx, tracker)`, identical in shape to the
+  // collision resolvers, so scene.js can dispatch this rod from the SAME per-tick loop
+  // (collisionResolvers) on both the live and headless paths. Called once per tick on
+  // the COMMITTED post-integration state (see (a) above). Registered ONLY for a rod with
+  // activate_on_contact — a plain rod is never in the resolver list.
+  //
+  // MONOTONIC: it can only ever turn the weld ON. It never releases a welded rod — a rod
+  // that let go the moment the tidal gradient stretched the pair past contact range would
+  // reproduce, exactly, the one-sided failure of the merge that this primitive exists to
+  // fix. Once welded, the rod's own restoring force is what keeps the pair touching.
+  //
+  // `tracker` is unused (a weld is a kinematic gate, not an energy event — the ROD is
+  // ideal and books nothing; the inelastic capture's ΔK is the MERGE's job, and the merge
+  // resolver deposits it). The arg is in the signature for contract parity with its
+  // siblings, exactly as BoxWallReflection's is.
+  resolve(sceneCtx, _tracker) {
+    if (this._active) return;              // already welded — monotonic, nothing to do
+    const bodies = sceneCtx?.bodies;
+    if (!bodies) return;
+    const a = bodies.find((x) => x.id === this.body_a);
+    const b = bodies.find((x) => x.id === this.body_b);
+    if (!a || !b) return;
+    // The ONE shared contact test (forces.js) — depth > 0 ⟺ the disks overlap. Note we
+    // deliberately do NOT require `approaching` (vRel < 0) the way the merge does: the
+    // merge needs it to self-suppress without a latch, whereas THIS gate has a latch and
+    // wants to weld on any real touch, however it arose.
+    if (!contactGeom(a, b)) return;
+    this._active = true;
+    // PUBLISH the weld so the rest of the step-3 slot can see it. The perfectly-inelastic
+    // merge reads this and STANDS DOWN (collisions.js): its one-time inelastic capture is
+    // already done, and a welded pair is co-moving, so its ΔK = kBefore − kAfter degrades
+    // into catastrophic cancellation (±1e-16 noise) that trips the merge's strict
+    // negative-ΔK guard and kills the run. The latch is the seam that keeps the two
+    // resolvers from fighting over a pair that is now ONE rigid object.
+    sceneCtx.weldedPairs?.add(weldPairKey(this.body_a, this.body_b));
+  }
+
+  // Clear the weld latch — called by the runner on reset() (and at construction of a
+  // fresh run). A plain rod (no activate_on_contact) resets to ACTIVE, which is its only
+  // valid state, so this is a no-op for every existing consumer.
+  reset() {
+    this._active = !this.activateOnContact;
+  }
+
   // Returns the rod force on `body` as a BARE {x,y} vec2 (constraints are NOT
   // Force subclasses — no withTau wrapper). Reads the partner body from
   // sceneCtx.bodies; the reaction is applied when the loop passes the partner.
   applyTo(body, sceneCtx) {
+    // DORMANT until welded (activate_on_contact only). Zero force — not a small force,
+    // not a soft spring: the two bodies must be dynamically INDEPENDENT during the
+    // approach, or an orbital intercept's back-propagated trajectory is perturbed by the
+    // very rod that is supposed to be asleep. `_active` is true from construction for a
+    // plain rod, so this is a single already-true branch on the existing hot path.
+    //
+    // This gate READS the latch; it never SETS it. Setting it here would evaluate contact
+    // on RK4 trial sub-states (applyTo runs 4× per tick) and could weld on a state the
+    // integrator discards — see (a) in the class comment. resolve() owns the write.
+    if (!this._active) return zero();
     const bodies = sceneCtx && sceneCtx.bodies;
     if (!bodies) {
       this._warnOncePartner(

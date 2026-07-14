@@ -57,11 +57,35 @@ export class SimRunner {
     // P2 (kinetic-theory box): drop any wall-impulse left from a prior run so
     // the t=0 snapshot below reads a clean 0 (no hits have happened yet).
     this.loaded.sceneCtx?.wallImpulse?.clear();
+    // orbit_weld_on_contact: a fresh run starts UN-WELDED. Clears the
+    // activate_on_contact latch on any body_rod that carries one (a plain rod resets to
+    // its only valid state, ACTIVE, so this is a no-op for every existing consumer).
+    this.loaded.sceneCtx?.weldedPairs?.clear();
+    this._resetConstraints();
 
     // Take an initial energy snapshot so .history() is non-empty
     // immediately (used by the inspector for live readouts).
     loaded.syncBodies(this.state);
     this._tracker.snapshot(0);
+  }
+
+  // orbit_weld_on_contact — clear every constraint's per-run latch. Today the only
+  // latching constraint is a BodyRodConstraint with activate_on_contact (its `_active`
+  // weld flag); `reset?.()` is duck-typed so a constraint without per-run state costs
+  // nothing and needs no change. Symmetric with the circuitState / wallImpulse /
+  // inductionFluxState clears above and in reset(): all are per-RUN state that a replay
+  // must start cold.
+  //
+  // This is what keeps the weld replay-safe, and it is the reason a weld may hold a
+  // latch at all where collisions.js forbids one. That prohibition targets a latch that
+  // would SKIP a merge on replay ("already merged, don't re-fire"); the weld latch is
+  // its mirror image — cleared here, a timeline scrub replays from t=0 with the rod
+  // asleep, re-contacts, and re-welds. A latch nobody clears is the bug; a latch cleared
+  // on reset is just state.
+  _resetConstraints() {
+    const constraints = this.loaded?.constraints;
+    if (!constraints) return;
+    for (const c of constraints) c.reset?.();
   }
 
   setPlaybackRate(rate) {
@@ -108,6 +132,13 @@ export class SimRunner {
     // timeline scrub / replay starts from a clean pressure signal (the
     // regression guard for a cross-run |J| leak — box_wall_reflection.test.js).
     this.loaded.sceneCtx?.wallImpulse?.clear();
+    // orbit_weld_on_contact: un-weld. A timeline scrub replays from t=0, so a rod that
+    // stayed welded across the reset would be TETHERED during the approach — which for
+    // an orbital intercept perturbs the back-propagated trajectory and the two bodies
+    // would never meet on the second play-through. Cleared here, the replay re-detects
+    // contact and re-welds at the same instant.
+    this.loaded.sceneCtx?.weldedPairs?.clear();
+    this._resetConstraints();
     this.loaded.syncBodies(this.state);
     if (this.onTick) this.onTick(this);
   }

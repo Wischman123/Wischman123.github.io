@@ -68,6 +68,12 @@ export { traceStreamline } from './render_primitives.js';
 // These live in the ENGINE layer (extent is computed there at load); the render
 // layer imports DOWN (render→engine is the sanctioned direction).
 import { collectSuppressedIds, extentCenter } from '../engine/extended_object_geometry.js';
+// dawn_worksheet_parity_live_sim_v1 D7 — the engine's OWN burn-heading resolver,
+// reused so the firing exhaust plume (drawn anti-parallel to the Δv) can never
+// drift out of anti-parallel with the physics. Render-only reuse of a pure helper
+// (the renderer already imports pure engine helpers above: extended-object geometry,
+// emFields); it mutates nothing.
+import { burnUnit } from '../engine/maneuvers.js';
 // sim_buoyancy_fluids P3: iterate emFields() (not fields.values()) in the field
 // render loops so a non-EM FluidField (no E_at/B_at) is skipped rather than
 // crashing the field-arrow / streamline draw. The fluid stays in the Map for
@@ -100,11 +106,24 @@ import { emFields } from '../engine/fields.js';
 //                       measurement color ('2980B9' in diagrams_KAP.py). It already
 //                       equals the default charge_neg/bfield blue, so no override.
 //
-// v1 RESTRICTION: the worksheet terrain fill is validated ONLY for
-// single-convex-arc, K015-shaped scenes (one convex `circular_arc`/`curved` hill
-// + flat ground). Multi-arc scenes (e.g. the K020 coaster's several arcs) are
-// OUT OF SCOPE for the worksheet theme in v1 — filling each convex arc's FULL
-// circle is only geometrically valid for a lone hill dome, not a chain of arcs.
+// v1 RESTRICTION — scoped to the TERRAIN FILL, and to nothing else.
+// The worksheet terrain fill is validated ONLY for single-convex-arc, K015-shaped
+// scenes (one convex `circular_arc`/`curved` hill + flat ground). Multi-arc scenes
+// (e.g. the K020 coaster's several arcs) remain OUT OF SCOPE for the worksheet
+// theme — filling each convex arc's FULL circle is only geometrically valid for a
+// lone hill dome, not a chain of arcs.
+//
+// dawn_worksheet_parity_live_sim_v1 D3 — THE THEME NOW ALSO SERVES SURFACE-FREE
+// ORBIT SCENES. The restriction above was never about the theme as a whole; it was
+// about `_fillWorksheetTerrain`, which iterates `loaded.surfaces`. An orbit scene
+// (dawn_last_burn) declares `surfaces: []`, so BOTH fill flags are genuine no-ops
+// there and the restriction cannot bite: there is no terrain to fill. The adjacent
+// trap is closed too — `drawImplicitGround` early-returns on
+// `loaded.hasImplicitGround`, and engine/ground_plane.js disarms universal-gravity
+// (orbit) scenes, so no fake floor is painted under a planet. The worksheet theme
+// therefore serves TWO scene families: K015-shaped terrain scenes (the fill flags
+// apply) and surface-free ORBIT scenes (the fill flags are inert; the orbit-parity
+// flags below apply).
 const THEME_DEFAULT = {
   bg:           '#fcfcfd',
   grid:         '#eef0f4',
@@ -153,7 +172,34 @@ const THEME_DEFAULT = {
   annLabelFont:  'bold 14px "Times New Roman", Times, serif', // A / B — bold serif
   annLabelColor: '#2c3e50',   // SC  — position-label + v₀ text color
   annMeasure:    '#333333',   // DC  — h measure line + T-ticks (near-black)
-  annRadius:     '#2980b9'    // BLC — dashed R radius line
+  annRadius:     '#2980b9',   // BLC — dashed R radius line
+
+  // ----- Orbit-parity flags (dawn_worksheet_parity_live_sim_v1 D3) -----------
+  // THE STANDING ANTI-TARGET, RESTATED AS CODE: each flag's DEFAULT VALUE below
+  // preserves THEME_DEFAULT's CURRENT behaviour exactly — *the flag is not the
+  // behaviour*. `showGrid` is TRUE here: the flag exists, the NEW behaviour (hiding
+  // the grid) is off. Setting it literally `false` here would strip the grid from
+  // all ~105 scenes — the precise regression this framing exists to stop.
+  showGrid: true,             // draw the metric grid + x/y axis lines + "grid: N m"
+  bodyRadiusToScale: false,   // bodies draw at the fixed BODY_RADIUS_PX floor
+  // Per-body appearance (D1 §3, hosted on the EXISTING render_shape as an optional
+  // semantic `role` — no new `kind`, so a role-carrying body still takes the
+  // _drawBodyDisk path that bodyRadiusToScale hangs on). EMPTY maps here ⇒
+  // bodyRoleFill[anyRole] is undefined ⇒ every body still fills with `particle`,
+  // which is today's code path verbatim. Byte-identical for all ~105 scenes, even
+  // for a body that CARRIES a role.
+  bodyRoleFill: {},           // role → disk fill
+  bodyRoleLabelColor: {},     // role → in-disk label colour (white "Ceres")
+  // Worksheet-annotation-layer colours. INERT in the default look (like terrainFill):
+  // drawAnnotations early-returns on `annotationLayer`, so neither is ever read
+  // unless the worksheet theme is active.
+  orbitPath: '#cccccc',       // LGC tools/claude_tools/diagrams/style.py:LGC — dashed orbit
+  arrowRoleColor: {},         // vector_arrow role → colour (worksheet-only)
+  // Flame palette for an exhaust channel with `glyph: 'flame'` (worksheet-only, like
+  // arrowRoleColor). EMPTY here ⇒ _drawExhaustFlame early-returns ⇒ zero pixels. Inert
+  // twice over, in fact: the whole exhaust leg is gated on `annotationLayer`, false
+  // here. Byte-identical for every scene in the default look.
+  flameColor: []
 };
 
 const THEME_WORKSHEET = {
@@ -167,7 +213,55 @@ const THEME_WORKSHEET = {
   fillConvexArc: true,
   fillFlatBand:  true,
   terrainFill:   '#c8b88a',             // GRC — tan hill dome + ground band
-  annotationLayer: true                 // W4 — the worksheet annotation layer draws
+  annotationLayer: true,                // W4 — the worksheet annotation layer draws
+
+  // ----- Orbit parity (dawn_worksheet_parity_live_sim_v1 D3) ------------------
+  // D1 item 5 chose branch (i): ACCEPT the K015 change rather than scope these to
+  // the scene via a render_hints block. K015 (`theme: worksheet` on the live
+  // homepage) is the ONLY other scene reaching this theme, and its delta is EXACTLY
+  // `showGrid` — proved, not hoped (brief §5): its ball declares no `radius_m`
+  // (so bodyRadiusToScale's null-fallback returns the 10px floor → byte-identical)
+  // and carries no `render_shape` (so bodyRoleFill[undefined] falls back to
+  // `particle` → still red). The grid/axes/caption vanishing from K015 is the ONE
+  // approved visual change, and D5 shows Brendan the before/after.
+  showGrid: false,            // a printed worksheet has no metric grid, axes or caption
+  bodyRadiusToScale: true,    // Ceres draws to scale; the BODY_RADIUS_PX floor keeps
+                              // Dawn + the debris readable instead of 2.6px specks (F6)
+  // role → fill. Source constants, never sampled pixels (../tools/claude_tools/diagrams/style.py):
+  bodyRoleFill: {
+    central_body: '#888888',            // GC  style.py:GC  — Ceres gray
+    spacecraft:   '#2980b9',            // BLC style.py:BLC — Dawn blue
+    debris:       '#c8b88a'             // GRC style.py:GRC — debris tan
+  },
+  // Only the central body gets an in-disk label (the printed page's white bold
+  // "Ceres" ON the disk). Every other role keeps the normal above-glyph label path.
+  bodyRoleLabelColor: {
+    central_body: '#ffffff'             // WHT style.py:WHT
+  },
+  // vector_arrow role → colour. `incoming` is RC red, NOT blue: the printed debris
+  // arrow is drawn red (diagrams_F.py:208 add_incoming_arrow(color=RC)), which is
+  // the whole reason role is a THREE-value enum (D1 F3).
+  arrowRoleColor: {
+    velocity: '#2980b9',                // BLC — v₀ at A, v_D at C
+    exhaust:  '#e74c3c',                // RC  — the retrograde exhaust plume
+    incoming: '#e74c3c'                 // RC  — the head-on debris arrow
+  },
+  // Flame palette for an exhaust channel with `glyph: 'flame'` — the layers of a real
+  // plume, COOLEST FIRST: the outer shell is drawn first and the hot core last, so the
+  // core lands on top. Ordered, not named, so a theme can carry any number of layers.
+  //
+  // The colours live HERE, in the theme, for the same reason arrowRoleColor does: a
+  // scene declares the SEMANTIC channel (exhaust, glyph flame) and the theme owns the
+  // palette. A hex on the scene would be the bug this split exists to prevent.
+  //
+  // RC red is kept as the outer shell so the flame still reads as the printed page's
+  // exhaust RC — the fire is a richer glyph for the same annotation, not a new colour
+  // vocabulary.
+  flameColor: [
+    '#e74c3c',                          // RC  — cooled outer shell
+    '#f39c12',                          // orange — mid plume
+    '#ffe08a'                           // pale hot core
+  ]
 };
 
 const BODY_RADIUS_PX = 10;       // visual size; world size is mass-agnostic
@@ -179,6 +273,59 @@ const ANN_TICK_HALF_PX = 5;      // T-tick cap half-length, ⊥ the measure line
 const ANN_MEASURE_WIDTH_PX = 1.5;// measure/radius line stroke width
 const ANN_LABEL_PAD_PX = 4;      // gap between a line's label and the line
 const ANN_DASH = [6, 4];         // R radius-line dash pattern (construction line)
+// dawn_worksheet_parity_live_sim_v1 D3 — vector_arrow geometry. The printed page's
+// arrows are DrawingML `arrow_end=True` heads: solid filled triangles, not the two
+// stroked barbs render_primitives.js::drawArrow paints (a different mark, and that
+// module is not this phase's to change). Hence a local head here.
+const ANN_ARROW_WIDTH_PX = 2;    // arrow shaft stroke width (heavier than a measure line)
+const ANN_ARROW_HEAD_PX = 9;     // filled head length, tip → base, ALONG the shaft
+const ANN_ARROW_HALF_PX = 3.5;   // filled head half-width, ⊥ the shaft
+const ANN_SUB_SCALE = 0.72;      // subscript run's font size ÷ the base run's
+const ANN_SUB_DROP_PX = 2.5;     // subscript baseline drop below the base run
+// dawn_worksheet_parity_live_sim_v1 D7 — exhaust plume length, in the SAME
+// speed×lead-time→world-length idiom as a live velocity_vector: len = |v|·lead_s.
+// Set to the archetype's _ORB_ARROW_LEN (0.35), so at the circular speed v_A the
+// plume matches the printed F001 exhaust arrow (0.35·r₀, diagrams_F.py). The plume
+// is schematic — only visible in the brief burn window, where |v| ≈ v_p is ~constant.
+const ANN_EXHAUST_LEAD_S = 0.35;
+
+// orbit_weld_on_contact follow-on — the FLAME glyph (`render_shape.exhaust.glyph:
+// 'flame'`). Same anchor, direction and length basis as the exhaust ARROW; only the
+// glyph differs. Nested teardrops, COOLEST FIRST (outer shell drawn first, hot core
+// last so it lands on top) — index i takes THEME.flameColor[i].
+const ANN_FLAME_LAYERS = [
+  { lenFrac: 1.00, halfFrac: 0.30 },   // outer shell — full plume length
+  { lenFrac: 0.70, halfFrac: 0.18 },   // mid plume
+  { lenFrac: 0.40, halfFrac: 0.09 }    // hot core, tight against the nozzle
+];
+// Throttle: the plume is FULL length at t_burn and tapers to this fraction at the
+// window edges, so the engine visibly lights, swells and dies rather than popping on
+// and off at full size for a whole second.
+const ANN_FLAME_MIN_SCALE = 0.35;
+// Flicker — [amplitude, angular frequency] pairs summed as sines of the SIM TIME.
+// Deliberately NOT Math.random: the draw must be a pure function of sim state, so a
+// timeline scrub replays the identical fire and the golden draw-call lists stay
+// reproducible. Two incommensurate frequencies read as irregular to the eye.
+const ANN_FLAME_FLICKER = [[0.10, 47], [0.05, 83]];
+
+// D1 FINDING F4 — the subscript contract, as a PURE function (the decision point,
+// unit-tested directly rather than through the canvas).
+//
+// The printed labels are v₀ (a Unicode subscript), v_D and v_debris (true lowered
+// runs). Canvas has no rich-run text, and there is NO Unicode subscript for a
+// capital D — so "v_D" cannot be spelled in Unicode and needs a real lowered run.
+// Contract: a trailing `_<sub>` splits into a base + a lowered subscript run;
+// Unicode subscripts ("v₀") pass through untouched.
+//
+// Edge cases, named: a leading underscore ("_x") is NOT a subscript (there is no
+// base to lower it under) and a trailing one ("v_") has no sub — both pass through
+// whole, so a label can never render as a bare floating subscript.
+export function splitSubscript(label) {
+  if (typeof label !== 'string' || label.length === 0) return { base: '', sub: null };
+  const i = label.indexOf('_');
+  if (i <= 0 || i === label.length - 1) return { base: label, sub: null };
+  return { base: label.slice(0, i), sub: label.slice(i + 1) };
+}
 // FIELD_GRID_COUNT now single-sourced in ./render_primitives.js (imported
 // above) so the arrow grid and the F1 overlay share one gridSpacing/rClip.
 const FIELD_E_PX_PER_V_PER_M = 1.5;
@@ -578,6 +725,16 @@ const CONNECTOR_RENDER_ENTRIES = [
     // primitive as the anchor rod.
     className: 'BodyRodConstraint', type: 'body_rod', source: 'constraints',
     draw(self, c, bodyById, loaded) {
+      // A WELD is not a bar. An `activate_on_contact` rod models a bond that forms
+      // when two bodies TOUCH (docking, capture, sticking-on-impact) — no strut
+      // exists, so there is nothing to draw. Drawing one is not merely decorative
+      // noise, it is FALSE: while the rod is dormant the two bodies can be a whole
+      // orbit apart, and the bar reads as a physical tether that is holding them
+      // together — the exact opposite of the dormancy the primitive guarantees.
+      // Post-weld the pair is touching (rod length = r_a + r_b), so the bar would
+      // be hidden inside the two glyphs anyway: suppressing it costs no true signal
+      // at any instant of the run. A plain rod (double pendulum) IS a bar and draws.
+      if (c.activateOnContact) return;
       const bodyA = bodyById.get(c.body_a);
       const bodyB = bodyById.get(c.body_b);
       if (!bodyA || !bodyB) return;
@@ -652,6 +809,31 @@ export const DRAWN_CONSTRAINT_TYPES = new Set(
 export const DRAWN_CONNECTOR_FORCE_TYPES = new Set(
   CONNECTOR_RENDER_ENTRIES.filter((e) => e.source === 'forces').map((e) => e.type)
 );
+
+// ----- The worksheet-annotation RENDER SEAM (dawn_worksheet_parity D3 change 6) --
+// drawAnnotations used to dispatch through a `switch` ending in `default: break`,
+// so an annotation type the SCHEMA accepts but the renderer cannot draw painted
+// NOTHING, silently — the exact stale-renderer failure class this plan exists to
+// prevent, and D2+D3 push two brand-new types across that boundary. The annotation
+// lockstep pair that already existed locks the schema to the BROWSER VALIDATOR
+// only; nothing gated the renderer.
+//
+// So the dispatch is now a REGISTRY (mirroring SHAPE_DRAWERS above and
+// CONNECTOR_RENDER_ENTRIES beside it), and DRAWN_ANNOTATION_TYPES is DERIVED from
+// it — the set cannot drift from the dispatch, because it IS the dispatch's key
+// list. schema_browser_lockstep.test.js asserts the schema's annotation type enum
+// is a SUBSET of this set, so a type with no drawer fails a TEST instead of failing
+// a PAGE. Add a type here to teach the renderer to draw it — ONE entry.
+const ANNOTATION_DRAWERS = {
+  position_label: (r, a) => r._drawPositionLabel(a),
+  measure_line:   (r, a) => r._drawMeasureLine(a),
+  radius_line:    (r, a) => r._drawRadiusLine(a),
+  text_label:     (r, a) => r._drawTextLabel(a),
+  orbit_path:     (r, a) => r._drawOrbitPath(a),
+  vector_arrow:   (r, a, ctxInfo) => r._drawVectorArrow(a, ctxInfo)
+};
+
+export const DRAWN_ANNOTATION_TYPES = new Set(Object.keys(ANNOTATION_DRAWERS));
 
 export class Canvas2DRenderer {
   constructor(canvas, theme = 'default') {
@@ -876,7 +1058,9 @@ export class Canvas2DRenderer {
       // sim_trace_ghost P1 — stroke each traceable body's past-path trail
       // BEFORE drawBodies so the live body disk sits on top of its own trace.
       if (this.showTrace) drawTraceOverlay(this, loaded);
-      this.drawBodies(loaded);
+      // simTime reaches drawBodies for D7's firing exhaust — the plume shows only
+      // inside the burn window |t − t_burn| ≤ window_s (worksheet theme only).
+      this.drawBodies(loaded, simTime);
       // k015_worksheet_parity_live_sim_v1 W4 — printed-worksheet annotation
       // layer (A/B labels, h/R measure lines, v₀ = 0). Drawn AFTER the bodies so
       // the labels sit on top of the ball, and gated ENTIRELY on the worksheet
@@ -980,6 +1164,16 @@ export class Canvas2DRenderer {
   }
 
   drawGrid() {
+    // dawn_worksheet_parity D3 change 3 — the metric grid is a SIM affordance, not
+    // a printed-worksheet one. One early-return kills all THREE marks this method
+    // paints, together: the minor grid lines, the x=0/y=0 axis lines, and the
+    // lower-right "grid: N m" caption. The caption is meaningless in the parity
+    // scene anyway — Dawn is a SCALED CANONICAL frame (GM = r₀ = v₀ = 1), so there
+    // are no centimetres in it to caption.
+    //
+    // `showGrid` is TRUE in THEME_DEFAULT, so this returns early ONLY under the
+    // worksheet theme: all ~105 default scenes keep their grid, byte-identical.
+    if (!this.style.showGrid) return;
     const ctx = this.ctx;
     // Choose a grid spacing that lands on a nice number of meters.
     const targetPx = 60;
@@ -2031,15 +2225,142 @@ export class Canvas2DRenderer {
     if (!this.style.annotationLayer) return;   // worksheet theme only (anti-target)
     const anns = loaded && loaded.annotations;
     if (!Array.isArray(anns) || anns.length === 0) return;
+    // A vector_arrow's label sits ⊥ the shaft on the side AWAY from the scene's
+    // central body (mirroring the docx add_tangent_velocity_label(center=…)
+    // contract), so a tangential v-label never lands on top of the planet. Resolve
+    // that centre ONCE per frame rather than per arrow.
+    const centerPx = this._annotationCenterPx(loaded);
     for (const a of anns) {
-      switch (a.type) {
-        case 'position_label': this._drawPositionLabel(a); break;
-        case 'measure_line':   this._drawMeasureLine(a); break;
-        case 'radius_line':    this._drawRadiusLine(a); break;
-        case 'text_label':     this._drawTextLabel(a); break;
-        default: break;                         // unknown type: skip (validators reject upstream)
-      }
+      // Registry dispatch (ANNOTATION_DRAWERS). An unknown type is IMPOSSIBLE in a
+      // validated scene — the schema + the browser twin both reject it, and
+      // DRAWN_ANNOTATION_TYPES is gated ⊇ the schema enum by a lockstep test — so
+      // the old silent `default: break` is gone. A type that somehow arrives here
+      // with no drawer is skipped, exactly as before, but it can no longer SHIP.
+      const draw = ANNOTATION_DRAWERS[a.type];
+      if (draw) draw(this, a, centerPx);
     }
+  }
+
+  // The world anchor a vector_arrow's label is offset AWAY from: the central body if
+  // the scene declares one (the printed page's Ceres), else the orbit path's centre,
+  // else null (→ a fixed ⊥ side). Read-only; no draw calls.
+  _annotationCenterPx(loaded) {
+    const central = loaded.bodies?.find((b) => b.renderShape?.role === 'central_body');
+    if (central) return this.worldToPx(central.position);
+    const orbit = loaded.annotations?.find((a) => a.type === 'orbit_path');
+    if (orbit) return this.worldToPx(orbit.world);
+    return null;
+  }
+
+  // Dashed circular orbit path (printed row 3 — `draw_orbit_path`). Centre `world`,
+  // radius `radius_m` in WORLD metres → px via this.scale, so the circle tracks
+  // zoom/pan exactly like every other world-anchored mark. Stroke-only (never
+  // filled): it is a construction path, not a surface.
+  _drawOrbitPath(a) {
+    const ctx = this.ctx;
+    const c = this.worldToPx(a.world);
+    const rPx = (a.radius_m ?? 0) * this.scale;
+    if (!(rPx > 0)) return;                    // degenerate radius draws nothing
+    ctx.save();
+    ctx.strokeStyle = this.style.orbitPath;    // LGC
+    ctx.lineWidth = ANN_MEASURE_WIDTH_PX;
+    ctx.setLineDash(a.dashed === false ? [] : ANN_DASH);
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, rPx, 0, 2 * Math.PI);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+
+  // Labelled vector arrow (printed rows 6-9, 13-14, 18): a stroked shaft p1→p2 plus
+  // a FILLED triangular head, coloured by the record's SEMANTIC role (the scene
+  // never carries a hex). The head is COMPUTED from the shaft direction — never
+  // assumed vertical — the same discipline _drawMeasureLine's T-ticks already
+  // follow. That matters here: these arrows aim up (v₀), down (exhaust, v_D) and
+  // sideways (v_debris), and a vertical assumption would silently mis-draw three of
+  // the four.
+  _drawVectorArrow(a, centerPx) {
+    const ctx = this.ctx;
+    const p1 = this.worldToPx(a.p1);
+    const p2 = this.worldToPx(a.p2);
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+    const len = Math.hypot(dx, dy);
+    if (len < 1) return;                       // sub-pixel shaft: no direction to draw
+    const sx = dx / len;                       // unit ALONG the shaft
+    const sy = dy / len;
+    const color = this.style.arrowRoleColor?.[a.role] ?? this.style.annMeasure;
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.fillStyle = color;
+    ctx.lineWidth = ANN_ARROW_WIDTH_PX;
+    ctx.setLineDash([]);
+    // Shaft.
+    ctx.beginPath();
+    ctx.moveTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.stroke();
+    // Filled head: tip at p2, base one head-length BACK along the shaft, corners
+    // ±half-width along the shaft's perpendicular.
+    const bx = p2.x - sx * ANN_ARROW_HEAD_PX;
+    const by = p2.y - sy * ANN_ARROW_HEAD_PX;
+    const nx = -sy;                            // unit ⊥ the shaft
+    const ny = sx;
+    ctx.beginPath();
+    ctx.moveTo(p2.x, p2.y);
+    ctx.lineTo(bx + nx * ANN_ARROW_HALF_PX, by + ny * ANN_ARROW_HALF_PX);
+    ctx.lineTo(bx - nx * ANN_ARROW_HALF_PX, by - ny * ANN_ARROW_HALF_PX);
+    ctx.closePath();
+    ctx.fill();
+    if (a.label) this._drawArrowLabel(a, p1, p2, nx, ny, color, centerPx);
+    ctx.restore();
+  }
+
+  // A vector_arrow's label: at the shaft midpoint, offset ⊥ to the shaft on the side
+  // AWAY from the scene centre, italic by default (it is a physics variable), with a
+  // trailing _<sub> rendered as a real lowered run (splitSubscript — F4: "v_D" has
+  // no Unicode spelling, so the run is the only way to draw it).
+  _drawArrowLabel(a, p1, p2, nx, ny, color, centerPx, padPx = null) {
+    const ctx = this.ctx;
+    const mx = (p1.x + p2.x) / 2;
+    const my = (p1.y + p2.y) / 2;
+    // Flip the ⊥ so the label moves AWAY from the centre (dot product < 0 ⇒ the
+    // offset currently aims inward, toward the planet).
+    let ox = nx;
+    let oy = ny;
+    if (centerPx && ((mx - centerPx.x) * ox + (my - centerPx.y) * oy) < 0) {
+      ox = -ox;
+      oy = -oy;
+    }
+    // padPx overrides the ⊥ standoff. An ARROW is a 1.5px line, so the default pad
+    // clears it; a FLAME is a filled teardrop tens of pixels wide at the belly, and the
+    // default pad drops the label INSIDE the fire. The flame passes its own half-width.
+    const pad = padPx ?? (ANN_TICK_HALF_PX + ANN_LABEL_PAD_PX);
+    const lx = mx + ox * pad;
+    const ly = my + oy * pad;
+    const { base, sub } = splitSubscript(a.label);
+    const font = a.italic === false ? this.style.annLabelFont : this.style.labelFont;
+    ctx.fillStyle = color;
+    ctx.font = font;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    if (!sub) {
+      ctx.fillText(base, lx, ly);
+      return;
+    }
+    // Two runs: measure the base so the subscript sits just past it, and shift the
+    // pair left by half the subscript so the WHOLE label stays centred on (lx, ly).
+    const baseW = ctx.measureText(base).width;
+    const subFont = font.replace(/(\d+(?:\.\d+)?)px/, (_m, px) =>
+      `${(parseFloat(px) * ANN_SUB_SCALE).toFixed(1)}px`);
+    ctx.font = subFont;
+    const subW = ctx.measureText(sub).width;
+    ctx.font = font;
+    const startX = lx - subW / 2;
+    ctx.fillText(base, startX, ly);
+    ctx.font = subFont;
+    ctx.textAlign = 'left';
+    ctx.fillText(sub, startX + baseW / 2, ly + ANN_SUB_DROP_PX);
   }
 
   // Bold-serif position label (A, B) centred above its world anchor so it clears
@@ -2286,8 +2607,12 @@ export class Canvas2DRenderer {
     ctx.stroke();
   }
 
-  drawBodies(loaded) {
+  drawBodies(loaded, simTime = 0) {
     const ctx = this.ctx;
+    // The world anchor a live velocity_vector / exhaust arrow's label is offset AWAY
+    // from (the central body, else the orbit centre) — resolved ONCE per frame, the
+    // same as drawAnnotations. Null on non-orbit scenes (→ a fixed ⊥ side).
+    const centerPx = this._annotationCenterPx(loaded);
     // Phase A5: bodies that belong to an extended-object render group are drawn
     // ONCE as that group's glyph (drawExtendedObjects, before this leg). Skip
     // each such member's ENTIRE per-body iteration — glyph, velocity arrow,
@@ -2316,17 +2641,34 @@ export class Canvas2DRenderer {
       const labelAnchor = drawer
         ? drawer(this, body, p)
         : this._drawBodyDisk(body, p, isCharge);
-      // Velocity arrow (green) if non-zero — shared across every glyph,
-      // drawn from the body centre.
-      const vMag = Math.hypot(body.velocity.x, body.velocity.y);
-      if (vMag > 1e-6) {
-        ctx.strokeStyle = this.style.velocity;
-        ctx.fillStyle = this.style.velocity;
-        ctx.lineWidth = 2;
-        const dx = body.velocity.x * VELOCITY_SCALE_PX_PER_M_PER_S;
-        const dy = -body.velocity.y * VELOCITY_SCALE_PX_PER_M_PER_S;
-        const head = { x: p.x + dx, y: p.y + dy };
-        drawArrow(this.ctx, p, head, 6);
+      // Velocity arrow. Under the worksheet theme a body carrying a
+      // render_shape.velocity_vector draws a LIVE, role-coloured arrow whose length
+      // is |v|·lead_s in WORLD metres (D7 change 1) — reusing _drawVectorArrow — and
+      // the default fixed-scale arrow is SUPPRESSED for it (the two would
+      // double-draw). Gated on annotationLayer, so the default look is byte-identical
+      // and K015 (no velocity_vector) is untouched. Every other body keeps the
+      // default green/red velocity arrow exactly as before.
+      const liveVel = this.style.annotationLayer ? body.renderShape?.velocity_vector : null;
+      if (liveVel) {
+        this._drawLiveVelocityVector(body, liveVel, centerPx);
+      } else {
+        const vMag = Math.hypot(body.velocity.x, body.velocity.y);
+        if (vMag > 1e-6) {
+          ctx.strokeStyle = this.style.velocity;
+          ctx.fillStyle = this.style.velocity;
+          ctx.lineWidth = 2;
+          const dx = body.velocity.x * VELOCITY_SCALE_PX_PER_M_PER_S;
+          const dy = -body.velocity.y * VELOCITY_SCALE_PX_PER_M_PER_S;
+          const head = { x: p.x + dx, y: p.y + dy };
+          drawArrow(this.ctx, p, head, 6);
+        }
+      }
+      // Firing exhaust plume (D7 change 2) — worksheet-only, drawn ONLY inside the
+      // burn window of this body's scheduled maneuver, anti-parallel to the Δv.
+      // Gated on annotationLayer + the channel's presence, so it draws zero pixels
+      // in the default look and on any body without an exhaust channel.
+      if (this.style.annotationLayer && body.renderShape?.exhaust) {
+        this._drawExhaustPlume(body, body.renderShape.exhaust, loaded, simTime, centerPx);
       }
       // Phase 3.4 (Q3=B): orientation arrow for rotating bodies.
       // Probe `body.theta` rather than instanceof so future rotational
@@ -2358,15 +2700,159 @@ export class Canvas2DRenderer {
         this.style.annotationLayer && !body.renderShape?.label;
       if (!showsAnnotationLabels) {
         const labelText = body.renderShape?.label ?? body.id;
-        ctx.fillStyle = this.style.labelColor;
-        ctx.font = this.style.labelFont;
-        ctx.textAlign = 'center';
-        // Drawer may request a baseline: disk labels sit ABOVE (default
-        // 'bottom'); the rod labels BELOW its lower tip ('top') to clear
-        // top-edge overlays like the induction-loop EMF label.
-        ctx.textBaseline = labelAnchor.baseline ?? 'bottom';
-        ctx.fillText(labelText, labelAnchor.x, labelAnchor.y);
+        // dawn_worksheet_parity D3 change 5 — the IN-DISK role label (printed row 2:
+        // a white bold "Ceres" ON the disk, not floating above it). Keyed on the same
+        // render_shape.role as the fill. THEME_DEFAULT's bodyRoleLabelColor is EMPTY,
+        // so inDiskColor is undefined for EVERY body — including one carrying a role —
+        // and the else-branch below runs exactly as it does today. Byte-identical.
+        const inDiskColor = this.style.bodyRoleLabelColor?.[body.renderShape?.role];
+        if (inDiskColor) {
+          ctx.fillStyle = inDiskColor;
+          ctx.font = this.style.annLabelFont;   // bold serif — matches the printed page
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(labelText, p.x, p.y);    // the disk CENTRE, not the anchor above it
+        } else {
+          ctx.fillStyle = this.style.labelColor;
+          ctx.font = this.style.labelFont;
+          ctx.textAlign = 'center';
+          // Drawer may request a baseline: disk labels sit ABOVE (default
+          // 'bottom'); the rod labels BELOW its lower tip ('top') to clear
+          // top-edge overlays like the induction-loop EMF label.
+          ctx.textBaseline = labelAnchor.baseline ?? 'bottom';
+          ctx.fillText(labelText, labelAnchor.x, labelAnchor.y);
+        }
       }
+    }
+  }
+
+  // dawn_worksheet_parity_live_sim_v1 D7 change 1 — a LIVE, body-attached velocity
+  // vector. Drawn from the body's CURRENT position along its CURRENT velocity, with
+  // length |v|·lead_s in WORLD metres. The length is PROPORTIONAL to |v|, which is
+  // the crux: Dawn's arrow visibly lengthens at the prograde burn (Δv > 0)
+  // and shrinks climbing to apoapsis. Reuses _drawVectorArrow (shaft + filled head +
+  // role colour + label) — no second arrow renderer. Worksheet-only (the caller
+  // gates on annotationLayer), so the default look is untouched.
+  _drawLiveVelocityVector(body, vv, centerPx) {
+    const vx = body.velocity.x;
+    const vy = body.velocity.y;
+    const vMag = Math.hypot(vx, vy);
+    if (!(vMag > 1e-6)) return;                // a body at rest has no velocity arrow
+    const lenWorld = vMag * vv.lead_s;         // WORLD metres, ∝ |v|
+    const tip = {
+      x: body.position.x + (vx / vMag) * lenWorld,
+      y: body.position.y + (vy / vMag) * lenWorld,
+    };
+    // _drawVectorArrow projects p1/p2 (world) → px itself; p1 = the body's own
+    // position, which projects to exactly the drawn disk anchor (bodyAnchorPx).
+    this._drawVectorArrow(
+      { p1: body.position, p2: tip, label: vv.label, role: vv.role }, centerPx);
+  }
+
+  // dawn_worksheet_parity_live_sim_v1 D7 change 2 — the firing exhaust plume. Drawn
+  // ONLY inside the burn window |t − t_burn| ≤ window_s of this body's scheduled
+  // maneuver, ANTI-PARALLEL to the Δv (a prograde burn throws mass retrograde — the
+  // printed page draws exhaust DOWN while v₀ aims UP). Physically honest: nothing
+  // is drawn outside the window (the engine is not firing). Reuses _drawVectorArrow
+  // and the engine's own burnUnit heading resolver — never a second implementation.
+  _drawExhaustPlume(body, ex, loaded, simTime, centerPx) {
+    const burn = (loaded.maneuverResolvers ?? []).find((m) => m.body_id === body.id);
+    if (!burn) return;                                   // no scheduled burn ⇒ no plume
+    if (!(Math.abs(simTime - burn.t_burn) <= ex.window_s)) return;   // outside the window
+    const vMag = Math.hypot(body.velocity.x, body.velocity.y);
+    if (!(vMag > 1e-6)) return;                          // no heading ⇒ no anti-parallel
+    const dv = burnUnit(body, burn.direction);           // Δv unit — the engine's own
+    const lenWorld = vMag * ANN_EXHAUST_LEAD_S;
+    const tip = {
+      x: body.position.x - dv.x * lenWorld,              // anti-parallel to the Δv
+      y: body.position.y - dv.y * lenWorld,
+    };
+    // THE GLYPH FORK. The printed page draws the exhaust as a labelled ARROW, so that
+    // stays the DEFAULT (parity — an absent `glyph` key is byte-identical to D7 for
+    // every existing scene). A scene that wants the engine to visibly FIRE opts into
+    // 'flame'. Identical anchor, identical anti-parallel heading, identical length
+    // basis — the fork is purely how the same plume is painted.
+    if (ex.glyph === 'flame') {
+      this._drawExhaustFlame(body, ex, tip, burn, simTime, centerPx);
+      return;
+    }
+    this._drawVectorArrow(
+      { p1: body.position, p2: tip, label: ex.label, role: ex.role }, centerPx);
+  }
+
+  // The FLAME glyph — fire out of the engine bell, drawn as nested teardrops from the
+  // craft's EDGE (never its centre: a plume anchored at the dot's middle reads as fire
+  // coming out of the middle of the spacecraft) along the same anti-Δv heading the
+  // arrow uses.
+  //
+  // HONEST LIMIT, inherited from the arrow: the engine's burn is IMPULSIVE — one Δv
+  // applied at t_burn. The plume is SCHEMATIC. The throttle ramp below makes it light,
+  // swell and die across the window, which is what a real engine firing over that
+  // window would look like; the physics underneath is still the instantaneous kick.
+  // The fire is an honest picture of the burn, not a second model of it — it reads
+  // nothing back into the state vector.
+  _drawExhaustFlame(body, ex, tipWorld, burn, simTime, centerPx) {
+    const ctx = this.ctx;
+    const colors = this.style.flameColor;
+    if (!colors || colors.length === 0) return;   // theme carries no flame palette
+
+    const p1 = this.worldToPx(body.position);
+    const p2 = this.worldToPx(tipWorld);
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+    const full = Math.hypot(dx, dy);
+    if (full < 1) return;                         // sub-pixel plume: no direction to draw
+    const sx = dx / full;                         // unit ALONG the plume, away from the craft
+    const sy = dy / full;
+    const nx = -sy;                               // unit ⊥ the plume
+    const ny = sx;
+
+    // Throttle (1 at t_burn → ANN_FLAME_MIN_SCALE at the window edges) and flicker, both
+    // pure functions of simTime. Math.max guards the edges against float overshoot.
+    const u = 1 - Math.abs(simTime - burn.t_burn) / ex.window_s;
+    const throttle = ANN_FLAME_MIN_SCALE + (1 - ANN_FLAME_MIN_SCALE) * Math.max(0, u);
+    let flicker = 1;
+    for (const [amp, freq] of ANN_FLAME_FLICKER) flicker += amp * Math.sin(simTime * freq);
+
+    // Start at the drawn disk's edge — _bodyRadiusPx is THE body-radius decision point,
+    // so the nozzle tracks the glyph under bodyRadiusToScale instead of re-deriving it.
+    const r = this._bodyRadiusPx(body);
+    const ox = p1.x + sx * r;
+    const oy = p1.y + sy * r;
+    const len = Math.max(1, (full - r) * throttle * flicker);
+
+    ctx.save();
+    ctx.setLineDash([]);
+    for (let i = 0; i < ANN_FLAME_LAYERS.length; i++) {
+      const { lenFrac, halfFrac } = ANN_FLAME_LAYERS[i];
+      const L = len * lenFrac;
+      const w = len * halfFrac;
+      const tx = ox + sx * L;                     // this layer's tip
+      const ty = oy + sy * L;
+      const cx = ox + sx * L * 0.55;              // control point, mid-plume — the belly
+      const cy = oy + sy * L * 0.55;
+      // Teardrop: bulge out along one flank to the tip, then back down the other.
+      ctx.beginPath();
+      ctx.moveTo(ox, oy);
+      ctx.quadraticCurveTo(cx + nx * w, cy + ny * w, tx, ty);
+      ctx.quadraticCurveTo(cx - nx * w, cy - ny * w, ox, oy);
+      ctx.closePath();
+      ctx.fillStyle = colors[Math.min(i, colors.length - 1)];
+      ctx.fill();
+    }
+    ctx.restore();
+
+    // Same label path as the arrow (midpoint, offset ⊥ AWAY from the scene centre) — the
+    // annotation is still "exhaust"; only its glyph changed.
+    if (ex.label) {
+      const color = this.style.arrowRoleColor?.[ex.role] ?? this.style.annMeasure;
+      // Stand the label off by the OUTER layer's half-width at the belly — the widest
+      // the fire ever gets — plus the normal pad, so it clears the flame at full
+      // throttle instead of being swallowed by it. Derived from the same `len` the
+      // teardrops were built from, so it tracks the flicker and can never drift.
+      const clearPx = len * ANN_FLAME_LAYERS[0].halfFrac + ANN_TICK_HALF_PX + ANN_LABEL_PAD_PX;
+      this._drawArrowLabel(
+        { label: ex.label, role: ex.role }, p1, p2, nx, ny, color, centerPx, clearPx);
     }
   }
 
@@ -2374,14 +2860,45 @@ export class Canvas2DRenderer {
   // the label anchor just above the disk. Extracted from drawBodies so the
   // T4 shape registry can pick a different glyph without touching shared
   // overlays.
+  // THE body-radius decision point (dawn_worksheet_parity D3 change 4), isolated as
+  // ONE method so the three consumers that must agree — the disk, its label anchor,
+  // and pickBodyAt's hit-test — can never disagree about how big a body is.
+  //
+  // Today BODY_RADIUS_PX = 10 is fixed for every body ("world size is mass-agnostic"),
+  // which is exactly why Ceres (radius_m 0.47 against r₀ = 1) and a 1-tonne spacecraft
+  // currently draw as identical dots. Under `bodyRadiusToScale` a body draws at its
+  // TRUE world radius — floored at BODY_RADIUS_PX, and the floor is load-bearing:
+  // Ceres (0.470 of the orbit radius) becomes the large disk the printed page shows,
+  // while Dawn (0.012) and the debris keep the readable 10px marker instead of
+  // collapsing to ~2.6px specks (D1 F6 — measured, not eyeballed).
+  //
+  // THE `?? 0` IS THE K015 REGRESSION VECTOR, NOT COSMETICS. bodies.js defaults
+  // radius_m to null, and Math.max(10, null * scale) → 10 by luck; but a body whose
+  // radius is UNDEFINED gives Math.max(10, NaN) → NaN, and ctx.arc(x, y, NaN, …)
+  // draws NOTHING AT ALL. This flag reaches K015's ball — which declares no radius_m
+  // — on the live homepage. `?? 0` makes the null/undefined case return the 10px
+  // floor by CONSTRUCTION rather than by luck, which is what makes K015's ball
+  // provably byte-identical (brief §5).
+  _bodyRadiusPx(body) {
+    if (!this.style.bodyRadiusToScale) return BODY_RADIUS_PX;
+    return Math.max(BODY_RADIUS_PX, (body.radius ?? 0) * this.scale);
+  }
+
   _drawBodyDisk(body, p, isCharge) {
     const ctx = this.ctx;
+    const r = this._bodyRadiusPx(body);
     ctx.beginPath();
-    ctx.arc(p.x, p.y, BODY_RADIUS_PX, 0, 2 * Math.PI);
+    ctx.arc(p.x, p.y, r, 0, 2 * Math.PI);
     if (isCharge) {
       ctx.fillStyle = body.charge >= 0 ? this.style.charge_pos : this.style.charge_neg;
     } else {
-      ctx.fillStyle = this.style.particle;
+      // Per-body appearance (D3 change 5), hosted on render_shape.role. THEME_DEFAULT's
+      // bodyRoleFill is EMPTY, so this resolves to undefined → `this.style.particle`,
+      // today's code path verbatim — even for a body that CARRIES a role. That is the
+      // anti-target: the appearance channel reaches all ~105 scenes and must change
+      // zero pixels in the default look.
+      const roleFill = this.style.bodyRoleFill?.[body.renderShape?.role];
+      ctx.fillStyle = roleFill ?? this.style.particle;
     }
     ctx.fill();
     ctx.strokeStyle = this.style.particleEdge;
@@ -2394,7 +2911,9 @@ export class Canvas2DRenderer {
       ctx.textBaseline = 'middle';
       ctx.fillText(body.charge >= 0 ? '+' : '−', p.x, p.y + 0.5);
     }
-    return { x: p.x, y: p.y - BODY_RADIUS_PX - 3 };
+    // Label anchor rides the DRAWN radius, not the constant: a to-scale Ceres would
+    // otherwise anchor its own label 13px above its centre — i.e. INSIDE itself.
+    return { x: p.x, y: p.y - r - 3 };
   }
 
   // Rod glyph (T4): an oriented bar of renderShape.length_m drawn as a thick
@@ -2536,13 +3055,23 @@ export class Canvas2DRenderer {
   }
 
   // Pick a body whose disk contains the given pixel coordinate (for inspector).
+  //
+  // dawn_worksheet_parity D3 change 4 — the hit-test reads the SAME _bodyRadiusPx as
+  // the disk that was drawn. A recording-context harness is structurally BLIND to
+  // this (hit-testing draws nothing), so it is asserted as a direct predicate test
+  // under BOTH themes instead. Two failure modes, both real: leave it at the constant
+  // and a ~100px to-scale Ceres becomes unclickable in the inspector everywhere
+  // except a 14px bullseye at its centre; make it read `body.radius` UNCONDITIONALLY
+  // and every default-theme scene's click radius silently changes, with no draw-call
+  // gate able to see it. Reading the flag is what keeps THEME_DEFAULT at exactly
+  // BODY_RADIUS_PX + 4.
   pickBodyAt(loaded, pxPoint) {
     if (!loaded) return null;
     for (const body of loaded.bodies) {
       const p = this.bodyAnchorPx(body, loaded);
       const dx = pxPoint.x - p.x;
       const dy = pxPoint.y - p.y;
-      if (Math.hypot(dx, dy) <= BODY_RADIUS_PX + 4) return body;
+      if (Math.hypot(dx, dy) <= this._bodyRadiusPx(body) + 4) return body;
     }
     return null;
   }
