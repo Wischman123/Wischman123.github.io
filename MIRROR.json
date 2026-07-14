@@ -1,14 +1,14 @@
 {
   "schema": 1,
   "source_repo": "physics",
-  "source_commit": "73d4ddbef27ed235c78cb530a9f7464050b76a3c",
-  "sim_source_commit": "73d4ddbef27ed235c78cb530a9f7464050b76a3c",
+  "source_commit": "81be5428bf9cb94fbb3de9434f4e4086dcfa7606",
+  "sim_source_commit": "81be5428bf9cb94fbb3de9434f4e4086dcfa7606",
   "determinism_excluded_keys": [
     "generated_at"
   ],
   "files": {
     "src/architecture.html": {
-      "sha256": "59635a3979129eb46b6492544d932ec0be4926c3f17310edc46a9c178e34d078",
+      "sha256": "65b830244a7a753ce15c6404653b757ab264785ecb48f312f2c33cf041cb42eb",
       "rule": "pages"
     },
     "src/assets/d1_after_regeneration.png": {
@@ -288,39 +288,39 @@
       "rule": "deep-assets"
     },
     "src/deep/code.html": {
-      "sha256": "eb7a3784442b1be8ddd814022ca56ff9e17e9aa7f13f98646c6b09b7d15a178e",
+      "sha256": "cc89cc8309cb8ee9a197c75dd71285134f5b445fa282ceafdc275375dbffd270",
       "rule": "pages"
     },
     "src/deep/engine.html": {
-      "sha256": "ffdec8162f988487de7ab3617ab16e4d0aa61180d6a7974d0d4ffa8fed2fefd0",
+      "sha256": "d9d24d7756eeeb2ce81a9786476f54711a1cfbdeb5227127cc04ca20a42fbfca",
       "rule": "pages"
     },
     "src/deep/gallery.html": {
-      "sha256": "0b2909a0ce8e7264686d3a9ad13a09278ec62a6a0974c51d3fff4b678cde0aef",
+      "sha256": "6341d54909eef1a34864455be9b51d61535d3997c18e9acea413f74e49b9c92e",
       "rule": "pages"
     },
     "src/deep/lab.html": {
-      "sha256": "fc911b3fbb5b17498cf8934c5663abf6fb541dc3bbc373e2e4cf196df542985f",
+      "sha256": "c97ca14aa2d81d7e77803593d4d35cce63b8f17930d593b7b8803730ea940b2a",
       "rule": "pages"
     },
     "src/deep/meta.html": {
-      "sha256": "a8dedfb18db151629849c4b906a048fb42781596b676e870cad2f5f0e2135ed8",
+      "sha256": "b6df37e0d962422c81b204c492b6f72497bf5bfbe998e594967e2eaf444aa844",
       "rule": "pages"
     },
     "src/deep/sims.html": {
-      "sha256": "0b6ca6003bf8af624dd0122f2ddbedab1d962703363cd5f4ec2e971b3f7be86d",
+      "sha256": "de319e7daf4e77d4f328c7d05009405865010a21cf76a5eac7057db218311d12",
       "rule": "pages"
     },
     "src/deep/systems.html": {
-      "sha256": "56d7ea989832ae8cd9601ad8dbaa9108c367bf1c17be7a664168fe216f86d463",
+      "sha256": "cafd6a0b2c967102bd17b0a199746af4375f54604f7fef0c1cc0496f20eef5f3",
       "rule": "pages"
     },
     "src/deep/verification.html": {
-      "sha256": "5e19f7d03a36106129788db5d51602cc204ea8d3ed48de79c5b2fd55daad4ae9",
+      "sha256": "62dd09f8780677c23d96be9ceddbefca1b8f7fcf90fc81979480586eaee48b24",
       "rule": "pages"
     },
     "src/index.html": {
-      "sha256": "cfcf9de48879278eec2b06492d98c09ecbd498502516cc5221135d007a4d2b73",
+      "sha256": "e8ef98c1f44f9a67e55f5886df638882e6515b87111c649f7a6913a03c4f0738",
       "rule": "pages"
     },
     "src/plain-vs-engine.html": {
@@ -532,7 +532,7 @@
       "rule": "sim"
     },
     "src/sim/render/surface_geometry.js": {
-      "sha256": "3db7d6461f759648e0c07502c5ac9a871abc33700dfb7158ec32479bdf3a1029",
+      "sha256": "b285da0a9071ec2b878e852e5a2e5a70372f1b93b351cd85c76cca98f73fc758",
       "rule": "sim"
     },
     "src/sim/render/trajectory_trace.js": {
@@ -660,7 +660,7 @@
       "rule": "schema"
     },
     "src/videos.html": {
-      "sha256": "d28780600c91c06cb255c0287b1e654a4cc9bf3328ac317e78a6d14a8b5f5481",
+      "sha256": "741d2dc805626c83302e3a946e918985ce4cbb5b0abb4b2a6b74e7f3dd1d665e",
       "rule": "pages"
     },
     "tools/check_stats.py": {

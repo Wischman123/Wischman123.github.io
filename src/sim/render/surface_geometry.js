@@ -54,8 +54,8 @@ const normalize = (a) => ((a % TWO_PI) + TWO_PI) % TWO_PI;
  * world-space angle `theta`?
  *
  * This is the F4 regression predicate in one pure call: the apex a body rides
- * must lie on the arc the renderer strokes. Any point strictly inside the
- * engine's swept sector must answer true; a point in the complementary sector
+ * must lie on the arc the renderer strokes. Any angle strictly inside the
+ * engine's swept sector must answer true; an angle in the complementary sector
  * must answer false. An inverted flag flips both answers, so this catches the
  * bug in either direction.
  *
