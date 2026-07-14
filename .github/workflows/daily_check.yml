@@ -16,8 +16,24 @@
 #                      run must be forceable in the same sitting that lands the
 #                      file — and Brendan can re-run it by hand after a red day.
 #
-# E1 later adds one more call (check_freshness.py) to THIS workflow. It is not a
-# second mechanism.
+# E1.1 (2026-07-14) added the second step: check_freshness.py — the DEAD-MAN'S
+# SWITCH on the committed stats JSON. It is not a second mechanism; it is one
+# more call in THIS workflow, and it needs no PAT either (it reads a committed
+# file). Two deliberate properties:
+#
+#   * ALARM, NOT GATE. It is invoked ONLY here — never by the deploy gate — so
+#     a stale JSON can page a human but can never block the deploy that would
+#     fix it.
+#   * THE WINDOW DERIVES FROM THE CADENCE. The local cron on Brendan's box
+#     publishes DAILY; 7 days ≈ 3x the cadence + sleeping-laptop slack. Change
+#     the cadence and the window must be re-derived (check_freshness.py
+#     --max-age-days), or one missed run trips the alarm by design.
+#
+# PLATFORM LIMIT — THE NAMED TERMINAL ALARM: GitHub auto-disables schedule-
+# triggered workflows after ~60 days without repository activity, emailing the
+# repo owner. A box that stops pushing therefore silences THIS alarm after ~60
+# days — and that auto-disable EMAIL is the last alarm layer. The full ladder
+# is in docs/runbooks/showcase_publish.md (parent repo).
 
 name: Daily live check
 
@@ -44,3 +60,10 @@ jobs:
         # referenced asset; on the rail-bearing pages, rail href-set equality vs
         # SITE_NAV and exactly one aria-current. It reads NO baseline.
         run: python build.py --smoke --base-url "https://wischman123.github.io"
+
+      - name: Freshness heartbeat (check_freshness.py — the dead-man's switch)
+        # Fails iff now - generated_at > 7 days: the local cron has stopped
+        # publishing (box asleep, cron disabled, machine rebuilt). Fires when
+        # NOTHING happens — the failure mode a failure-notification can never
+        # see. Stdlib only; reads the COMMITTED src/data/showcase_data.json.
+        run: python tools/check_freshness.py
