@@ -1,0 +1,1562 @@
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow">
+<title>Brendan Wischweh — a classroom rebuilt with Claude Code</title>
+<link rel="stylesheet" href="assets/theme.css?v=1">
+<style>
+  /* Tokens (--bg, --ink, --rule, --accent, --serif, …) now come from
+     assets/theme.css — the ONE place the site's palette is declared. This page
+     used to hold the master copy and three other files hand-mirrored it. Do not
+     reintroduce a :root block here; edit theme.css. */
+
+  /* ---------- base ---------- */
+  html { background: var(--bg); scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: 17px;
+    line-height: 1.65;
+    margin: 0;
+  }
+  a { color: var(--accent-text); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  a:focus-visible, button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  h1, h2 { text-wrap: balance; margin: 0; }
+
+  .wrap { max-width: 1060px; margin: 0 auto; padding: 0 24px; }
+  .prose { max-width: 66ch; }
+
+  /* ---------- preview banner (not part of the design) ---------- */
+  .preview-note {
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.5;
+    letter-spacing: 0.02em;
+    background: var(--banner-bg);
+    border-bottom: 1px solid var(--rule);
+    padding: 10px 24px;
+    color: var(--ink-soft);
+  }
+  .preview-note strong { color: var(--ink); font-weight: 600; }
+
+  /* ---------- left rail ----------
+     GONE FROM HERE — and deliberately not replaced by a copy.
+
+     This page used to own the site's rail: the .layout grid, the .rail column,
+     its hand-written link list, and a scrollspy at the foot of the page. Three
+     other pages then MIRRORED it (site.css says so in as many words: "if
+     index.html's .rail rules change, re-mirror them here"), and the deep-dive
+     wing carried a different nav surface again — a .deepnav strip.
+
+     There is now ONE rail component for the whole site:
+       markup   physics/tools/showcase/templates/_siterail.html.j2  (a macro)
+       styling  physics/tools/showcase/templates/_siterail.css
+       links    physics/tools/showcase/deep_nav.py::SITE_NAV        (order+labels)
+     The generated deep pages get it from base.html.j2; THIS page and the other
+     three hand-authored root pages have it stamped in by inject_site_rail.py,
+     inside <!-- SITERAIL BEGIN/END --> markers. The rail is position:fixed and
+     insets the page with one body{padding-left} rule, so no .layout grid — and
+     no wrapper element — is needed here any more.
+
+     It also FIXES what this rail did below 1100px: it vanished
+     (.rail{display:none}) with no fallback. The shared one collapses into a
+     sticky top bar instead. Add or reorder a page in SITE_NAV; never here. */
+
+  /* ---------- section scaffolding ---------- */
+  .section { padding: 72px 0 0; }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--accent-text);
+    margin: 0 0 14px;
+  }
+  .section h2 {
+    font-size: 1.6rem;
+    font-weight: 600;
+    line-height: 1.25;
+    margin-bottom: 16px;
+  }
+
+  /* ---------- hero ---------- */
+  .hero { padding: 72px 0 0; display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 56px; align-items: center; }
+  .hero h1 {
+    font-size: clamp(2rem, 4.6vw, 3.1rem);
+    font-weight: 600;
+    line-height: 1.14;
+    letter-spacing: -0.01em;
+    margin: 18px 0 20px;
+  }
+  .hero h1 em { font-style: italic; color: var(--accent-text); }
+  .hero .sub { font-size: 1.12rem; color: var(--ink-soft); margin: 0; max-width: 56ch; }
+  .fig { margin: 0; }
+  .fig canvas { width: 100%; aspect-ratio: 10 / 9; display: block; }
+  .figcap {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: var(--ink-soft);
+    margin-top: 10px;
+  }
+  .figcap b { color: var(--ink); font-weight: 600; }
+
+
+  /* ---------- field lab (interactive Fig. 1) ---------- */
+  .fl-stage { position: relative; }
+  /* touch-action: pan-y keeps vertical PAGE SCROLL working over the canvas on
+     mobile (a background swipe still scrolls); a grab on a charge captures the
+     pointer so the drag doesn't scroll. Mouse + keyboard get full 2-D control. */
+  #fieldfig { cursor: grab; touch-action: pan-y; border-radius: 2px; }
+  #fieldfig:active { cursor: grabbing; }
+  #fieldfig:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .fl-hint {
+    position: absolute;
+    left: 50%;
+    bottom: 10px;
+    transform: translateX(-50%);
+    margin: 0;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    background: var(--bg-raised);
+    background: color-mix(in srgb, var(--bg) 84%, transparent);
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    padding: 4px 12px;
+    pointer-events: none;
+    opacity: 0.92;
+    transition: opacity 0.4s ease;
+  }
+  .fl-hint[data-dismissed="true"] { opacity: 0; }
+  .fl-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 7px;
+    margin-top: 14px;
+  }
+  .fl-clabel {
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-soft);
+    margin-right: 2px;
+  }
+  .fl-controls button {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 12px;
+    color: var(--ink-soft);
+    background: var(--bg-raised);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 5px 9px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .fl-controls button:hover { color: var(--ink); border-color: var(--ink-soft); }
+  .fl-controls button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .fl-controls button[aria-pressed="true"] {
+    color: var(--accent-text);
+    border-color: var(--accent);
+    background: var(--bg-raised);
+    background: color-mix(in srgb, var(--accent) 9%, var(--bg-raised));
+  }
+  .fl-controls .fl-reset { margin-left: auto; color: var(--ink-soft); }
+
+  /* ---------- placeholder frames (graph paper) ---------- */
+  .frame {
+    border: 1.5px dashed var(--rule);
+    background-color: var(--bg-raised);
+    background-image:
+      linear-gradient(var(--gridline) 1px, transparent 1px),
+      linear-gradient(90deg, var(--gridline) 1px, transparent 1px);
+    background-size: 24px 24px;
+    display: grid;
+    place-items: center;
+  }
+
+  /* ---------- what it is ---------- */
+  .three-up { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px; margin-top: 28px; }
+  .three-up h3 {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin: 0 0 10px;
+  }
+  .three-up p { margin: 0; font-size: 0.98rem; color: var(--ink-soft); }
+  .three-up p b { color: var(--ink); font-weight: 600; }
+
+  /* ---------- gallery ---------- */
+  .gallery { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 40px 28px; margin-top: 24px; }
+  .gallery .fig img {
+    width: 100%;
+    display: block;
+    border: 1px solid var(--rule);
+    background: #FFFFFF;
+  }
+  .gallery .frame { aspect-ratio: 4 / 3; }
+  .gallery-note { font-family: var(--mono); font-size: 12.5px; color: var(--ink-soft); margin-top: 24px; }
+  /* full-width page strip: one exhibit showing every page of a document */
+  .gallery .fig--pages { grid-column: 1 / -1; }
+  .gallery .fig--pages .pages {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  /* ---------- numbers ---------- */
+  .readout { margin-top: 26px; border-top: 1px solid var(--rule); }
+  .readout .row {
+    display: grid;
+    grid-template-columns: 170px minmax(0, 1fr) max-content;
+    gap: 8px 28px;
+    align-items: baseline;
+    padding: 13px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .readout .val {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 1.32rem;
+    font-weight: 600;
+    text-align: right;
+    color: var(--ink);
+  }
+  .readout .lab { font-size: 0.98rem; color: var(--ink-soft); }
+  .readout .lab b { color: var(--ink); font-weight: 600; }
+  .readout .date {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+  .chart-fig { margin: 40px 0 0; }
+  .chart-fig svg { width: 100%; height: auto; display: block; }
+  .ch-grid { stroke: var(--rule); stroke-width: 1; }
+  .ch-area { fill: var(--accent); opacity: 0.13; }
+  .ch-line { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; }
+  .ch-dot { fill: var(--accent); }
+  .ch-open { fill: var(--bg); stroke: var(--accent); stroke-width: 1.5; }
+  .ch-lab { fill: var(--ink-soft); font-family: var(--mono); font-size: 10.5px; font-variant-numeric: tabular-nums; }
+  .ch-lab-strong { fill: var(--ink); font-family: var(--mono); font-size: 11px; font-weight: 600; }
+
+  /* ---------- how it's built ---------- */
+  .built { margin: 24px 0 0; padding: 0; list-style: none; }
+  .built li {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    column-gap: 12px;
+    align-items: baseline;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--rule);
+    font-size: 0.98rem;
+    color: var(--ink-soft);
+  }
+  .built li:first-child { border-top: 1px solid var(--rule); }
+  .built .kw {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink);
+  }
+
+  /* ---------- footer ---------- */
+  .footer { margin-top: 88px; border-top: 1px solid var(--rule); padding: 28px 0 64px; }
+  .footer .inner { display: flex; flex-wrap: wrap; gap: 10px 40px; justify-content: space-between; align-items: baseline; }
+  .footer .who { font-size: 1.02rem; }
+  .footer .meta { font-family: var(--mono); font-size: 12px; color: var(--ink-soft); }
+
+  /* ---------- responsive ---------- */
+  @media (max-width: 880px) {
+    .hero { grid-template-columns: 1fr; gap: 40px; }
+    .three-up { grid-template-columns: 1fr; gap: 28px; }
+    .gallery { grid-template-columns: 1fr; }
+    .gallery .fig--pages .pages { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .readout .row { grid-template-columns: 1fr; gap: 2px; }
+    .readout .val { text-align: left; }
+    .built li { display: block; }
+    .built .kw { display: block; margin-bottom: 2px; }
+    .section { padding-top: 56px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+    html { scroll-behavior: auto; }
+  }
+
+  /* ---------- before/after wipe slider ----------
+     CSS delivery for public/assets/js/wipe_slider.js (the ONE shared module,
+     D-0 single-module rule — consumed here, NOT re-forked). This block is the
+     documented "copied CSS block" half of the module's contract; it mirrors the
+     wing's public/assets/site.css .wipe rules verbatim so the two consumers
+     render the component identically. No autonomous motion: the wipe rests at
+     50 % and only a native <input type=range> (keyboard + pointer + touch)
+     moves it — the frame carries no pointer handlers, so a vertical swipe on
+     the images scrolls the page (anti-target: no vertical-scroll capture). */
+  .wipe { margin: 1rem 0 0.4rem; }
+  .wipe__frame {
+    position: relative; border: 1px solid var(--rule); border-radius: 10px;
+    overflow: hidden; background: var(--bg-raised); line-height: 0;
+  }
+  .wipe__img { display: block; width: 100%; height: auto; }
+  .wipe__img--after { position: absolute; inset: 0; width: 100%; }
+  .wipe__badge {
+    position: absolute; top: 8px; font-family: var(--mono); font-size: 0.72rem;
+    background: var(--ink); color: var(--bg); padding: 0.15em 0.55em; border-radius: 4px;
+    line-height: 1.3;
+  }
+  .wipe__badge--before { left: 8px; }
+  .wipe__badge--after { right: 8px; }
+  .wipe__handle {
+    position: absolute; top: 0; bottom: 0; width: 2px; background: var(--accent);
+    transform: translateX(-1px); pointer-events: none;
+  }
+  .wipe__range { width: 100%; margin-bottom: 0.6rem; min-height: 40px; accent-color: var(--accent); }
+  .wipe__grab { position: absolute; top: 0; bottom: 0; left: 0; width: 24px; margin-left: -12px; cursor: ew-resize; touch-action: none; pointer-events: auto; }
+  .wipe__handle::after { content: ""; position: absolute; top: 50%; left: 50%; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; background: var(--bg); border: 2px solid var(--accent); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.22); }
+  .wipe--crop .wipe__frame { aspect-ratio: 1.43; }
+  .wipe--crop .wipe__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+  .wipe noscript { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+  .wipe noscript img { width: 100%; height: auto; border: 1px solid var(--rule); border-radius: 8px; }
+  /* Portfolio-only override: .gallery .fig img (below) forces a border + white
+     bg on every gallery image; the stacked wipe images must not carry that, or
+     the absolutely-positioned "after" layer misaligns. Beats .gallery .fig img. */
+  .gallery .fig .wipe__img { border: 0; background: transparent; }
+
+  /* ---------- click-to-enlarge lightbox (gallery stills) ---------- */
+  .gallery .fig > img, .gallery .fig .pages img { cursor: zoom-in; }
+  .lightbox {
+    position: fixed; inset: 0; z-index: 100;
+    display: flex;
+    overflow-y: auto;
+    padding: 20px;
+    background: rgba(14, 17, 16, 0.88);
+    cursor: zoom-out;
+  }
+  .lightbox[hidden] { display: none; }
+  .lightbox img {
+    /* fit to page WIDTH; a tall figure scrolls vertically instead of
+       shrinking to fit the viewport. margin:auto centers a short image
+       both ways yet never clips the top of a tall one (flex auto-margin
+       overflow rule), which place-items:center would. */
+    margin: auto;
+    width: min(1600px, 96vw);
+    height: auto;
+    border: 1px solid var(--rule);
+    background: #FFFFFF;
+    box-shadow: 0 18px 60px rgba(0, 0, 0, 0.5);
+  }
+
+  /* ---------- hand-off into the architecture page: NOT STYLED HERE ----------
+     `.arch-fade` used to be styled in this block. It no longer is, and adding a
+     rule for it back here is a REGRESSION, not a tweak.
+
+     The band is one of the site's two NEXT BANDS (the other is `.nextbar`, at
+     the foot of every deep page). They are the same control — a whole-band link
+     into the next page — and they now share ONE affordance contract, `.nextband`,
+     which lives in the site-rail component:
+
+         physics/tools/showcase/templates/_siterail.css
+
+     That file is included by the deep pages' Jinja base AND stamped into this
+     page inside the SITERAIL block below (which is why the rules resolve here at
+     all). While the band's rules were private to this page, its only hover was an
+     underline on the headline — no background change whatever — so the front page
+     looked dead on hover while the shared banner's hover was being "fixed" for the
+     deep pages. One contract, both bands: that cannot happen again.
+
+     Layout too: `min-height: 44vh` + `align-content: end` are GONE (2026-07-12).
+     They made the band a PAGE ENDING — a half-screen of paper you fell through —
+     which became a hole in the middle of the page once the band moved above the
+     footer. It is an ordinary content block now, on the ordinary rhythm. */
+</style>
+
+<style>
+/* ---------- the site rail: ONE left rail, every page ----------
+   THE ONE SOURCE for the .siterail component AND the .nextbar next-page banner.
+
+   TWO consumers, one file (do NOT paste a divergent copy into either):
+     * base.html.j2 — pulls this in with a Jinja include, inside its style
+       block, so every deep/*.html page gets it.
+     * inject_site_rail.py — reads this file as TEXT and emits it INSIDE its
+       marked block on each ROOT page (index / systems / architecture / videos),
+       which do not extend the Jinja base and so cannot inherit the styles.
+
+   WARNING — this file is parsed by Jinja (base.html.j2 includes it), so it must
+   contain NO Jinja delimiters ANYWHERE, comments included. Writing the include
+   tag literally in a comment once made _deepnav.css include ITSELF and the build
+   died with RecursionError (2026-07-12). Describe the tag in prose; never spell
+   it out here. Single CSS braces are fine and are all this file uses.
+
+   .nextbar WAS in _deepnav.css and is FOLDED IN here verbatim, on purpose: the
+   rail replaced the .deepnav strip, so a page that stopped including _deepnav.css
+   would have silently lost the bottom banner too — the very control the next
+   phase exists to refine. One file carries both, so that cannot happen.
+
+   THE NEXT BAND (review item 9) — READ THIS BEFORE TOUCHING EITHER BAND.
+   The site has TWO bottom bands, and the obvious one is the WRONG one:
+
+     * .arch-fade — the LAST CONTENT BLOCK of the FRONT page (index.html), whose
+       destination is architecture.html. Brendan's review items 1-8 are all
+       front-page items and the destination he named is Architecture, so THIS is
+       the band he hovered. Its rules used to live in index.html's own inline
+       style block, where its ONLY hover was an underline on the headline — no
+       background change at all, i.e. no affordance.
+     * .nextbar — the derived next-page banner on the deep pages and on
+       architecture.html. Its hover was a --core tint 6% -> 12% OVER TRANSPARENT,
+       which reads as nothing.
+
+   Fixing only .nextbar ships item 9 "done" while the band Brendan was actually
+   looking at still looks dead. So the affordance is ONE contract — .nextband —
+   and BOTH bands consume it: cursor, resting tint, a clear background lift on
+   hover, a border-colour change, an arrow that steps forward, an underline on
+   the destination line, and :focus-visible preserved for the keyboard. Each
+   band then adds only its own LAYOUT. Do not re-add a hover rule to either band:
+   a second copy is how the two drift apart again.
+
+   TWO PALETTES, ONE COMPONENT. The deep pages and index/architecture/videos
+   carry the CANONICAL custom properties (--text/--muted/--line/--core/--paper,
+   from theme.css or base.html.j2's inline copy). The root systems.html still
+   links the older assets/site.css, which declares ONLY the COMPAT names
+   (--ink/--ink-soft/--rule/--accent-text/--bg). So every colour below is read
+   through a --rail-* alias with a var() fallback chain: canonical first, compat
+   second, a literal last. The rail therefore renders correctly on BOTH palettes
+   without this component re-theming systems.html (not its call to make). The
+   chain flows canonical -> compat ONLY, never back — theme.css's cycle hazard.
+
+   (This comment ships inside every deep page, so it deliberately avoids the
+   word the meta wing's "no cost claims" gate scans for — see test_meta.py.)
+
+   Link ORDER and labels are NOT here — they live in deep_nav.py::SITE_NAV.
+   Hrefs are derived per directory depth by deep_nav.py::href_for. */
+
+:root{
+  --railw:208px;
+}
+
+.siterail,.nextband{
+  --rail-fg:var(--text, var(--ink, #101d31));
+  --rail-dim:var(--muted, var(--ink-soft, #566885));
+  --rail-line:var(--line, var(--rule, #d5deec));
+  --rail-accent:var(--core, var(--accent-text, #2f63ff));
+  --rail-bg:var(--paper, var(--bg, #e9eef6));
+}
+
+/* ---------- desktop: a fixed left column ---------- */
+.siterail{
+  position:fixed;top:0;left:0;bottom:0;width:var(--railw);z-index:30;
+  background:var(--rail-bg);border-right:1px solid var(--rail-line);
+  overflow-y:auto;overscroll-behavior:contain;
+}
+.siterail__inner{display:flex;flex-direction:column;padding:30px 22px 26px;}
+
+.siterail__mark{display:flex;flex-direction:column;
+  font-family:var(--serif, var(--sans, sans-serif));font-size:1.02rem;font-weight:600;
+  line-height:1.3;color:var(--rail-fg);text-decoration:none;margin:0 0 22px;}
+.siterail__mark:hover{color:var(--rail-accent);text-decoration:none;}
+
+.siterail__zone{display:flex;flex-direction:column;}
+.siterail__zone + .siterail__zone{margin-top:16px;padding-top:14px;
+  border-top:1px solid var(--rail-line);}
+.siterail__title{font-family:var(--mono, monospace);font-size:10px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--rail-dim);opacity:.7;margin:0 0 4px;}
+
+/* The CURRENT-PAGE MARKER is aria-current="page" — the HTML-spec value — for
+   BOTH zones. The rail this replaced used aria-current="true" for its scrollspy
+   while .deepnav used "page"; two spellings meant two sets of selectors that had
+   to agree. One spelling now, and the ported scrollspy sets exactly this one. */
+.siterail a.rail-anchor,.siterail a.rail-page{
+  font-family:var(--mono, monospace);font-size:11.5px;text-transform:uppercase;
+  letter-spacing:.08em;color:var(--rail-dim);text-decoration:none;
+  padding:7px 0;line-height:1.35;}
+.siterail a.rail-anchor:hover,.siterail a.rail-page:hover{
+  color:var(--rail-accent);text-decoration:none;}
+.siterail a.rail-anchor[aria-current="page"],.siterail a.rail-page[aria-current="page"]{
+  color:var(--rail-accent);}
+.siterail a.rail-anchor[aria-current="page"]::before,
+.siterail a.rail-page[aria-current="page"]::before{content:"— ";}
+.siterail a:focus-visible{outline:2px solid var(--rail-accent);outline-offset:2px;}
+
+/* The rail is FIXED, so it is out of flow and cannot push anything: every page's
+   content is inset by its width from ONE rule here. The pages themselves know
+   nothing about the rail — which is what lets the same component drop onto four
+   hand-authored root pages and six generated ones with no per-page layout edit. */
+@media (min-width:1100px){
+  body{padding-left:var(--railw);}
+}
+
+/* ---------- mobile: the rail COLLAPSES, it does not vanish ----------
+   This is a first-class deliverable, not an edge case. The rail this replaced
+   had exactly one mobile rule — .rail{display:none} at 1099px, with NO fallback
+   — while the .deepnav strip it ALSO replaced was a flex-wrap bar that worked at
+   every width. Shipping the rail as-was would therefore have removed ALL
+   navigation from every deep page below 1100px. Below the same real breakpoint
+   the rail becomes a sticky top bar: the mark, then each zone as a horizontally
+   scrollable chip row (the pattern code.html.j2's TOC already used at its narrow
+   width). Verified at 900px and at 500px — a nav is reachable at both. */
+@media (max-width:1099px){
+  .siterail{position:sticky;top:0;left:auto;bottom:auto;width:auto;height:auto;
+    border-right:0;border-bottom:1px solid var(--rail-line);
+    background:color-mix(in srgb, var(--rail-bg) 88%, transparent);
+    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+    overflow:visible;}
+  .siterail__inner{flex-direction:column;align-items:stretch;gap:4px;
+    max-width:1180px;margin:0 auto;padding:9px clamp(12px,4vw,24px);}
+  .siterail__mark{flex-direction:row;gap:.35em;margin:0 0 2px;font-size:.95rem;}
+  .siterail__title{display:none;}
+  .siterail__zone{flex-direction:row;flex-wrap:nowrap;gap:4px;
+    overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px;}
+  .siterail__zone + .siterail__zone{margin-top:0;padding-top:0;border-top:0;}
+  .siterail a.rail-anchor,.siterail a.rail-page{
+    flex:0 0 auto;white-space:nowrap;font-size:11px;
+    padding:5px 10px;border-radius:8px;}
+  .siterail a.rail-anchor[aria-current="page"],.siterail a.rail-page[aria-current="page"]{
+    color:var(--rail-fg);
+    background:color-mix(in srgb, var(--rail-accent) 15%, transparent);}
+  .siterail a.rail-anchor[aria-current="page"]::before,
+  .siterail a.rail-page[aria-current="page"]::before{content:none;}
+}
+
+/* ================= THE NEXT BAND — ONE affordance, BOTH bands =================
+   The whole band is the button. Both bands were ALREADY whole-band anchors, so
+   the click target was never the defect — the defect was that nothing on screen
+   said so. Every rule that makes a band FEEL like a control lives here, once:
+
+     resting tint     a band is visibly a control before you touch it (it used to
+                      be flat paper, indistinguishable from a footer);
+     hover lift       6% -> 18% of the accent, mixed against the PAPER, not
+                      against `transparent`. That was the old bug: a 6% -> 12%
+                      transparent tint is a ~6% alpha change over whatever is
+                      behind it, which is why the hover "did nothing";
+     border           the top rule goes accent-coloured, so the band's whole
+                      outline answers the pointer, not just its middle;
+     cursor           pointer, everywhere in the band — including its padding;
+     arrow            steps forward 5px (its own class, so a band with no arrow
+                      simply has nothing to translate);
+     label            the destination line underlines — the classic link cue,
+                      kept from .arch-fade's old hover and given to .nextbar too;
+     keyboard         :focus-visible gets the SAME lift plus the focus ring, so
+                      the affordance is not mouse-only.
+
+   The motion is the only new thing here that a reader can be hurt by, so it is
+   switched off under prefers-reduced-motion at the bottom of this block — the
+   root pages have no reduced-motion block of their own to fall back on. */
+.nextband{
+  display:block;                 /* each band overrides with its own layout */
+  cursor:pointer;
+  text-decoration:none;
+  color:var(--rail-fg);
+  border-top:1px solid var(--rail-line);
+  background:color-mix(in srgb, var(--rail-accent) 6%, var(--rail-bg));
+  transition:background-color .16s ease, border-color .16s ease;
+}
+.nextband:hover,.nextband:focus-visible{
+  background:color-mix(in srgb, var(--rail-accent) 18%, var(--rail-bg));
+  border-top-color:var(--rail-accent);
+  text-decoration:none;
+}
+.nextband:focus-visible{outline:2px solid var(--rail-accent);outline-offset:-3px;}
+.nextband__arrow{display:inline-block;transition:transform .16s ease;}
+.nextband:hover .nextband__arrow,.nextband:focus-visible .nextband__arrow{
+  transform:translateX(5px);}
+.nextband:hover .nextband__label,.nextband:focus-visible .nextband__label{
+  text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px;}
+@media (prefers-reduced-motion: reduce){
+  .nextband,.nextband__arrow{transition:none;}
+  .nextband:hover .nextband__arrow,.nextband:focus-visible .nextband__arrow{
+    transform:none;}
+}
+
+/* ---------- band 1: the next-page banner (folded in from _deepnav.css) -------
+   A full-width page-level "next" control at the FOOT of a deep page (and of
+   architecture.html), DERIVED from the deep_nav spine: the entry after the
+   active page; the last wing page -> the site front page. LAYOUT ONLY — its
+   hover/focus/cursor come from .nextband above. */
+.nextbar{display:flex;align-items:center;justify-content:space-between;gap:16px;
+  max-width:1180px;margin:24px auto 0;padding:18px clamp(16px,4vw,40px);}
+.nextbar__text{display:flex;flex-direction:column;gap:3px;min-width:0;}
+.nextbar__eyebrow{font-family:var(--mono, monospace);font-size:11px;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--rail-accent);font-weight:700;}
+.nextbar__dest{font-size:clamp(19px,2.5vw,24px);font-weight:820;
+  letter-spacing:-.015em;color:var(--rail-fg);line-height:1.1;}
+.nextbar__arrow{font-size:26px;line-height:1;color:var(--rail-accent);font-weight:700;flex:none;}
+
+/* ---------- band 2: the front page's hand-off into architecture.html ---------
+   MOVED HERE from index.html's own inline style block (2026-07-12). It stayed
+   private for as long as it was a bespoke GRADIENT — the homepage's warm paper
+   dissolving into architecture.html's cool paper. theme.css gave both pages one
+   palette, so there are no longer two papers to blend: the gradient is gone, the
+   band is flat, and what remains is the same control .nextbar is. Keeping a
+   second private copy of "how a next band behaves" is precisely how the front
+   page ends up with a dead-looking hover while the gate reports green.
+
+   LAYOUT ONLY, like .nextbar. The colours read through the --rail-* aliases (not
+   --paper/--rule directly) so the band survives on either palette, exactly as the
+   rail does. */
+.arch-fade{display:grid;justify-items:center;gap:10px;
+  margin-top:72px;padding:64px 24px;text-align:center;}
+.arch-fade .cue{font-family:var(--mono, monospace);font-size:12px;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--rail-dim);}
+.arch-fade .headline{font-family:var(--serif, serif);font-size:1.5rem;font-weight:600;
+  color:var(--rail-fg);}
+.arch-fade .sub{font-size:.95rem;color:var(--rail-dim);max-width:46ch;}
+/* The band's own bottom padding already carries the gap to whatever follows, so
+   the footer's top margin would double it. Collapse it only in that adjacency —
+   a standalone .footer keeps its own. */
+.arch-fade + .footer{margin-top:0;}</style>
+<aside class="siterail" aria-label="Site navigation">
+  <div class="siterail__inner">
+    <a class="siterail__mark" href="index.html"><span>Brendan</span><span>Wischweh</span></a>    <nav class="siterail__zone siterail__zone--page" aria-label="On this page">
+      <p class="siterail__title">On this page</p>      <a class="rail-anchor" href="#what">What it is</a>      <a class="rail-anchor" href="#story">One problem&rsquo;s life</a>      <a class="rail-anchor" href="#numbers">The numbers</a>      <a class="rail-anchor" href="#built">How it&rsquo;s built</a>      <a class="rail-anchor" href="#contact">Contact</a>    </nav>    <nav class="siterail__zone siterail__zone--site" aria-label="The site">
+      <p class="siterail__title">The site</p>      <a class="rail-page" href="index.html" aria-current="page">Home</a>      <a class="rail-page" href="architecture.html">Architecture</a>      <a class="rail-page" href="deep/code.html">Code</a>      <a class="rail-page" href="deep/verification.html">Formal&nbsp;Verification</a>      <a class="rail-page" href="deep/lab.html">The&nbsp;Lab</a>      <a class="rail-page" href="deep/meta.html">Meta&nbsp;Tools</a>      <a class="rail-page" href="deep/engine.html">Engine&nbsp;Room</a>      <a class="rail-page" href="deep/systems.html">Systems&nbsp;Atlas</a>      <a class="rail-page" href="deep/sims.html">Sims</a>      <a class="rail-page" href="deep/gallery.html">Gallery</a>      <a class="rail-page" href="videos.html">Videos</a>    </nav>
+  </div>
+</aside><script>
+(function () {
+  function start() {
+    var links = {};
+    var ids = [];
+    Array.prototype.forEach.call(
+      document.querySelectorAll('.siterail a.rail-anchor[href^="#"]'),
+      function (a) {
+        var id = a.getAttribute('href').slice(1);
+        if (!id) return;
+        links[id] = a;
+        ids.push(id);
+      }
+    );
+    if (!ids.length || !('IntersectionObserver' in window)) return;
+    var spy = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        ids.forEach(function (id) { links[id].removeAttribute('aria-current'); });
+        var link = links[e.target.id];
+        if (link) link.setAttribute('aria-current', 'page');
+      });
+    }, { rootMargin: '-35% 0px -55% 0px' });
+    ids.forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) spy.observe(el);
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', start);
+  } else {
+    start();
+  }
+})();
+</script>
+<div class="preview-note">
+  <strong>Work in progress</strong> — this portfolio is being actively built out and refined; some sections are still landing. Last&nbsp;updated <span class="wip-updated">2026-07-13 10:08 AM CT</span>.
+</div>
+
+<!-- The left rail is INJECTED here, immediately above this header, inside the
+     SITERAIL BEGIN / SITERAIL END marker pair
+     (physics/tools/showcase/inject_site_rail.py). The hand-authored rail aside
+     that used to sit here — with the .layout/.content grid wrappers that
+     positioned it — was removed when the shared rail landed: the injector owns
+     only the region between its markers and cannot delete an aside, so leaving
+     it would have rendered TWO rails.
+     (NB: the marker names are spelled out in prose above rather than shown as
+     literal comment syntax — an HTML comment cannot nest, so an inner comment
+     close would END this one and dump the rest of it onto the page as text.) -->
+
+<header class="wrap hero" id="top">
+  <div>
+    <p class="eyebrow">Brendan Wischweh · Physics &amp; Engineering teacher</p>
+    <h1>A physics teacher&rsquo;s classroom, rebuilt with <em>Claude&nbsp;Code</em>.</h1>
+    <p class="sub">An AI-native curriculum platform in weekly production use —
+    generating assessments with computed diagrams, grading scanned paper locally,
+    and writing every student a narrative report.</p>
+  </div>
+  <figure class="fig" id="fieldlab">
+    <div class="fl-stage">
+      <canvas id="fieldfig" role="img" aria-label="Electric field lines and dashed equipotential curves at equal potential steps from a two-charge system, charges plus two and minus one, traced numerically by this page with midline direction arrows. Because the potential step between adjacent dashed curves is constant, their spacing shows the field strength. Drag either charge, or use the charge-ratio buttons, to recompute."></canvas>
+      <p class="fl-hint" id="fl-hint" aria-hidden="true">drag a charge</p>
+    </div>
+    <div class="fl-controls" id="fl-controls" role="group" aria-label="Charge ratio">
+      <span class="fl-clabel">Charge&nbsp;ratio</span>
+      <button type="button" data-ratio="1,-1" aria-pressed="false">+1&nbsp;/&nbsp;&minus;1</button>
+      <button type="button" data-ratio="2,-1" aria-pressed="true">+2&nbsp;/&nbsp;&minus;1</button>
+      <button type="button" data-ratio="3,-1" aria-pressed="false">+3&nbsp;/&nbsp;&minus;1</button>
+      <button type="button" data-ratio="2,-2" aria-pressed="false">+2&nbsp;/&nbsp;&minus;2</button>
+      <button type="button" data-ratio="3,-2" aria-pressed="false">+3&nbsp;/&nbsp;&minus;2</button>
+      <button type="button" class="fl-reset" data-reset>Reset</button>
+    </div>
+    <figcaption class="figcap"><b>Fig.&nbsp;1</b> — Electric field lines
+    (arrowed) and equipotential curves (dashed) from a two-charge system
+    (+2&nbsp;/&nbsp;&minus;1 to start), traced numerically by this page — line
+    counts per Gauss&rsquo;s law, equipotentials drawn at equal potential steps
+    (so their spacing shows the field strength), per the platform&rsquo;s own
+    validators. Drag either charge, or switch the
+    ratio, to recompute it live. The platform emits diagrams like this into
+    Word as native, editable drawing objects.</figcaption>
+  </figure>
+</header>
+
+<main class="wrap">
+
+  <section class="section" id="what" aria-labelledby="what-h">
+    <p class="eyebrow">What it is</p>
+    <h2 id="what-h">One platform, three jobs.</h2>
+    <div class="three-up">
+      <div>
+        <h3>Generate</h3>
+        <p><b>Assessments, homework, reviews, and step-by-step solution guides</b>
+        — with computed physics diagrams emitted as editable Word objects. Every
+        class period gets its own parallel version: same concepts, same
+        difficulty, different problems.</p>
+      </div>
+      <div>
+        <h3>Grade</h3>
+        <p><b>Scanned answer sheets, graded by a local pipeline</b> — no model
+        calls in the main path. It handles skewed, wrinkled, real-world scans;
+        the ~1% it isn&rsquo;t sure about is flagged for review, and every
+        answer-key correction is teacher-approved.</p>
+      </div>
+      <div>
+        <h3>Feedback</h3>
+        <p><b>Personalized narrative feedback, the main feature</b>: after
+        every assessment, every student gets a written report — what their
+        reasoning shows, which targets they own, which to revisit, the exact
+        problems to retry. It describes; it never ranks. And a sub-goal,
+        teaching the teacher: the same machinery audits the course itself
+        against my stated values.</p>
+      </div>
+    </div>
+  </section><style>
+  /* ---------- local shape overrides (NOT a palette adapter — see the header) ----
+     Colour tokens come straight from the site's theme.css; redefining one here
+     would cycle against its compat alias. These two are pure geometry: the
+     homepage reads flat and print-like, so the story keeps squarer corners and
+     no drop shadow even though the shared theme ships both. */
+  #story{
+    --radius: 8px;
+    --shadow: none;
+  }
+
+  /* ---------- the stat provenance contract (was base.html.j2) ---------- */
+  #story .stat{font-family:var(--mono);font-weight:700;font-variant-numeric:tabular-nums;
+    color:var(--ink);background:color-mix(in srgb,var(--accent) 14%, transparent);
+    border-radius:4px;padding:.04em .4em;white-space:nowrap;}
+  #story .stat--pinned{background:color-mix(in srgb,var(--equip) 22%, transparent);}
+  #story .stat__pin{font-size:.8em;color:var(--equip);margin-left:.15em;vertical-align:super;}
+
+  /* ---------- section intro ---------- */
+  #story .dek{font-size:clamp(16px,2.1vw,19px);color:var(--ink-soft);max-width:66ch;margin:0;}
+  #story .lede{margin:22px 0 0;font-size:14px;color:var(--muted);max-width:60ch;}
+
+  /* ---------- scrollytelling frame ---------- */
+  #story .scrolly{position:relative;display:grid;grid-template-columns:1fr 1fr;
+    gap:clamp(20px,4vw,56px);margin-top:clamp(32px,6vw,64px);align-items:start;}
+`, truncating the block and leaving <style> unclosed.
+     Keep every `{`-then-`#story` separated. #}
+  @media (max-width:820px){ #story .scrolly{grid-template-columns:1fr;gap:8px;} }
+
+  #story .frame{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);overflow:hidden;margin:0 0 20px;display:flex;flex-direction:column;}
+  #story .frame .fill{width:100%;display:flex;align-items:center;justify-content:center;padding:14px;}
+  #story .frame img,#story .frame .mot{display:block;width:100%;height:auto;}
+  #story .frame--img .fill{padding:12px;}
+  #story .frame__cap{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--muted);padding:10px 14px;border-top:1px solid var(--line);}
+
+  /* the beats column */
+  #story .beats{list-style:none;margin:0;padding:0;counter-reset:beat;}
+  #story .beat{counter-increment:beat;padding:22px 0;}
+  #story .beat__n{font-family:var(--mono);font-size:12px;color:var(--core);letter-spacing:.18em;
+    text-transform:uppercase;font-variant-numeric:tabular-nums;}
+  #story .beat__n::before{content:counter(beat,decimal-leading-zero) "  ·  ";}
+  #story .beat h3{font-size:clamp(21px,2.7vw,29px);line-height:1.15;letter-spacing:-.012em;
+    margin:.28em 0 .5em;font-weight:700;}
+  #story .beat p{margin:0 0 .9em;max-width:48ch;font-size:clamp(15px,1.7vw,17px);}
+  #story .beat .muted{color:var(--muted);}
+  #story .beat .go{display:inline-block;margin-top:.2em;font-family:var(--mono);font-weight:700;
+    font-size:14px;}
+  #story .beat .go::after{content:"  →";}
+
+  /* ---------- JS-enhanced sticky cross-fade ---------- */
+  #story .scrolly.is-js .stage{position:sticky;top:24px;height:min(80vh,660px);}
+  #story .scrolly.is-js .frame{position:absolute;inset:0;margin:0;opacity:0;transition:opacity .5s ease;
+    pointer-events:none;}
+  #story .scrolly.is-js .frame.is-shown{opacity:1;pointer-events:auto;}
+  #story .scrolly.is-js .frame .fill{flex:1 1 auto;min-height:0;}
+  #story .scrolly.is-js .frame img,#story .scrolly.is-js .frame .mot{max-width:100%;max-height:100%;
+    width:auto;height:auto;object-fit:contain;}
+  #story .scrolly.is-js .beat{min-height:80vh;display:flex;flex-direction:column;justify-content:center;}
+  #story .scrolly.is-js .beat h3,#story .scrolly.is-js .beat p{opacity:.5;transition:opacity .35s ease;}
+  #story .scrolly.is-js .beat.is-active h3,#story .scrolly.is-js .beat.is-active p{opacity:1;}
+  @media (max-width:820px){
+    #story .scrolly.is-js .stage{position:sticky;top:8px;height:52vh;z-index:2;
+      background:var(--paper);padding-bottom:6px;}
+    #story .scrolly.is-js .beat{min-height:64vh;}
+  }
+
+  /* ---------- terminal (the gate gauntlet) ----------
+     Deliberately dark in BOTH themes: a terminal is a terminal. */
+  #story .term{width:100%;height:100%;display:flex;flex-direction:column;background:#0b1220;
+    color:#c9d4ea;font-family:var(--mono);border-radius:10px;overflow:hidden;}
+  #story .term__bar{display:flex;align-items:center;gap:7px;padding:9px 12px;background:#111a2e;
+    font-size:11px;color:#7f8db0;letter-spacing:.04em;}
+  #story .term__bar i{width:10px;height:10px;border-radius:50%;background:#38425e;flex:none;}
+  #story .term__body{margin:0;padding:14px 16px;font-size:12.5px;line-height:1.85;overflow:auto;flex:1;
+    white-space:pre-wrap;}
+  #story .term__cmd{color:#8fb0ff;}
+  #story .term__fail{color:#ff8a8f;font-weight:700;}
+  #story .term__gate{color:#e6c069;}
+  #story .term__hint{color:#6fd6c4;}
+
+  /* ---------- feedback beat (two-up report + grade-free row) ---------- */
+  #story .fbwrap{width:100%;height:100%;display:flex;flex-direction:column;gap:10px;padding:4px;}
+  #story .fbrow{display:flex;gap:10px;align-items:center;color:var(--muted);font-size:13px;
+    padding:6px 14px;border:1px dashed var(--line);border-radius:8px;}
+  #story .fbrow b{color:var(--text);font-weight:600;}
+
+  /* ---------- multi-image frames (solution derivation + two-up feedback) ---------- */
+  #story .frame .duo,#story .frame .stack{width:100%;display:flex;gap:12px;align-items:center;
+    justify-content:center;}
+  #story .frame .stack{flex-direction:column;}
+  #story .frame .duo img,#story .frame .stack img{display:block;max-width:100%;height:auto;
+    border:1px solid var(--line);border-radius:6px;}
+  #story .frame .duo img{max-width:calc(50% - 6px);}
+  @media (max-width:820px){
+    #story .frame .duo{flex-direction:column;}
+    #story .frame .duo img{max-width:100%;}
+  }
+  #story .scrolly.is-js .frame .stack,#story .scrolly.is-js .frame .duo{height:100%;}
+  #story .scrolly.is-js .frame .stack img{max-height:calc(50% - 8px);width:auto;object-fit:contain;}
+  #story .scrolly.is-js .frame .duo img{max-height:100%;width:auto;object-fit:contain;}
+
+  /* ---------- image lightbox (click a figure image to zoom to page width) ------
+     Scoped to #story like every rule here. The zoom-in cursor and the dialog are
+     wired by JS only when the enhancement runs — without it the images are plain
+     (there is no lightbox to open). Opens the printed page, engine diagram, brief
+     crop and solution / feedback stacks; the live-sim poster is excluded (its
+     click boots the simulation). Width matches the page content column. */
+  #story .frame--img .fill img,#story .frame .stack img{cursor:zoom-in;}
+  #story .lightbox{position:fixed;inset:0;z-index:1200;display:none;cursor:zoom-out;
+    overflow-y:auto;padding:clamp(16px,4vw,44px);
+    background:color-mix(in srgb,var(--ink) 82%, transparent);}
+  #story .lightbox.is-open{display:flex;}
+  /* A zoom SCALES the figure; it must never STRETCH it. Constraining `width` AND
+     `max-height` at once did exactly that: Chromium honours both literally, so the
+     portrait printed page (1275x1650) came out 1180x828 — 84% off its real ratio.
+     Constrain ONE axis (width, so the figure fills the content column as intended)
+     and leave the other intrinsic. A figure taller than the viewport then SCROLLS
+     rather than squashing: `overflow-y:auto` on the backdrop plus `margin:auto` on
+     the image centres a short figure both ways yet never clips the top of a tall
+     one (the flex auto-margin overflow rule) — which `align-items:center` would.
+     This is the same geometry the gallery lightbox on this page already uses. */
+  #story .lightbox img{display:block;margin:auto;
+    width:min(1180px,94vw);height:auto;
+    border-radius:8px;background:var(--card);
+    box-shadow:0 30px 80px rgba(0,0,0,.55);}
+  @media (prefers-reduced-motion:no-preference){
+    #story .lightbox.is-open img{animation:story-zoom .18s ease;}
+  }
+  @keyframes story-zoom{from{transform:scale(.965);opacity:.55;} to{transform:none;opacity:1;}}
+
+  /* ---------- live K015 sim embed (#11 'alive' frame) ----------
+     Reuses the sims-page embed controller, UNMODIFIED: poster underneath, run
+     control centered, iframe revealed on boot. Scoped to .frame--sim so the
+     generic .frame img rules above don't fight the absolute-positioned poster. */
+  #story .frame--sim .fill{padding:12px;align-items:stretch;}
+  #story .frame--sim .ex__stage{position:relative;width:100%;min-width:0;}
+  #story .frame--sim .ex__frame{position:relative;width:100%;aspect-ratio:16/10;min-height:300px;
+    border-radius:10px;overflow:hidden;background:color-mix(in srgb,var(--core) 6%,var(--card));}
+  #story .frame--sim .ex__poster,#story .scrolly.is-js .frame--sim .ex__poster{position:absolute;inset:0;
+    width:100%;height:100%;max-width:none;max-height:none;object-fit:contain;display:block;}
+  #story .frame--sim .ex__iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;
+    opacity:0;transition:opacity .25s ease;background:var(--card);}
+  #story .frame--sim .ex__stage.is-booted .ex__iframe{opacity:1;}
+  #story .frame--sim .ex__stage.is-booted .ex__poster{opacity:0;}
+  #story .frame--sim .ex__run{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    font-family:var(--mono);font-size:14px;font-weight:700;color:var(--bg-raised);background:var(--core);
+    border:none;border-radius:999px;padding:11px 22px;cursor:pointer;
+    box-shadow:0 6px 20px rgba(30,43,51,.28);display:inline-flex;align-items:center;gap:9px;}
+  #story .frame--sim .ex__run:hover{filter:brightness(1.07);}
+  #story .frame--sim .ex__run:focus-visible{outline:3px solid var(--core);outline-offset:3px;}
+  #story .frame--sim .ex__run[disabled]{display:none;}
+  #story .frame--sim .ex__run-icon{font-size:12px;line-height:1;}
+  #story .frame--sim .ex__fallback{position:absolute;left:12px;right:12px;bottom:12px;margin:0;
+    font-family:var(--mono);font-size:12px;color:var(--bg-raised);background:rgba(30,43,51,.82);
+    border-radius:8px;padding:8px 10px;}
+  #story .scrolly.is-js .frame--sim .ex__stage{height:100%;}
+  #story .scrolly.is-js .frame--sim .ex__frame{aspect-ratio:auto;min-height:0;height:100%;}
+
+  /* svg motif element roles */
+  #story .mot .card{fill:var(--card);stroke:var(--line);stroke-width:1.6;}
+  #story .mot .card--hot{fill:color-mix(in srgb,var(--core) 10%, var(--card));stroke:var(--core);stroke-width:2.4;}
+  #story .mot .band{fill:var(--line);}
+  #story .mot .core{fill:var(--core);} #story .mot .drive{fill:var(--drive);} #story .mot .driven{fill:var(--driven);}
+  #story .mot .subj{fill:var(--subject);}
+  #story .mot .stroke{fill:none;stroke:var(--edge);stroke-width:2;stroke-linecap:round;}
+  #story .mot .stroke-core{fill:none;stroke:var(--core);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;}
+  #story .mot .stroke-ok{fill:none;stroke:var(--drive);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;}
+  #story .mot text{font-family:var(--mono);font-size:11px;letter-spacing:.12em;fill:var(--muted);text-transform:uppercase;}
+</style>
+
+<section class="section" id="story" aria-labelledby="story-h">
+  <p class="eyebrow">The story</p>
+  <h2 id="story-h">One problem&rsquo;s life, end to end.</h2>
+  <p class="dek">Follow a single physics problem from a row in the bank all the way
+    to grade-free feedback on a student&rsquo;s desk. It is the same instinct the
+    whole system is built on: author once, verify relentlessly, hand the student a
+    description of their thinking instead of a score.</p>
+  <p class="lede">Every figure in a <span class="stat" data-source="legend" data-verified="2026-07-13" data-provenance="verified">highlighted box</span>
+    is harvested live from the repository with a source and a verified date &mdash;
+    hover to read them. A <span class="stat stat--pinned" data-source="legend" data-verified="2026-07-13" data-provenance="hand-pinned">figure<span class="stat__pin" aria-hidden="true">&dagger;</span></span>
+    is hand-pinned, not yet wired to a machine source.</p>
+
+  <div class="scrolly" id="scrolly">
+    <div class="stage" id="stage" aria-hidden="false">
+
+      <figure class="frame" data-frame="bank">
+        <div class="fill">
+          <svg class="mot" viewBox="0 0 340 210" role="img" aria-label="A grid of problem cards, one highlighted: a single new idea taking its place in the bank among many others.">
+            <g>
+              <rect class="card" x="14" y="14" width="70" height="48" rx="7"/>
+              <rect class="card" x="98" y="14" width="70" height="48" rx="7"/>
+              <rect class="card" x="182" y="14" width="70" height="48" rx="7"/>
+              <rect class="card" x="266" y="14" width="60" height="48" rx="7"/>
+              <rect class="card--hot" x="98" y="80" width="70" height="48" rx="7"/>
+              <circle class="core" cx="112" cy="94" r="4"/>
+              <rect class="card" x="14" y="80" width="70" height="48" rx="7"/>
+              <rect class="card" x="182" y="80" width="70" height="48" rx="7"/>
+              <rect class="card" x="266" y="80" width="60" height="48" rx="7"/>
+              <rect class="card" x="14" y="146" width="70" height="48" rx="7"/>
+              <rect class="card" x="98" y="146" width="70" height="48" rx="7"/>
+              <rect class="card" x="182" y="146" width="70" height="48" rx="7"/>
+              <rect class="card" x="266" y="146" width="60" height="48" rx="7"/>
+              <rect class="band" x="24" y="34" width="40" height="4" rx="2"/>
+              <rect class="band" x="108" y="100" width="44" height="4" rx="2"/>
+              <rect class="band" x="192" y="34" width="40" height="4" rx="2"/>
+              <text x="108" y="122">idea</text>
+            </g>
+          </svg>
+        </div>
+        <figcaption class="frame__cap">A single idea, taking its place in the bank</figcaption>
+      </figure>
+
+      <figure class="frame frame--img" data-frame="brief">
+        <div class="fill">
+          <img src="assets/story/brief_zoom.png" loading="lazy"
+               alt="A zoomed crop of the problem&rsquo;s physics design brief: the Cross-Check section re-deriving the hilltop speed a second way with the work-energy theorem (6.26 m/s), the force analysis solving the normal force (3.92 N) with its sanity checks, and the energy-accounting table showing kinetic and gravitational energy summing to the same 39.2 J at both positions.">
+        </div>
+        <figcaption class="frame__cap">Physics design brief &mdash; every claim cross-checked independently</figcaption>
+      </figure>
+
+      <figure class="frame" data-frame="gauntlet">
+        <div class="fill">
+          <div class="term" role="img" aria-label="A terminal showing the build gates rejecting an early draft of the problem.">
+            <div class="term__bar"><i></i><i></i><i></i> build &middot; energy-K015 (draft)</div>
+            <pre class="term__body"><span class="term__cmd">$ build energy-K015 --draft</span>
+<span class="term__fail">BLOCKED</span>  <span class="term__gate">check_solution_structure</span>
+         part (a) must be the LOL energy diagram
+<span class="term__fail">BLOCKED</span>  <span class="term__gate">check_prescriptive_questions</span>
+         a bare formula leaked into a question stem
+<span class="term__fail">BLOCKED</span>  <span class="term__gate">check_orphan_measurement</span>
+         a labeled height has no drawn bar
+<span class="term__fail">BLOCKED</span>  <span class="term__gate">check_fbd_presence</span>
+         the force part has no free-body diagram
+<span class="term__hint">build halted &mdash; fix the physics, then rebuild</span></pre>
+          </div>
+        </div>
+        <figcaption class="frame__cap">The gauntlet &mdash; a real, sanitized rejection</figcaption>
+      </figure>
+
+      <figure class="frame frame--img" data-frame="engine">
+        <div class="fill">
+          <img src="assets/story/diagram_engine.png" loading="lazy"
+               alt="The generated scene diagram: a ball at rest at the top of a track that descends to a large circular hill, with the drop height and the hill's radius marked.">
+        </div>
+        <figcaption class="frame__cap">The diagram engine &mdash; one shared library, every scene</figcaption>
+      </figure><figure class="frame frame--sim" data-frame="alive">
+        <div class="fill">
+          <div class="ex__stage js-embed" data-autostart
+               data-embed-src="sim/index.html?scene=k015_eulers_hilltop_full&amp;embed=1&amp;theme=worksheet"
+               data-label="Euler&rsquo;s Hilltop">
+            <div class="ex__frame">
+              <img class="ex__poster" src="assets/sims/k015_eulers_hilltop_full.poster.png"
+                   alt="Euler&rsquo;s Hilltop running live, drawn the way the worksheet draws it: the ball starts at rest at A, runs down the ramp and through the valley, crests the hill and lifts off the surface, with the live energy bars (K, U&#8202;g) and a zero-drift total.">
+            </div>
+          </div>
+        </div>
+        <figcaption class="frame__cap">The same motion, running live &mdash; the worksheet&rsquo;s own diagram</figcaption>
+      </figure>
+
+      <figure class="frame frame--img" data-frame="page">
+        <div class="fill">
+          <img src="assets/story/printed_page.png" loading="lazy"
+               alt="A print-ready physics problem page: a title, a scene diagram, an energy bar chart, lettered questions, and a short scientist biography.">
+        </div>
+        <figcaption class="frame__cap">The printed page &mdash; one problem, one page</figcaption>
+      </figure>
+
+      <figure class="frame" data-frame="solution">
+        <div class="fill">
+          <div class="stack">
+            <img src="assets/story/solution_page.png" loading="lazy"
+                 alt="The worked solution guide for Euler&rsquo;s Hilltop: a free-body diagram above one continuous aligned block that runs from the work-energy theorem to the final number, with margin annotations explaining the hardest steps.">
+            <img src="assets/story/solution_zoom.png" loading="lazy"
+                 alt="A tight crop of the same derivation&rsquo;s aligned block, equals signs vertically aligned, showing the substitution and solve steps with their right-margin notes.">
+          </div>
+        </div>
+        <figcaption class="frame__cap">The solution guide &mdash; every step of the printed set, worked</figcaption>
+      </figure>
+
+      <figure class="frame" data-frame="forms">
+        <div class="fill">
+          <svg class="mot" viewBox="0 0 340 210" role="img" aria-label="One problem fanning out into three parallel forms labeled A, B and C.">
+            <rect class="card--hot" x="16" y="80" width="70" height="50" rx="8"/>
+            <rect class="band" x="26" y="100" width="46" height="4" rx="2"/>
+            <path class="stroke" d="M92 100 C140 100 150 40 214 40"/>
+            <path class="stroke" d="M92 105 C150 105 150 105 214 105"/>
+            <path class="stroke" d="M92 110 C140 110 150 170 214 170"/>
+            <rect class="card" x="216" y="18" width="70" height="46" rx="8"/>
+            <rect class="card" x="216" y="82" width="70" height="46" rx="8"/>
+            <rect class="card" x="216" y="146" width="70" height="46" rx="8"/>
+            <text x="251" y="46" text-anchor="middle">form a</text>
+            <text x="251" y="110" text-anchor="middle">form b</text>
+            <text x="251" y="174" text-anchor="middle">form c</text>
+          </svg>
+        </div>
+        <figcaption class="frame__cap">Parallel forms &mdash; same physics, new numbers</figcaption>
+      </figure>
+
+      <figure class="frame" data-frame="scan">
+        <div class="fill">
+          <svg class="mot" viewBox="0 0 340 210" role="img" aria-label="A bubble answer sheet with response bubbles lettered A through E, some filled.">
+            <rect class="card" x="60" y="12" width="220" height="186" rx="10"/>
+            <text x="96" y="40">a</text><text x="132" y="40">b</text><text x="168" y="40">c</text>
+            <text x="204" y="40">d</text><text x="240" y="40">e</text>
+            <g>
+              <circle class="stroke" cx="98" cy="64" r="8"/><circle class="core" cx="134" cy="64" r="8"/>
+              <circle class="stroke" cx="170" cy="64" r="8"/><circle class="stroke" cx="206" cy="64" r="8"/>
+              <circle class="stroke" cx="242" cy="64" r="8"/>
+              <circle class="stroke" cx="98" cy="96" r="8"/><circle class="stroke" cx="134" cy="96" r="8"/>
+              <circle class="stroke" cx="170" cy="96" r="8"/><circle class="core" cx="206" cy="96" r="8"/>
+              <circle class="stroke" cx="242" cy="96" r="8"/>
+              <circle class="core" cx="98" cy="128" r="8"/><circle class="stroke" cx="134" cy="128" r="8"/>
+              <circle class="stroke" cx="170" cy="128" r="8"/><circle class="stroke" cx="206" cy="128" r="8"/>
+              <circle class="stroke" cx="242" cy="128" r="8"/>
+              <circle class="stroke" cx="98" cy="160" r="8"/><circle class="stroke" cx="134" cy="160" r="8"/>
+              <circle class="core" cx="170" cy="160" r="8"/><circle class="stroke" cx="206" cy="160" r="8"/>
+              <circle class="stroke" cx="242" cy="160" r="8"/>
+            </g>
+          </svg>
+        </div>
+        <figcaption class="frame__cap">Scanned back in &mdash; no retyping</figcaption>
+      </figure>
+
+      <figure class="frame frame--img" data-frame="grade">
+        <div class="fill">
+          <img src="assets/story/solution_math.png" loading="lazy"
+               alt="The worked solution's force step: Newton's second law in the radial direction, solved down to the normal force at the hilltop.">
+        </div>
+        <figcaption class="frame__cap">Grading against the key &mdash; the two never drift</figcaption>
+      </figure>
+
+      <figure class="frame" data-frame="feedback">
+        <div class="fill">
+          <div class="fbwrap">
+            <div class="stack">
+              <img src="assets/story/feedback_front_zoom.png" loading="lazy"
+                   alt="Front of the Average Armadillo feedback report, zoomed to read: the concepts the student&rsquo;s thinking demonstrated, then the first concept to revisit &mdash; the named misconception and the worksheet problem to review &mdash; no score anywhere.">
+              <img src="assets/story/feedback_back_zoom.png" loading="lazy"
+                   alt="Back of the same report, zoomed to read &mdash; &lsquo;Your next steps&rsquo;: for the same concept, the Modeling unit that covers it and targeted review questions to try next.">
+            </div>
+            <div class="fbrow"><b>No score.</b> No rank. Just the next move.</div>
+          </div>
+        </div>
+        <figcaption class="frame__cap">Feedback, not a grade</figcaption>
+      </figure>
+
+      <figure class="frame" data-frame="correct">
+        <div class="fill">
+          <svg class="mot" viewBox="0 0 340 210" role="img" aria-label="A shield marked with a check, and linked nodes representing welded and verified checks.">
+            <path class="stroke-core" d="M120 22 L200 22 L200 120 C200 156 160 178 160 178 C160 178 120 156 120 120 Z"/>
+            <path class="stroke-ok" d="M138 96 l14 16 l30 -40"/>
+            <circle class="drive" cx="60" cy="60" r="7"/><circle class="drive" cx="60" cy="120" r="7"/>
+            <circle class="driven" cx="280" cy="60" r="7"/><circle class="driven" cx="280" cy="150" r="7"/>
+            <path class="stroke" d="M67 62 C95 70 100 80 118 84"/>
+            <path class="stroke" d="M67 118 C95 112 100 108 118 106"/>
+            <path class="stroke" d="M273 62 C245 72 240 82 202 86"/>
+            <path class="stroke" d="M273 148 C245 132 240 118 202 110"/>
+            <text x="132" y="200">welded &middot; verified</text>
+          </svg>
+        </div>
+        <figcaption class="frame__cap">How it stays correct &mdash; welds &amp; formal checks</figcaption>
+      </figure>
+
+    </div>
+
+    <ol class="beats" id="beats">
+      <li class="beat" data-frame="bank" id="beat-bank">
+        <p class="beat__n">It all starts with a simple idea</p>
+        <h3>&ldquo;Create an energy problem that combines circular motion and projectiles&rdquo;</h3>
+        <p>You give the system a single sentence. From there it researches the physics,
+          works out a concrete situation that puts the concept on display, and anchors the
+          whole problem to a real scientist whose work it echoes &mdash; here
+          <b>Euler&rsquo;s Hilltop</b>, after <b>Leonhard Euler</b>, whose equations of motion
+          describe the very curve the ball crests &mdash; with a short biography that ships
+          right on the printed page.</p>
+        <p>That finished problem lands as one row among many &mdash; <span class="stat" data-stat="inventory.rows_total" data-source="data/_inventory.json (rows)" data-verified="2026-07-13" data-provenance="verified" title="source: data/_inventory.json (rows) · verified 2026-07-13">413</span> of
+          them &mdash; feeding a bank of <span class="stat" data-stat="problems.frq_total" data-source="sum of data/problems/frq/*.json record counts" data-verified="2026-07-13" data-provenance="verified" title="source: sum of data/problems/frq/*.json record counts · verified 2026-07-13">51</span> free-response and
+          <span class="stat" data-stat="problems.mc_total" data-source="sum of data/problems/mc/*.json record counts" data-verified="2026-07-13" data-provenance="verified" title="source: sum of data/problems/mc/*.json record counts · verified 2026-07-13">72</span> multiple-choice problems, <span class="stat" data-stat="problems.frq_by_unit.energy" data-source="data/problems/frq/energy.json (record count)" data-verified="2026-07-13" data-provenance="verified" title="source: data/problems/frq/energy.json (record count) · verified 2026-07-13">50</span> in the
+          energy unit alone.</p>
+      </li>
+
+      <li class="beat" data-frame="brief" id="beat-brief">
+        <p class="beat__n">Physics before pixels</p>
+        <h3>It has to pass the brief first</h3>
+        <p>Before a diagram is ever drawn, the problem must clear a physics design brief:
+          geometry, energy accounting, every claim cross-checked. The brief is the first of
+          three independent checks behind every finished problem &mdash; the design brief here,
+          the live simulation, and formal verification of the engine itself. The physics is the
+          <em>first</em> gate, not an afterthought.</p>
+        <p class="muted">It is one small addition to a repository grown across
+          <span class="stat" data-stat="repo.commit_count" data-source="git rev-list --count HEAD (physics repo)" data-verified="2026-07-13" data-provenance="verified" title="source: git rev-list --count HEAD (physics repo) · verified 2026-07-13">1,705</span> commits since <span class="stat" data-stat="repo.first_commit_date" data-source="git log --reverse --format=%cI (physics repo)" data-verified="2026-07-13" data-provenance="verified" title="source: git log --reverse --format=%cI (physics repo) · verified 2026-07-13">2026-03-19</span> &mdash;
+          <span class="stat" data-stat="loc.first_party_lines" data-source="tools/loc_history/history.json (latest entry)" data-verified="2026-07-13" data-provenance="verified" title="source: tools/loc_history/history.json (latest entry) · verified 2026-07-13">1,617,947</span> lines of first-party code.</p>
+      </li>
+
+      <li class="beat" data-frame="gauntlet" id="beat-gauntlet">
+        <p class="beat__n">The gauntlet</p>
+        <h3>Then the build tries to stop it</h3>
+        <p><span class="stat" data-stat="gates.total" data-source="tools/showcase/gate_registry.yaml (HAND-CURATED census)" data-verified="2026-07-13" data-provenance="verified" title="source: tools/showcase/gate_registry.yaml (HAND-CURATED census) · verified 2026-07-13">43</span> build-blocking gates stand between a draft and a
+          shippable page: <span class="stat" data-stat="gates.by_tier.data-validation" data-source="tools/showcase/gate_registry.yaml (HAND-CURATED census) — tier==data-validation" data-verified="2026-07-13" data-provenance="verified" title="source: tools/showcase/gate_registry.yaml (HAND-CURATED census) — tier==data-validation · verified 2026-07-13">25</span> data validators,
+          <span class="stat" data-stat="gates.by_tier.git-hook" data-source="tools/showcase/gate_registry.yaml (HAND-CURATED census) — tier==git-hook" data-verified="2026-07-13" data-provenance="verified" title="source: tools/showcase/gate_registry.yaml (HAND-CURATED census) — tier==git-hook · verified 2026-07-13">12</span> git-hook checks, and <span class="stat" data-stat="gates.by_tier.static-lint" data-source="tools/showcase/gate_registry.yaml (HAND-CURATED census) — tier==static-lint" data-verified="2026-07-13" data-provenance="verified" title="source: tools/showcase/gate_registry.yaml (HAND-CURATED census) — tier==static-lint · verified 2026-07-13">6</span> static
+          lints, backed by <span class="stat" data-stat="invariants.total" data-source="tools/metacognition/cli.py list --kind invariant" data-verified="2026-07-13" data-provenance="verified" title="source: tools/metacognition/cli.py list --kind invariant · verified 2026-07-13">10</span> standing invariants.</p>
+        <p class="muted">Here is what the gauntlet actually said to an early draft of the
+          hilltop problem &mdash; four real gates, four real refusals.</p>
+      </li>
+
+      <li class="beat" data-frame="engine" id="beat-engine">
+        <p class="beat__n">The diagram engine</p>
+        <h3>One library draws every scene</h3>
+        <p>Clear the gauntlet and the diagram engine takes over &mdash; the shared library
+          that draws the track, the curved crest, the height bar, the velocity arrow. Fix a
+          label once and the next forty problems inherit the fix.</p>
+        <p class="muted">It is one node in an import graph of <span class="stat" data-stat="import_graph.nodes_total" data-source="tools/showcase/out/import_graph.json (import_graph_dump.py)" data-verified="2026-07-13" data-provenance="verified" title="source: tools/showcase/out/import_graph.json (import_graph_dump.py) · verified 2026-07-13">433</span>
+          modules wired by <span class="stat" data-stat="import_graph.edges_total" data-source="tools/showcase/out/import_graph.json (import_graph_dump.py)" data-verified="2026-07-13" data-provenance="verified" title="source: tools/showcase/out/import_graph.json (import_graph_dump.py) · verified 2026-07-13">1,144</span> edges, <span class="stat" data-stat="catalog.nodes_by_kind.lib" data-source="data/catalog_manifest.json (regenerated this run) — nodes[kind==lib]" data-verified="2026-07-13" data-provenance="verified" title="source: data/catalog_manifest.json (regenerated this run) — nodes[kind==lib] · verified 2026-07-13">76</span> of them
+          shared library files.</p>
+      </li>
+
+      <li class="beat" data-frame="alive" id="beat-alive">
+        <p class="beat__n">The same problem, alive</p>
+        <h3>Not only a page &mdash; a simulation</h3>
+        <p>The same problem &mdash; Euler&rsquo;s Hilltop, the one you just watched clear the
+          gauntlet &mdash; <b>runs live</b>: not a picture of the motion but the real engine,
+          solving the worksheet&rsquo;s own diagram in your browser. It begins at rest at A,
+          exactly as the printed page will set it up, and runs the whole story: down the ramp,
+          through the valley, up over the crest. The energy bars trade kinetic for
+          gravitational as the ball climbs. It crests, the normal force dies, and it leaves the
+          surface &mdash; no code says when. <span class="stat" data-stat="sim.scenes_total" data-source="node sim/scripts/dump_registry.js (scenario registry)" data-verified="2026-07-13" data-provenance="verified" title="source: node sim/scripts/dump_registry.js (scenario registry) · verified 2026-07-13">104</span> scenarios are registered
+          and <span class="stat" data-stat="sim.coverage_welded" data-source="tools/sim_coverage.py --json" data-verified="2026-07-13" data-provenance="verified" title="source: tools/sim_coverage.py --json · verified 2026-07-13">39</span> weld their physics to an independent check; this run is
+          held to the same energy books, and the exhibit page opens the welded fixture itself.</p>
+        <a class="go" href="deep/sims.html">Open the sim exhibit</a>
+      </li>
+
+      <li class="beat" data-frame="page" id="beat-page">
+        <p class="beat__n">The printed page</p>
+        <h3>What lands on the desk</h3>
+        <p>Title, scene, energy bar chart, lettered questions, a worked-key-quality
+          solution, a scientist&rsquo;s story &mdash; one problem, one page, print-ready.
+          No template surgery, no hand-placed labels.</p>
+      </li>
+
+      <li class="beat" data-frame="solution" id="beat-solution">
+        <p class="beat__n">The solution guide</p>
+        <h3>Every step worked, every step annotated</h3>
+        <p>The matching solution guide ships with every set &mdash; the same pipeline that
+          typeset the problem typesets the full derivation: one continuous aligned block from
+          &Sigma;W = &Delta;K to the number, equals signs aligned, with margin annotations
+          explaining exactly the steps students find hardest.</p>
+      </li>
+
+      <li class="beat" data-frame="forms" id="beat-forms">
+        <p class="beat__n">Parallel forms fan out</p>
+        <h3>One problem becomes many</h3>
+        <p>The same physics generates parallel forms &mdash; different numbers, identical
+          concept &mdash; so a class can work in groups without copying, and a make-up form
+          is a command away instead of an afternoon.</p>
+      </li>
+
+      <li class="beat" data-frame="scan" id="beat-scan">
+        <p class="beat__n">Scanned back in</p>
+        <h3>Paper goes straight back into the pipeline</h3>
+        <p>Multiple-choice answers come back on paper and re-enter the system without a human
+          retyping a single response &mdash; scanned, read, and matched to the key.
+          Free-response work is the next frontier: the grader that will feed it into this
+          same pipeline is designed, not yet in the loop.</p>
+      </li>
+
+      <li class="beat" data-frame="grade" id="beat-grade">
+        <p class="beat__n">Graded against the worked key</p>
+        <h3>The same key the engine produced</h3>
+        <p>Grading runs against the very solution the engine generated &mdash; the
+          normal-force step, the maximum-height limit, all of it. The answer key and the
+          grader are never allowed to drift apart.</p>
+      </li>
+
+      <li class="beat" data-frame="feedback" id="beat-feedback">
+        <p class="beat__n">Feedback, not a grade</p>
+        <h3>Personalized Narrative Feedback</h3>
+        <p>The report names four things, in the student&rsquo;s own terms. It marks the
+          learning goals their work has already met, and the ones not yet shown to be
+          mastered. For each miss it takes the <em>specific</em> misunderstanding behind their
+          answer and re-explains, from their point of view, how the physics actually works. It
+          points them back to the problems from class the missed one is most like. And it
+          hands them a few targeted questions to revisit that idea on their own terms &mdash;
+          no score, no rank, no points, just the next move.</p>
+        <p class="muted">The persona shown here is a fictional demo &mdash; &ldquo;Average
+          Armadillo&rdquo; &mdash; and no student data ever leaves the building.</p>
+      </li>
+
+      <li class="beat" data-frame="correct" id="beat-correct">
+        <p class="beat__n">How it stays correct</p>
+        <h3>None of this is trusted on faith</h3>
+        <p><span class="stat" data-stat="sim.coverage_welded" data-source="tools/sim_coverage.py --json" data-verified="2026-07-13" data-provenance="verified" title="source: tools/sim_coverage.py --json · verified 2026-07-13">39</span> problems weld their answer to an independent solver
+          &mdash; <span class="stat" data-stat="sim.coverage_modelable" data-source="tools/sim_coverage.py --json" data-verified="2026-07-13" data-provenance="verified" title="source: tools/sim_coverage.py --json · verified 2026-07-13">100%</span> of the modelable set &mdash; and the wider
+          engine is guarded by formal-verification passes across
+          <span class="stat stat--pinned" data-stat="fv_aggregate.functions" data-source="hand-pinned from the live index display at wischman123.github.io on 2026-07-09; no machine-readable repo source located (probe 2026-07-09)" data-verified="2026-07-13" data-provenance="hand-pinned" title="source: hand-pinned from the live index display at wischman123.github.io on 2026-07-09; no machine-readable repo source located (probe 2026-07-09) · verified 2026-07-13 (hand-pinned)">831<span class="stat__pin" aria-hidden="true">†</span></span> functions, <span class="stat stat--pinned" data-stat="fv_aggregate.property_checked" data-source="hand-pinned from the live index display at wischman123.github.io on 2026-07-09; no machine-readable repo source located (probe 2026-07-09)" data-verified="2026-07-13" data-provenance="hand-pinned" title="source: hand-pinned from the live index display at wischman123.github.io on 2026-07-09; no machine-readable repo source located (probe 2026-07-09) · verified 2026-07-13 (hand-pinned)">641<span class="stat__pin" aria-hidden="true">†</span></span> property-checked,
+          <span class="stat stat--pinned" data-stat="fv_aggregate.laws" data-source="hand-pinned from the live index display at wischman123.github.io on 2026-07-09; no machine-readable repo source located (probe 2026-07-09)" data-verified="2026-07-13" data-provenance="hand-pinned" title="source: hand-pinned from the live index display at wischman123.github.io on 2026-07-09; no machine-readable repo source located (probe 2026-07-09) · verified 2026-07-13 (hand-pinned)">581<span class="stat__pin" aria-hidden="true">†</span></span> against stated laws.</p>
+        <p class="muted">The formal-verification totals carry a &dagger;: read from the live
+          index and hand-pinned until a machine source is wired in.</p>
+      </li>
+    </ol>
+  </div><div class="lightbox" id="story-lightbox" role="dialog" aria-modal="true"
+       aria-label="Enlarged figure" tabindex="-1">
+    <img alt="Enlarged figure">
+  </div>
+</section>
+
+<script src="assets/sims/embed.js"></script>
+<script>
+(function(){
+  var scrolly = document.getElementById('scrolly');
+  var stage = document.getElementById('stage');
+  if(!scrolly || !stage || !('IntersectionObserver' in window)){ return; }
+  scrolly.classList.add('is-js');
+
+  var frames = {};
+  var list = stage.querySelectorAll('.frame');
+  for(var i=0;i<list.length;i++){ frames[list[i].getAttribute('data-frame')] = list[i]; }
+  if(list.length){ list[0].classList.add('is-shown'); }
+
+  // Autostart-on-scroll: the first time the live-sim frame ('alive', beat #5)
+  // becomes active, click the run control embed.js injected so the sim boots with
+  // no tap. Lazy query (only fires once the reader reaches the beat) so this can't
+  // race embed.js's own DOMContentLoaded setup regardless of script order.
+  var simBooted = false;
+  function bootSimIfActive(id){
+    if(simBooted || id !== 'alive'){ return; }
+    var run = document.querySelector('#story .js-embed[data-autostart] .js-embed-run');
+    if(run){ simBooted = true; run.click(); }
+  }
+
+  function show(id){
+    for(var k in frames){
+      if(Object.prototype.hasOwnProperty.call(frames,k)){
+        frames[k].classList.toggle('is-shown', k === id);
+      }
+    }
+    bootSimIfActive(id);
+  }
+
+  var beats = scrolly.querySelectorAll('.beat');
+  var io = new IntersectionObserver(function(entries){
+    for(var j=0;j<entries.length;j++){
+      var e = entries[j];
+      if(e.isIntersecting){
+        e.target.classList.add('is-active');
+        show(e.target.getAttribute('data-frame'));
+      } else {
+        e.target.classList.remove('is-active');
+      }
+    }
+  }, { rootMargin: '-45% 0px -45% 0px', threshold: 0 });
+
+  for(var b=0;b<beats.length;b++){ io.observe(beats[b]); }
+})();
+
+// Image lightbox — click a figure image (or Enter/Space on it) to zoom it to the
+// page's content width; click, Esc, or the backdrop closes. Everything is scoped
+// to #story. Progressive enhancement: the images only become buttons when this
+// runs; without JS there is nothing to open.
+(function(){
+  var story = document.getElementById('story');
+  var scrolly = document.getElementById('scrolly');
+  var stage = document.getElementById('stage');
+  var box = document.getElementById('story-lightbox');
+  if(!story || !box){ return; }
+  var boxImg = box.querySelector('img');
+
+  // Zoomable = the single-image frames + the stacked ones (solution + feedback).
+  // The live-sim poster (.frame--sim) is deliberately NOT zoomable — its click
+  // boots the simulation.
+  var zoomables = [].slice.call(
+    story.querySelectorAll('.frame--img .fill img, .frame .stack img'));
+  var isScrolly = scrolly && scrolly.classList.contains('is-js');
+
+  for(var i=0;i<zoomables.length;i++){
+    var im = zoomables[i];
+    im.setAttribute('role','button');
+    im.setAttribute('aria-haspopup','dialog');
+    if(!im.getAttribute('aria-label')){
+      im.setAttribute('aria-label','Enlarge image' + (im.alt ? ': ' + im.alt : ''));
+    }
+  }
+
+  // Keyboard reach without dead tab stops: in the sticky cross-fade only the
+  // SHOWN frame's image is tabbable (all of them in the static fallback layout,
+  // where every frame is visible).
+  function refreshTab(){
+    for(var i=0;i<zoomables.length;i++){
+      var im = zoomables[i];
+      var fr = im.closest('.frame');
+      var on = !isScrolly || (fr && fr.classList.contains('is-shown'));
+      im.setAttribute('tabindex', on ? '0' : '-1');
+    }
+  }
+  refreshTab();
+  if(isScrolly && stage && ('MutationObserver' in window)){
+    new MutationObserver(refreshTab).observe(stage,
+      { subtree:true, attributes:true, attributeFilter:['class'] });
+  }
+
+  var lastFocus = null;
+  function openBox(img){
+    lastFocus = img;
+    boxImg.setAttribute('src', img.currentSrc || img.src);
+    boxImg.alt = img.alt || 'Enlarged figure';
+    box.classList.add('is-open');
+    box.focus();
+    document.addEventListener('keydown', onKey);
+  }
+  function closeBox(){
+    box.classList.remove('is-open');
+    boxImg.removeAttribute('src');
+    document.removeEventListener('keydown', onKey);
+    if(lastFocus){ lastFocus.focus(); lastFocus = null; }
+  }
+  function onKey(e){ if(e.key === 'Escape' || e.key === 'Esc'){ closeBox(); } }
+  function isZoomTarget(t){
+    return t && t.tagName === 'IMG' && t.closest('.frame--img, .stack')
+      && !t.closest('.frame--sim');
+  }
+
+  story.addEventListener('click', function(e){
+    if(isZoomTarget(e.target)){ e.preventDefault(); openBox(e.target); }
+  });
+  story.addEventListener('keydown', function(e){
+    if((e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') && isZoomTarget(e.target)){
+      e.preventDefault(); openBox(e.target);
+    }
+  });
+  // Click anywhere in the overlay — image, padding, or backdrop — closes it.
+  box.addEventListener('click', closeBox);
+})();
+</script><!-- ANSWER-KEY COMPARISON — PARKED, NOT DELETED (2026-07-13).
+     "The same problem, answered twice" (Figs. 2-3, the K015 plain-vs-platform
+     sliders) lived HERE. It was taken off the live site to be reworked, and is
+     preserved verbatim — with its styles, and openable in a browser — at:
+
+         publicity/anthropic/application/site/_parked/answer_key_section.html
+
+     That file is in the PRIVATE publicity repo and is NOT deployed.
+     Re-instatement instructions are in its header comment. Two things were
+     left behind on purpose so putting it back is a single paste:
+       * the .wipe CSS block above (dead for now; no [data-wipe] on this page)
+       * <script src="./assets/js/wipe_slider.js"> near the foot of this file
+     -->
+
+  <section class="section" id="numbers" aria-labelledby="num-h">
+    <p class="eyebrow">The numbers, dated</p>
+    <h2 id="num-h">Measured, not estimated.</h2>
+    <div class="readout">
+      <div class="row">
+        <!-- FIG10-TILE-START (generated by tools/loc_full_arc.py) -->
+        <span class="val">1,577,800</span>
+        <span class="lab"><b>first-party lines directed</b> — directed, not hand-typed</span>
+        <span class="date">verified 2026-07-12</span>
+        <!-- FIG10-TILE-END -->
+      </div>
+      <div class="row">
+        <span class="val">831</span>
+        <span class="lab"><b>load-bearing functions inventoried</b> across the platform</span>
+        <span class="date">verified 2026-07-09</span>
+      </div>
+      <div class="row">
+        <span class="val">641</span>
+        <span class="lab"><b>property-checked</b> under 581 proved physics laws</span>
+        <span class="date">verified 2026-07-09</span>
+      </div>
+      <div class="row">
+        <span class="val">190</span>
+        <span class="lab"><b>documented infeasible-to-test</b> — leaving 0 silently untested</span>
+        <span class="date">verified 2026-07-09</span>
+      </div>
+      <div class="row">
+        <span class="val">~260</span>
+        <span class="lab"><b>model-hours per week</b> at peak, between classes and after school</span>
+        <span class="date">verified 2026-07-09</span>
+      </div>
+      <div class="row">
+        <span class="val">mid-March</span>
+        <span class="lab"><b>first commit, 2026</b> — weekly production use since</span>
+        <span class="date">from git history</span>
+      </div>
+    </div>
+
+    <figure class="fig chart-fig">
+      <!-- FIG10-SVG-START (generated by tools/loc_full_arc.py) -->
+      <svg viewBox="0 0 640 240" role="img" aria-label="Two measured series of first-party lines of code. The solid curve is code COMMITTED to the four git-tracked project repositories (physics, tools, research, dotfiles), recomputed from git history under one counting rule, rising from near zero at the mid-March 2026 first commits to 1.27 million by 2026-07-12, marked with an open circle. The dashed curve is the WORKING TREE across every tracked directory -- committed code plus work on disk not yet committed -- reaching 1.58 million, the headline figure above the chart. It begins on 2026-05-28 because that is the first snapshot in the line-count tracker; a working tree cannot be reconstructed from git history for dates before it was recorded. The 306,983-line gap between the two is uncommitted work plus directories outside those four repositories. Current pace: about 96,866 committed lines per week over the last 31 days.">
+      <line class="ch-grid" x1="40" y1="200" x2="620" y2="200"></line>
+      <line class="ch-grid" x1="40" y1="150" x2="620" y2="150"></line>
+      <line class="ch-grid" x1="40" y1="101" x2="620" y2="101"></line>
+      <line class="ch-grid" x1="40" y1="51" x2="620" y2="51"></line>
+      <text class="ch-lab" x="34" y="203" text-anchor="end">0</text>
+      <text class="ch-lab" x="34" y="153" text-anchor="end">500K</text>
+      <text class="ch-lab" x="34" y="104" text-anchor="end">1.0M</text>
+      <text class="ch-lab" x="34" y="54" text-anchor="end">1.50M</text>
+      <path class="ch-area" d="M40,200 L75,197 L111,196 L146,194 L181,191 L217,185 L252,178 L287,170 L322,161 L358,152 L393,144 L428,127 L464,116 L499,105 L534,101 L570,93 L605,80 L620,74 L620,200 L40,200 Z"></path>
+      <path class="ch-line" d="M40,200 L75,197 L111,196 L146,194 L181,191 L217,185 L252,178 L287,170 L322,161 L358,152 L393,144 L428,127 L464,116 L499,105 L534,101 L570,93 L605,80 L620,74"></path>
+      <path class="ch-line" stroke-dasharray="5 3" d="M393.0,127.8 L413.2,119.8 L418.3,115.4 L423.3,110.7 L443.5,101.0 L453.6,97.4 L458.6,99.9 L463.7,99.6 L473.7,96.2 L478.8,92.4 L488.9,87.6 L509.0,85.5 L529.2,83.3 L554.4,79.9 L559.5,79.3 L574.6,74.2 L579.7,71.9 L589.7,68.5 L604.9,61.1 L609.9,54.5 L615.0,49.2 L620.0,43.1"></path>
+      <circle class="ch-dot" cx="40" cy="200" r="3"></circle>
+      <circle class="ch-open" cx="393.0" cy="127.8" r="2.5"></circle>
+      <circle class="ch-open" cx="620" cy="74" r="3.5"></circle>
+      <circle class="ch-dot" cx="620" cy="43" r="4"></circle>
+      <text class="ch-lab-strong" x="610" y="35" text-anchor="end">1.58M <tspan class="ch-lab">working tree, all dirs</tspan></text>
+      <text class="ch-lab-strong" x="610" y="141" text-anchor="end">1.27M <tspan class="ch-lab">committed, 4 repos</tspan></text>
+      <text class="ch-lab-strong" x="50" y="80">+96,866 <tspan class="ch-lab">committed lines/week — last 31 days</tspan></text>
+      <text class="ch-lab" x="40" y="218" text-anchor="start">03-19</text>
+      <text class="ch-lab" x="146" y="218" text-anchor="middle">04-09</text>
+      <text class="ch-lab" x="287" y="218" text-anchor="middle">05-07</text>
+      <text class="ch-lab" x="393" y="218" text-anchor="middle">05-28</text>
+      <text class="ch-lab" x="534" y="218" text-anchor="middle">06-25</text>
+      <text class="ch-lab" x="620" y="218" text-anchor="end">07-12</text>
+    </svg>
+      <!-- FIG10-SVG-END -->
+      <!-- FIG10-CAP-START (generated by tools/loc_full_arc.py) -->
+      <figcaption class="figcap"><b>Fig.&nbsp;2</b> — First-party lines of code over the platform&rsquo;s life, under one counting rule (2026-07-12). <b>Solid:</b> code <b>committed</b> to the four git repositories whose history reaches back to the mid-March first commit (physics, tools, research, dotfiles), recomputed by checking out every historical commit and counting it — 1,270,817 lines, marked with an open circle. <b>Dashed:</b> the <b>working tree</b> across every tracked directory — committed code plus work on disk not yet committed — reaching the 1,577,800 headline above. It begins May&nbsp;28, not in March, because that is the first snapshot in the line-count tracker: git records commits, so a past <em>working tree</em> simply was never written down, and drawing it before it was measured would be inventing data. The 306,983-line gap between the two is uncommitted work plus directories outside those four repos. 1,229,741 of the headline&rsquo;s lines sit in physics, tools, dotfiles — the repositories behind the work shown on this page. <em>Scratch and run-artifact directories are excluded from both series.</em></figcaption>
+      <!-- FIG10-CAP-END -->
+    </figure>
+  </section>
+
+  <section class="section" id="built" aria-labelledby="built-h">
+    <p class="eyebrow">How it&rsquo;s built</p>
+    <h2 id="built-h">For the technical reader.</h2>
+    <ul class="built">
+      <li><span class="kw">Hexagonal core</span> Domain logic stays pure; dependencies point inward only.</li>
+      <li><span class="kw">Completeness gates</span> The system may draft; it may not ship. Failing artifacts are rejected, not patched.</li>
+      <li><span class="kw">Regenerate, don&rsquo;t patch</span> Fixes land in the shared library; every artifact re-derives; old versions retire.</li>
+      <li><span class="kw">Proved physics</span> 581 relations Lean-proved and enforced as property-test laws, with negative controls.</li>
+      <li><span class="kw">Local-first grading</span> A deterministic pipeline on scanned paper — no model calls in the grading path.</li>
+      <li><span class="kw">Dated claims</span> Every number on this page carries the day it was verified.</li>
+    </ul>
+  </section>
+
+</main>
+
+<!-- The architecture band is the LAST CONTENT BLOCK, immediately above the
+     contact footer. It sat BELOW the footer until 2026-07-12, when it was a
+     full-bleed gradient dissolving this page's warm paper into
+     architecture.html's cool one. theme.css gave both pages one palette, so
+     the gradient — and with it the reason to hang the band off the end of the
+     document — is gone. The page now ends on the author's name, not on a link
+     out. Inside .content it takes the content column, aligning with every
+     other section instead of running under the rail. -->
+<a class="arch-fade nextband" href="architecture.html">
+  <span class="cue">before you go — the system&rsquo;s blueprint</span>
+  <span class="headline nextband__label">Into the architecture
+    <span class="nextband__arrow" aria-hidden="true">&rarr;</span></span>
+  <span class="sub">The same platform drawn as a hexagon: one subject-free core,
+    adapters at the ports, and the build gate that keeps every dependency
+    pointing inward.</span>
+</a>
+
+<footer class="footer" id="contact">
+  <div class="wrap inner">
+    <span class="who">Brendan Wischweh &nbsp;·&nbsp; <a href="mailto:Mr.Wischweh@gmail.com">Mr.Wischweh@gmail.com</a></span>
+    <span class="meta">Built with Claude Code — this page included. All student names shown are fictional.</span>
+  </div>
+</footer>
+
+<!-- Before/after wipe sliders (P4, Figs 4 & 5). The ONE shared module
+     public/assets/js/wipe_slider.js (D-0 single-module rule; the systems wing
+     consumes the same file). Classic script — self-inits on DOMContentLoaded,
+     upgrades every [data-wipe] figure to a native-range wipe (keyboard + pointer
+     + touch), and degrades to the <noscript> side-by-side with JS off. The frame
+     carries no pointer handlers, so vertical swipes keep scrolling the page. -->
+<script src="./assets/js/wipe_slider.js"></script>
+<!-- Fig. 1 interactive field lab (P3). ES module = needs an http origin (fine
+     on Pages / localhost; dead on file://, per site/RUNBOOK.md). Drives the
+     page's OWN tracer only — no physics-engine source is published (plan d4). -->
+<script type="module">
+  import { initFieldLab } from './assets/js/fieldlab/fieldlab.js';
+  initFieldLab(document.getElementById('fieldfig'), {
+    hintEl: document.getElementById('fl-hint'),
+    controlsEl: document.getElementById('fl-controls')
+  });
+</script>
+<!-- The rail scrollspy that used to live here MOVED INTO the shared rail
+     component (_siterail.html.j2), which ships it with the markup it depends on.
+     It bound '.rail a.nav[href^="#"]' and hardcoded the observed section ids —
+     both of which the shared component changed, so a copy left here would have
+     matched nothing and failed SILENTLY. The ported one derives the ids it
+     observes from the rail's own anchors, and sets aria-current="page" (the
+     HTML-spec value) rather than the "true" this copy used. -->
+<script>
+(function () {
+  // ---- click-to-enlarge lightbox (gallery stills only; the wipe sliders
+  //      and the field lab keep their own drag interactions) ----
+  var stills = document.querySelectorAll('.gallery .fig > img, .gallery .fig .pages img');
+  if (!stills.length) return;
+  var box = document.createElement('div');
+  box.className = 'lightbox';
+  box.hidden = true;
+  box.setAttribute('role', 'dialog');
+  box.setAttribute('aria-modal', 'true');
+  box.setAttribute('aria-label', 'Enlarged figure — click or press Escape to close');
+  var big = document.createElement('img');
+  box.appendChild(big);
+  document.body.appendChild(box);
+  var opener = null;
+  function openBox(img) {
+    opener = img;
+    big.src = img.currentSrc || img.src;
+    big.alt = img.alt || '';
+    box.hidden = false;
+  }
+  function closeBox() {
+    box.hidden = true;
+    big.removeAttribute('src');
+    if (opener) { opener.focus(); opener = null; }
+  }
+  Array.prototype.forEach.call(stills, function (img) {
+    img.setAttribute('tabindex', '0');
+    img.setAttribute('role', 'button');
+    img.addEventListener('click', function () { openBox(img); });
+    img.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openBox(img); }
+    });
+  });
+  box.addEventListener('click', closeBox);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !box.hidden) closeBox();
+  });
+})();
+</script>

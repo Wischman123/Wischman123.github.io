@@ -1,0 +1,81 @@
+{
+  "schema_version": "0.1",
+  "id": "hello_world",
+  "title": "Hello world — single body falling under gravity",
+  "preset_required": "1st_year",
+  "feature_toggles_required": [],
+  "scene_defaults": {
+    "gravity_model": "constant_g",
+    "g": 9.8,
+    "air_resistance": false,
+    "spring_mass": false,
+    "rope_mass": false
+  },
+  "bodies": [
+    {
+      "id": "ball",
+      "type": "particle",
+      "mass_kg": 1,
+      "position_m": {
+        "x": 0,
+        "y": 10
+      },
+      "velocity_m_per_s": {
+        "x": 0,
+        "y": 0
+      }
+    }
+  ],
+  "surfaces": [],
+  "fields": [],
+  "forces": [
+    {
+      "type": "gravity",
+      "applies_to": [
+        "ball"
+      ]
+    }
+  ],
+  "constraints": [],
+  "simulation": {
+    "duration_s": 1,
+    "integrator": "rk4",
+    "dt_s": 0.001,
+    "adaptive_dt": false
+  },
+  "outputs": [
+    {
+      "quantity": "position.y",
+      "body_id": "ball"
+    },
+    {
+      "quantity": "velocity.y",
+      "body_id": "ball"
+    },
+    {
+      "quantity": "energy.K",
+      "body_id": "ball"
+    },
+    {
+      "quantity": "energy.U_g",
+      "body_id": "ball"
+    },
+    {
+      "quantity": "energy.total",
+      "body_id": "ball"
+    }
+  ],
+  "expected": {
+    "tolerance_band": "default",
+    "values": {
+      "position.y_at_t_1.0": 5.1,
+      "velocity.y_at_t_1.0": -9.8,
+      "energy.total.drift_relative": 0.005,
+      "ball:position.y": 5.099999999999981,
+      "ball:velocity.y": -9.800000000000114,
+      "ball:energy.K": 48.02000000000112,
+      "ball:energy.U_g": 49.97999999999982,
+      "ball:energy.total": 98.00000000000094
+    }
+  }
+}

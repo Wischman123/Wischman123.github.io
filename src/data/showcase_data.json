@@ -1,0 +1,551 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-07-13T00:00:00+00:00",
+  "repo": {
+    "commit_count": {
+      "value": 1705,
+      "source": "git rev-list --count HEAD (physics repo)",
+      "verified": true
+    },
+    "first_commit_date": {
+      "value": "2026-03-19T14:59:41-05:00",
+      "source": "git log --reverse --format=%cI (physics repo)",
+      "verified": true
+    }
+  },
+  "catalog": {
+    "nodes_total": {
+      "value": 1905,
+      "source": "data/catalog_manifest.json (regenerated this run)",
+      "verified": true
+    },
+    "edges_total": {
+      "value": 505,
+      "source": "data/catalog_manifest.json (regenerated this run)",
+      "verified": true
+    },
+    "nodes_by_kind": {
+      "data": {
+        "value": 262,
+        "source": "data/catalog_manifest.json (regenerated this run) — nodes[kind==data]",
+        "verified": true
+      },
+      "doc": {
+        "value": 617,
+        "source": "data/catalog_manifest.json (regenerated this run) — nodes[kind==doc]",
+        "verified": true
+      },
+      "lib": {
+        "value": 76,
+        "source": "data/catalog_manifest.json (regenerated this run) — nodes[kind==lib]",
+        "verified": true
+      },
+      "script": {
+        "value": 492,
+        "source": "data/catalog_manifest.json (regenerated this run) — nodes[kind==script]",
+        "verified": true
+      },
+      "test": {
+        "value": 458,
+        "source": "data/catalog_manifest.json (regenerated this run) — nodes[kind==test]",
+        "verified": true
+      }
+    },
+    "manifest_generated": {
+      "value": "2026-07-14T01:13:58Z",
+      "source": "data/catalog_manifest.json 'generated' stamp",
+      "verified": true
+    }
+  },
+  "import_graph": {
+    "nodes_total": {
+      "value": 433,
+      "source": "tools/showcase/out/import_graph.json (import_graph_dump.py)",
+      "verified": true
+    },
+    "edges_total": {
+      "value": 1144,
+      "source": "tools/showcase/out/import_graph.json (import_graph_dump.py)",
+      "verified": true
+    }
+  },
+  "inventory": {
+    "rows_total": {
+      "value": 413,
+      "source": "data/_inventory.json (rows)",
+      "verified": true
+    }
+  },
+  "problems": {
+    "frq_by_unit": {
+      "energy": {
+        "value": 50,
+        "source": "data/problems/frq/energy.json (record count)",
+        "verified": true
+      },
+      "fluids": {
+        "value": 1,
+        "source": "data/problems/frq/fluids.json (record count)",
+        "verified": true
+      }
+    },
+    "mc_by_unit": {
+      "circular": {
+        "value": 25,
+        "source": "data/problems/mc/circular.json (record count)",
+        "verified": true
+      },
+      "electrostatics": {
+        "value": 31,
+        "source": "data/problems/mc/electrostatics.json (record count)",
+        "verified": true
+      },
+      "energy": {
+        "value": 16,
+        "source": "data/problems/mc/energy.json (record count)",
+        "verified": true
+      }
+    },
+    "frq_total": {
+      "value": 51,
+      "source": "sum of data/problems/frq/*.json record counts",
+      "verified": true
+    },
+    "mc_total": {
+      "value": 72,
+      "source": "sum of data/problems/mc/*.json record counts",
+      "verified": true
+    }
+  },
+  "sim": {
+    "scenes_total": {
+      "value": 104,
+      "source": "node sim/scripts/dump_registry.js (scenario registry)",
+      "verified": true
+    },
+    "published_total": {
+      "value": 62,
+      "source": "node sim/scripts/dump_registry.js (scenario registry) — published !== false (loader convention)",
+      "verified": true
+    },
+    "coverage_total_problems": {
+      "value": 51,
+      "source": "tools/sim_coverage.py --json",
+      "verified": true
+    },
+    "coverage_welded": {
+      "value": 39,
+      "source": "tools/sim_coverage.py --json",
+      "verified": true
+    },
+    "coverage_modelable_unwelded": {
+      "value": 0,
+      "source": "tools/sim_coverage.py --json",
+      "verified": true
+    },
+    "coverage_out_of_scope": {
+      "value": 12,
+      "source": "tools/sim_coverage.py --json",
+      "verified": true
+    },
+    "coverage_overall": {
+      "value": 0.7647058823529411,
+      "source": "tools/sim_coverage.py --json",
+      "verified": true
+    },
+    "coverage_modelable": {
+      "value": 1.0,
+      "source": "tools/sim_coverage.py --json",
+      "verified": true
+    }
+  },
+  "loc": {
+    "raw_files": {
+      "value": 8121,
+      "source": "tools/loc_history/history.json (latest entry)",
+      "verified": true
+    },
+    "raw_lines": {
+      "value": 2166537,
+      "source": "tools/loc_history/history.json (latest entry)",
+      "verified": true
+    },
+    "first_party_files": {
+      "value": 6134,
+      "source": "tools/loc_history/history.json (latest entry)",
+      "verified": true
+    },
+    "first_party_lines": {
+      "value": 1617947,
+      "source": "tools/loc_history/history.json (latest entry)",
+      "verified": true
+    },
+    "series_points": {
+      "value": 39,
+      "source": "tools/loc_history/history.json (entries count)",
+      "verified": true
+    },
+    "latest_timestamp": {
+      "value": "2026-07-13T09:13:43-05:00",
+      "source": "tools/loc_history/history.json (latest entry timestamp)",
+      "verified": true
+    }
+  },
+  "gates": {
+    "total": {
+      "value": 43,
+      "source": "tools/showcase/gate_registry.yaml (HAND-CURATED census)",
+      "verified": true
+    },
+    "by_tier": {
+      "data-validation": {
+        "value": 25,
+        "source": "tools/showcase/gate_registry.yaml (HAND-CURATED census) — tier==data-validation",
+        "verified": true
+      },
+      "git-hook": {
+        "value": 12,
+        "source": "tools/showcase/gate_registry.yaml (HAND-CURATED census) — tier==git-hook",
+        "verified": true
+      },
+      "static-lint": {
+        "value": 6,
+        "source": "tools/showcase/gate_registry.yaml (HAND-CURATED census) — tier==static-lint",
+        "verified": true
+      }
+    },
+    "consistency": {
+      "errors": [],
+      "warnings": []
+    }
+  },
+  "invariants": {
+    "total": {
+      "value": 10,
+      "source": "tools/metacognition/cli.py list --kind invariant",
+      "verified": true
+    },
+    "by_tier": {
+      "tier2": {
+        "value": 1,
+        "source": "tools/metacognition/cli.py list --kind invariant — response_tier==2",
+        "verified": true
+      },
+      "tier3": {
+        "value": 7,
+        "source": "tools/metacognition/cli.py list --kind invariant — response_tier==3",
+        "verified": true
+      },
+      "tier4": {
+        "value": 2,
+        "source": "tools/metacognition/cli.py list --kind invariant — response_tier==4",
+        "verified": true
+      }
+    }
+  },
+  "hooks": {
+    "total": {
+      "value": 39,
+      "source": "~/.claude/settings.json (hooks by event)",
+      "verified": true
+    },
+    "by_event": {
+      "Notification": {
+        "value": 1,
+        "source": "~/.claude/settings.json (hooks by event) — event Notification",
+        "verified": true
+      },
+      "PostToolUse": {
+        "value": 9,
+        "source": "~/.claude/settings.json (hooks by event) — event PostToolUse",
+        "verified": true
+      },
+      "PreToolUse": {
+        "value": 15,
+        "source": "~/.claude/settings.json (hooks by event) — event PreToolUse",
+        "verified": true
+      },
+      "SessionStart": {
+        "value": 2,
+        "source": "~/.claude/settings.json (hooks by event) — event SessionStart",
+        "verified": true
+      },
+      "Stop": {
+        "value": 6,
+        "source": "~/.claude/settings.json (hooks by event) — event Stop",
+        "verified": true
+      },
+      "UserPromptSubmit": {
+        "value": 6,
+        "source": "~/.claude/settings.json (hooks by event) — event UserPromptSubmit",
+        "verified": true
+      }
+    }
+  },
+  "retro": {
+    "trends_total": {
+      "value": 8,
+      "source": "tools/retro/_local_findings/effectiveness_v19.json (occurrence-rate trends)",
+      "verified": true
+    },
+    "by_direction": {
+      "baseline": {
+        "value": 1,
+        "source": "tools/retro/_local_findings/effectiveness_v19.json (occurrence-rate trends) — direction==baseline",
+        "verified": true
+      },
+      "flat": {
+        "value": 1,
+        "source": "tools/retro/_local_findings/effectiveness_v19.json (occurrence-rate trends) — direction==flat",
+        "verified": true
+      },
+      "improved": {
+        "value": 4,
+        "source": "tools/retro/_local_findings/effectiveness_v19.json (occurrence-rate trends) — direction==improved",
+        "verified": true
+      },
+      "regressed": {
+        "value": 2,
+        "source": "tools/retro/_local_findings/effectiveness_v19.json (occurrence-rate trends) — direction==regressed",
+        "verified": true
+      }
+    },
+    "source_report": {
+      "value": "effectiveness_v19.json",
+      "source": "tools/retro/_local_findings/effectiveness_v19.json (occurrence-rate trends)",
+      "verified": true
+    },
+    "interventions": [
+      {
+        "intervention_id": "C1",
+        "name": "over-long-session warn-hook (session_size_guard.py)",
+        "direction": "improved",
+        "rate_change": null,
+        "rate_note": "no longer ranks among the tracked findings this window"
+      },
+      {
+        "intervention_id": "C2",
+        "name": "dead-end-read detector fix + 'Read Narrowly' CLAUDE.md rule",
+        "direction": "flat",
+        "rate_change": {
+          "value": "-2%",
+          "source": "tools/retro/_local_findings/effectiveness_v19.json (occurrence-rate trends) — C2 occurrence rate per 1k sessions vs the pre-ship baseline",
+          "verified": true
+        },
+        "rate_note": "occurrence rate vs the pre-ship baseline"
+      },
+      {
+        "intervention_id": "C3",
+        "name": "forbidden-Bash block-hook (forbidden_bash_guard.py)",
+        "direction": "improved",
+        "rate_change": {
+          "value": "-83%",
+          "source": "tools/retro/_local_findings/effectiveness_v19.json (occurrence-rate trends) — C3 occurrence rate per 1k sessions vs the pre-ship baseline",
+          "verified": true
+        },
+        "rate_note": "occurrence rate vs the pre-ship baseline"
+      },
+      {
+        "intervention_id": "C4",
+        "name": "edit-loop guard (edit_loop_guard.py)",
+        "direction": "regressed",
+        "rate_change": {
+          "value": "+174%",
+          "source": "tools/retro/_local_findings/effectiveness_v19.json (occurrence-rate trends) — C4 occurrence rate per 1k sessions vs the pre-ship baseline",
+          "verified": true
+        },
+        "rate_note": "occurrence rate vs the pre-ship baseline"
+      },
+      {
+        "intervention_id": "C5",
+        "name": "undiagnosed-repeat hook (diagnose_repeated_tool_failure.py)",
+        "direction": "improved",
+        "rate_change": null,
+        "rate_note": "no longer ranks among the tracked findings this window"
+      },
+      {
+        "intervention_id": "C6",
+        "name": "answered-question detector fix + re-ask guard (ask_question_rescan.py)",
+        "direction": "regressed",
+        "rate_change": {
+          "value": "+639%",
+          "source": "tools/retro/_local_findings/effectiveness_v19.json (occurrence-rate trends) — C6 occurrence rate per 1k sessions vs the pre-ship baseline",
+          "verified": true
+        },
+        "rate_note": "occurrence rate vs the pre-ship baseline"
+      },
+      {
+        "intervention_id": "C7",
+        "name": "completion-claim Stop hook (completion_claim_check.py)",
+        "direction": "baseline",
+        "rate_change": null,
+        "rate_note": "new signal — this window sets the baseline"
+      },
+      {
+        "intervention_id": "C9",
+        "name": "cross-session redo-cost refinement (cross_session_rework.py)",
+        "direction": "improved",
+        "rate_change": null,
+        "rate_note": "no longer ranks among the tracked findings this window"
+      }
+    ]
+  },
+  "recall": {
+    "inventory_size": {
+      "value": 3205,
+      "source": "tools/recall/inventory/inventory.json (asset_count)",
+      "verified": true
+    },
+    "use": {
+      "injections": {
+        "value": 4725,
+        "source": "tools/recall/analysis/out/use_rate_summary.json (generated 2026-07-13) — scale.instrumentation_rows",
+        "verified": true
+      },
+      "sessions": {
+        "value": 1656,
+        "source": "tools/recall/analysis/out/use_rate_summary.json (generated 2026-07-13) — scale.sessions",
+        "verified": true
+      },
+      "surfacings": {
+        "value": 9984,
+        "source": "tools/recall/analysis/out/use_rate_summary.json (generated 2026-07-13) — consultation.surfacings",
+        "verified": true
+      },
+      "consulted": {
+        "value": 464,
+        "source": "tools/recall/analysis/out/use_rate_summary.json (generated 2026-07-13) — consultation.consulted",
+        "verified": true
+      },
+      "consult_rate_pct": {
+        "value": "4.6%",
+        "source": "tools/recall/analysis/out/use_rate_summary.json (generated 2026-07-13) — consultation.overall_rate (consulted/surfacings; the pinned is_used predicate: a later file touch or citation — a conservative floor)",
+        "verified": true
+      },
+      "hit_rate_pct": {
+        "value": "91%",
+        "source": "tools/recall/analysis/out/use_rate_summary.json (generated 2026-07-13) — criterion1: 31/34 labeled task-start prompts surfaced the hand-labeled correct prior asset",
+        "verified": true
+      },
+      "hook_latency_s": {
+        "value": "0.8",
+        "source": "tools/recall/analysis/out/use_rate_summary.json (generated 2026-07-13) — criterion1.hook_latency_s (one real hook call, full staleness walk)",
+        "verified": true
+      },
+      "prune": {
+        "value": 47,
+        "source": "tools/recall/analysis/out/use_rate_summary.json (generated 2026-07-13) — buckets.prune",
+        "verified": true
+      },
+      "down_rank": {
+        "value": 19,
+        "source": "tools/recall/analysis/out/use_rate_summary.json (generated 2026-07-13) — buckets.down_rank",
+        "verified": true
+      },
+      "keep": {
+        "value": 12,
+        "source": "tools/recall/analysis/out/use_rate_summary.json (generated 2026-07-13) — buckets.keep",
+        "verified": true
+      }
+    }
+  },
+  "lab": {
+    "explore": {
+      "completed_runs": {
+        "value": 86,
+        "source": "tools/mode_experiments/results.jsonl — status=='completed' rows",
+        "verified": true
+      },
+      "designs": {
+        "value": 5,
+        "source": "tools/mode_experiments/specs/e*.yaml excluding *smoke* (E1, E2, E4, E5, E6)",
+        "verified": true
+      },
+      "effect_l5": {
+        "value": "-5.28",
+        "source": "hand-pinned from tools/mode_experiments/specs/e5_hedging_maxcontrast_power.yaml (E5 header: Cohen's d on hedges/100w) + the /explore skill's validated-findings note; no machine-readable effect-size artifact located (probe 2026-07-13)",
+        "verified": false
+      },
+      "effect_l3": {
+        "value": "-2.26",
+        "source": "hand-pinned from tools/mode_experiments/specs/e5_hedging_maxcontrast_power.yaml (E5 header: Cohen's d on hedges/100w) + the /explore skill's validated-findings note; no machine-readable effect-size artifact located (probe 2026-07-13)",
+        "verified": false
+      }
+    },
+    "config_experiment": {
+      "profiles": {
+        "value": 2,
+        "source": "tools/config_experiment/profiles — profile dirs (a-vanilla, b-lightweight)",
+        "verified": true
+      }
+    },
+    "gate_check": {
+      "gates_audited": {
+        "value": 7,
+        "source": "tools/real_gate_check/runs.jsonl — latest run (2026-07-07, target_set frq_promote_gates_v1)",
+        "verified": true
+      },
+      "flagged": {
+        "value": 2,
+        "source": "tools/real_gate_check/runs.jsonl — latest run (2026-07-07, target_set frq_promote_gates_v1) — counts.flagged",
+        "verified": true
+      },
+      "ok": {
+        "value": 3,
+        "source": "tools/real_gate_check/runs.jsonl — latest run (2026-07-07, target_set frq_promote_gates_v1) — counts.ok",
+        "verified": true
+      },
+      "untested": {
+        "value": 2,
+        "source": "tools/real_gate_check/runs.jsonl — latest run (2026-07-07, target_set frq_promote_gates_v1) — counts.untested",
+        "verified": true
+      }
+    },
+    "inline_chat": {
+      "threads": {
+        "value": 5,
+        "source": "InlineChats/zz_registry.json — threads[] count (content plane)",
+        "verified": true
+      },
+      "flagship_rounds": {
+        "value": 12,
+        "source": "tools/org_doc/snapshots/physics_org_design_v*.docx — versioned snapshot count",
+        "verified": true
+      }
+    }
+  },
+  "fv_aggregate": {
+    "functions": {
+      "value": 831,
+      "source": "hand-pinned from the live index display at wischman123.github.io on 2026-07-09; no machine-readable repo source located (probe 2026-07-09)",
+      "verified": false
+    },
+    "property_checked": {
+      "value": 641,
+      "source": "hand-pinned from the live index display at wischman123.github.io on 2026-07-09; no machine-readable repo source located (probe 2026-07-09)",
+      "verified": false
+    },
+    "laws": {
+      "value": 581,
+      "source": "hand-pinned from the live index display at wischman123.github.io on 2026-07-09; no machine-readable repo source located (probe 2026-07-09)",
+      "verified": false
+    }
+  },
+  "consistency_todos": [
+    {
+      "stat": "fv_aggregate",
+      "reason": "no machine source; re-derive from fv_triangulation_runner census",
+      "opened": "2026-07-09"
+    },
+    {
+      "stat": "fv_c001_fixture",
+      "reason": "pinned from fv_triangulation_runner; re-derive on runner/model change",
+      "opened": "2026-07-09"
+    },
+    {
+      "stat": "lab_explore_effects",
+      "reason": "no machine source; re-derive by re-running mode_experiments stats over the E5 rows of results.jsonl on any model/effort change",
+      "opened": "2026-07-13"
+    }
+  ]
+}

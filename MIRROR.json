@@ -1,0 +1,695 @@
+{
+  "schema": 1,
+  "source_repo": "physics",
+  "source_commit": "73d4ddbef27ed235c78cb530a9f7464050b76a3c",
+  "sim_source_commit": "73d4ddbef27ed235c78cb530a9f7464050b76a3c",
+  "determinism_excluded_keys": [
+    "generated_at"
+  ],
+  "files": {
+    "src/architecture.html": {
+      "sha256": "59635a3979129eb46b6492544d932ec0be4926c3f17310edc46a9c178e34d078",
+      "rule": "pages"
+    },
+    "src/assets/d1_after_regeneration.png": {
+      "sha256": "7151ba1b565c2daa64ef65dbb5da0be9edbe6aa74e7b56281d3733420b00051d",
+      "rule": "assets"
+    },
+    "src/assets/d1_before_regeneration.png": {
+      "sha256": "8df5e484d060e2bb85e840abf381f6b0ce1a479fff97b3af842113ca583eeee8",
+      "rule": "assets"
+    },
+    "src/assets/field_tracer.js": {
+      "sha256": "308e4576b7db9bef8653536274926bdb487277ccdd54de1e2de2cac1be847d16",
+      "rule": "assets"
+    },
+    "src/assets/gate_rejection_ui.png": {
+      "sha256": "2ad99c6c66613c590ec6726b596943924d4897d0c29d06f26ef839e5c32c9943",
+      "rule": "assets"
+    },
+    "src/assets/js/fieldlab/fieldlab.js": {
+      "sha256": "3bf3380e9976cd21d2b8a623420a0dcc9e574923596a2f0f7ce72aa9249129af",
+      "rule": "assets"
+    },
+    "src/assets/js/fieldlab/scenes.js": {
+      "sha256": "f76d57d079c79bcd740641f32a239be82eaa8b0e96d830fb1e67ee5db0a5716b",
+      "rule": "assets"
+    },
+    "src/assets/js/fieldlab/tracer.js": {
+      "sha256": "893b8f4e6b085bc26f2dfd9cd15b045eadbb31eeca16a936659ac634a59eee27",
+      "rule": "assets"
+    },
+    "src/assets/js/lightbox.js": {
+      "sha256": "ecca2728c6c480786128710a2fc204c53353dca50841460d2966e698ef087bae",
+      "rule": "assets"
+    },
+    "src/assets/js/sim_embed_gesture.js": {
+      "sha256": "c25196855ee0aedb8f71fb4993af95c140947719637f4ac53f7b9c5e8cac2008",
+      "rule": "assets"
+    },
+    "src/assets/js/wipe_slider.js": {
+      "sha256": "1841354debbf66326b3a27fd5c1154426dadf6345cef7806cebfc0c5a1825aa4",
+      "rule": "assets"
+    },
+    "src/assets/k015_key_plain_p1.png": {
+      "sha256": "dfb9765117ae9d8e0448b4ef0827bacf6d74c61f63ab5e7360307a89fbdc9a6b",
+      "rule": "assets"
+    },
+    "src/assets/k015_key_plain_p2.png": {
+      "sha256": "29ea7846476e9f9ebbda7b90d8d315e8d324aeae2344f3fed28d8f59fe29b3c1",
+      "rule": "assets"
+    },
+    "src/assets/k015_key_system_p1.png": {
+      "sha256": "6bd20976205e894e0fe91904a1b01a97570b49e0258b3e9b7bf81d10c9bdd314",
+      "rule": "assets"
+    },
+    "src/assets/k015_key_system_p2.png": {
+      "sha256": "a10f7817f5af003a185ef620f2ba1cd0911784b763dd1d7dfad9ae48372eb308",
+      "rule": "assets"
+    },
+    "src/assets/poster_coulomb.png": {
+      "sha256": "d78c7ad6a1b2be34a66cd1928a67877b0ae4056e495fd1c1d229e811caf4c9ee",
+      "rule": "assets"
+    },
+    "src/assets/poster_dawn.png": {
+      "sha256": "f80547874511a761ca2a3c4dda12dcbf2e6c46128f2ef1dfb6fbf05c838eca25",
+      "rule": "assets"
+    },
+    "src/assets/poster_rlc.png": {
+      "sha256": "a40896d7780f696074e2a2c329f5fc9cf57ca13ee63943eb26324284aa570172",
+      "rule": "assets"
+    },
+    "src/assets/sim_embed.js": {
+      "sha256": "23641f9891249d208d5438bb9551da14a0e9e57465d7a0e3b5dcc3139cc127c5",
+      "rule": "assets"
+    },
+    "src/assets/sims/embed.js": {
+      "sha256": "b41f074822882c13a448facbbf56f9e9d0efc64b685291f8ee7f019e6864778c",
+      "rule": "assets"
+    },
+    "src/assets/sims/k015_eulers_hilltop_full.poster.png": {
+      "sha256": "4e7564503672a2b6edf9d5d610bed4934dadf87e8ad17ff5388570e4ef4da6cf",
+      "rule": "assets"
+    },
+    "src/assets/sims/manifest.json": {
+      "sha256": "151993edff14ddef731dae77ecf9fc16332f735123c39a43c6cede47a895b6cd",
+      "rule": "assets"
+    },
+    "src/assets/site.css": {
+      "sha256": "8cb1fba839c2453684710428ba13c5db3716eea86b6677fbf118a26debdc6b4d",
+      "rule": "assets"
+    },
+    "src/assets/story/brief_zoom.png": {
+      "sha256": "ff4a4de65ec23cbf5bf7c8b39470c06fd35d23268f1fcac17f1282ccf9265624",
+      "rule": "assets"
+    },
+    "src/assets/story/diagram_engine.png": {
+      "sha256": "383ab48a27176460caa55f68891bec0e8db8ba51a5a157ffafc65d5498acb9fe",
+      "rule": "assets"
+    },
+    "src/assets/story/feedback_back.png": {
+      "sha256": "b492785ec21d49e0e73940e14d879f2549e12e73736b306e4ba35cf39a0535fa",
+      "rule": "assets"
+    },
+    "src/assets/story/feedback_back_zoom.png": {
+      "sha256": "fe3d90331413d9d85e82d885e0535bf016e9fdad895a55083656b9ac79d10545",
+      "rule": "assets"
+    },
+    "src/assets/story/feedback_front.png": {
+      "sha256": "e5af26a211a85733672d6f94612bd4fb6457a24c653bf92993760eaed0a2aecc",
+      "rule": "assets"
+    },
+    "src/assets/story/feedback_front_zoom.png": {
+      "sha256": "c5cfa1adfcb749357ab8a03d1954eb002f97aca40590b7e53446327522277106",
+      "rule": "assets"
+    },
+    "src/assets/story/manifest.json": {
+      "sha256": "1c9a297fb459065d92b99420644ddcfc8c79ccbb8aa82f2e5acbc5900adc2777",
+      "rule": "assets"
+    },
+    "src/assets/story/printed_page.png": {
+      "sha256": "70ec3d828579b563ba272a1f5848c418cfa0aaa91a23d33b3323c9d35279098a",
+      "rule": "assets"
+    },
+    "src/assets/story/solution_math.png": {
+      "sha256": "f142e3c87e20f5072e9bef7389eb0cdde574ac45655be88518e16f27d6b9f70f",
+      "rule": "assets"
+    },
+    "src/assets/story/solution_page.png": {
+      "sha256": "febdd832bc1bf31f6a7d91dd81102dd320d7a4061555b07f3459dfe83ef7546d",
+      "rule": "assets"
+    },
+    "src/assets/story/solution_zoom.png": {
+      "sha256": "003d795e25f5d1e54e905ad8159c54554993038bce437a3a84eb27db2b550113",
+      "rule": "assets"
+    },
+    "src/assets/terminal_replay.js": {
+      "sha256": "f63d08f730dd77d6cf9345156f6073fd3f553bfa4d4c8eaaf9f2e404a1d91c06",
+      "rule": "assets"
+    },
+    "src/assets/theme.css": {
+      "sha256": "8bb6d3f27b1d9d8641e6c07bd9207d25c6f11660eb990effa25a7909e1bd3b9d",
+      "rule": "assets"
+    },
+    "src/data/showcase_data.json": {
+      "sha256": "632938b408b0a8844bb78397c6a177606800b84fcd731ed35034d678868e84ff",
+      "rule": "data"
+    },
+    "src/deep/assets/engine/gate_rejection.png": {
+      "sha256": "0cfcdfe42acaaedc1903ec8ee932ba5cf31ea2d75731029cb98c452712558dc6",
+      "rule": "deep-assets"
+    },
+    "src/deep/assets/engine/manifest.json": {
+      "sha256": "fadb588081f73dcb6da563a9967e67c2cfdbb37372873935ef41c9edd5fb7e84",
+      "rule": "deep-assets"
+    },
+    "src/deep/assets/fieldlab/field_tracer.js": {
+      "sha256": "308e4576b7db9bef8653536274926bdb487277ccdd54de1e2de2cac1be847d16",
+      "rule": "deep-assets"
+    },
+    "src/deep/assets/gallery/dawn_p1.png": {
+      "sha256": "b40544d2c175827d9f3c468d25ebe6967a0a72a973d72b61252d0edd5adf9a64",
+      "rule": "deep-assets"
+    },
+    "src/deep/assets/gallery/dawn_p2.png": {
+      "sha256": "834c53f84bb343f47f5d892e2f9e281d520c63d0d5ae0e977835479b7a23abf2",
+      "rule": "deep-assets"
+    },
+    "src/deep/assets/gallery/dawn_p3.png": {
+      "sha256": "d43ec5b7419344a74ea24ba69b8ba3a9f0f29e54082f7325b3fd4d0058abdc61",
+      "rule": "deep-assets"
+    },
+    "src/deep/assets/gallery/dawn_p4.png": {
+      "sha256": "72d91d12eefe24be228398df41569b9d0db49208b524172f7f654bf6ea0a76b0",
+      "rule": "deep-assets"
+    },
+    "src/deep/assets/gallery/dawn_p5.png": {
+      "sha256": "a5169b7dcf3b632475603c8576f9ab8a518df931075ebcc0a22ce30aaa2b9265",
+      "rule": "deep-assets"
+    },
+    "src/deep/assets/gallery/era_compare_after.png": {
+      "sha256": "d34650e0a3a3fd07a555f6f7a9b369547a5ca72e0b8bd07e4c6b9d83dd97f6cd",
+      "rule": "deep-assets"
+    },
+    "src/deep/assets/gallery/era_compare_before.png": {
+      "sha256": "a754bfc1eb5caa7b3e402717131113f8ee001c534cd76d840858737b61c23819",
+      "rule": "deep-assets"
+    },
+    "src/deep/assets/gallery/manifest.json": {
+      "sha256": "15c4e5080c0b9a6d65ffda76a51adbf56a5614672af103f416d16936c104b1a7",
+      "rule": "deep-assets"
+    },
+    "src/deep/assets/gallery/plain_vs_system_after.png": {
+      "sha256": "f27ccf345ed44d6252f150d7e09c72b6882df270448dfae1aa66e0236a4bc820",
+      "rule": "deep-assets"
+    },
+    "src/deep/assets/gallery/plain_vs_system_before.png": {
+      "sha256": "d5b44aa23e8b6581345d439e4427697f7acdf522fc131b666ce626162e218d2d",
+      "rule": "deep-assets"
+    },
+    "src/deep/assets/gallery/regen_review_after.png": {
+      "sha256": "8649a7cacb1d7ea552c795b77233bbbb46302c44354e5a7f49a172602ae8790d",
+      "rule": "deep-assets"
+    },
+    "src/deep/assets/gallery/regen_review_before.png": {
+      "sha256": "d5b4995e9cdb082be6315159d9906ea55b296ce63e76abdf2b3b3de0b1786fff",
+      "rule": "deep-assets"
+    },
+    "src/deep/assets/js/lightbox.js": {
+      "sha256": "ecca2728c6c480786128710a2fc204c53353dca50841460d2966e698ef087bae",
+      "rule": "deep-assets"
+    },
+    "src/deep/assets/js/wipe_slider.js": {
+      "sha256": "1841354debbf66326b3a27fd5c1154426dadf6345cef7806cebfc0c5a1825aa4",
+      "rule": "deep-assets"
+    },
+    "src/deep/assets/sims/coulomb_two_body.poster.png": {
+      "sha256": "d4a231a3e9624307b0f07a29e43e029c1548f288cebd091b919524db24e3f953",
+      "rule": "deep-assets"
+    },
+    "src/deep/assets/sims/dawn_last_burn.poster.png": {
+      "sha256": "5d2af0eabeac75429373163fa0aa79d6069212125c59b7ef88e5616110a05562",
+      "rule": "deep-assets"
+    },
+    "src/deep/assets/sims/embed.js": {
+      "sha256": "b41f074822882c13a448facbbf56f9e9d0efc64b685291f8ee7f019e6864778c",
+      "rule": "deep-assets"
+    },
+    "src/deep/assets/sims/k015_eulers_hilltop_full.poster.png": {
+      "sha256": "4e7564503672a2b6edf9d5d610bed4934dadf87e8ad17ff5388570e4ef4da6cf",
+      "rule": "deep-assets"
+    },
+    "src/deep/assets/sims/manifest.json": {
+      "sha256": "151993edff14ddef731dae77ecf9fc16332f735123c39a43c6cede47a895b6cd",
+      "rule": "deep-assets"
+    },
+    "src/deep/assets/sims/rlc_underdamped_1.poster.png": {
+      "sha256": "90ce7fad4d3bb1672ee953fa56d834066e36a6f756fdf5817a98f68aa09f81fe",
+      "rule": "deep-assets"
+    },
+    "src/deep/assets/story/diagram_engine.png": {
+      "sha256": "35fb2bc1ac589741033adcb0d14115da634e6ed2efa9a6c6137d5ff150776890",
+      "rule": "deep-assets"
+    },
+    "src/deep/assets/story/feedback_back.png": {
+      "sha256": "b492785ec21d49e0e73940e14d879f2549e12e73736b306e4ba35cf39a0535fa",
+      "rule": "deep-assets"
+    },
+    "src/deep/assets/story/feedback_back_zoom.png": {
+      "sha256": "fe3d90331413d9d85e82d885e0535bf016e9fdad895a55083656b9ac79d10545",
+      "rule": "deep-assets"
+    },
+    "src/deep/assets/story/feedback_front.png": {
+      "sha256": "e5af26a211a85733672d6f94612bd4fb6457a24c653bf92993760eaed0a2aecc",
+      "rule": "deep-assets"
+    },
+    "src/deep/assets/story/feedback_front_zoom.png": {
+      "sha256": "c5cfa1adfcb749357ab8a03d1954eb002f97aca40590b7e53446327522277106",
+      "rule": "deep-assets"
+    },
+    "src/deep/assets/story/manifest.json": {
+      "sha256": "af31c94673a9f298aeb293e144cf2fb89d43607f54ae6ef0ac3fee07ddd0a445",
+      "rule": "deep-assets"
+    },
+    "src/deep/assets/story/printed_page.png": {
+      "sha256": "0cdb72dc0d3499a6608c29725901395bf83b085d62e3325cbb63fa6ab5d78ae2",
+      "rule": "deep-assets"
+    },
+    "src/deep/assets/story/solution_math.png": {
+      "sha256": "c81d750e4aa85c5b945187eccb364690d35106e0d5f5e3cf67fc619d9ce8f587",
+      "rule": "deep-assets"
+    },
+    "src/deep/assets/story/solution_page.png": {
+      "sha256": "fd05ba1bec64618b5b3aa3ff4fe6ea36bc46f599d0dc69155c021cfc7880a3a7",
+      "rule": "deep-assets"
+    },
+    "src/deep/assets/story/solution_zoom.png": {
+      "sha256": "003d795e25f5d1e54e905ad8159c54554993038bce437a3a84eb27db2b550113",
+      "rule": "deep-assets"
+    },
+    "src/deep/code.html": {
+      "sha256": "eb7a3784442b1be8ddd814022ca56ff9e17e9aa7f13f98646c6b09b7d15a178e",
+      "rule": "pages"
+    },
+    "src/deep/engine.html": {
+      "sha256": "ffdec8162f988487de7ab3617ab16e4d0aa61180d6a7974d0d4ffa8fed2fefd0",
+      "rule": "pages"
+    },
+    "src/deep/gallery.html": {
+      "sha256": "0b2909a0ce8e7264686d3a9ad13a09278ec62a6a0974c51d3fff4b678cde0aef",
+      "rule": "pages"
+    },
+    "src/deep/lab.html": {
+      "sha256": "fc911b3fbb5b17498cf8934c5663abf6fb541dc3bbc373e2e4cf196df542985f",
+      "rule": "pages"
+    },
+    "src/deep/meta.html": {
+      "sha256": "a8dedfb18db151629849c4b906a048fb42781596b676e870cad2f5f0e2135ed8",
+      "rule": "pages"
+    },
+    "src/deep/sims.html": {
+      "sha256": "0b6ca6003bf8af624dd0122f2ddbedab1d962703363cd5f4ec2e971b3f7be86d",
+      "rule": "pages"
+    },
+    "src/deep/systems.html": {
+      "sha256": "56d7ea989832ae8cd9601ad8dbaa9108c367bf1c17be7a664168fe216f86d463",
+      "rule": "pages"
+    },
+    "src/deep/verification.html": {
+      "sha256": "5e19f7d03a36106129788db5d51602cc204ea8d3ed48de79c5b2fd55daad4ae9",
+      "rule": "pages"
+    },
+    "src/index.html": {
+      "sha256": "cfcf9de48879278eec2b06492d98c09ecbd498502516cc5221135d007a4d2b73",
+      "rule": "pages"
+    },
+    "src/plain-vs-engine.html": {
+      "sha256": "83ae585a22e61fd2a5855a98ca477baffcc8c3aad9ae94e2fa4b8f22275825f5",
+      "rule": "pages"
+    },
+    "src/sim/engine/bodies.js": {
+      "sha256": "2ba6af474abe60e8d7b0d3eb38b9a3fefe2761e98006368a87b186c0a0f5f2da",
+      "rule": "sim"
+    },
+    "src/sim/engine/circuits.js": {
+      "sha256": "1b20efd63605c772b38199167f9f60e6f7d0412702348e79e3f49e5b073185ea",
+      "rule": "sim"
+    },
+    "src/sim/engine/circuits/index.js": {
+      "sha256": "41ad49fa3d5e951433d61e1c73991c9fd75eb940a2845912e82612021ea8b8d4",
+      "rule": "sim"
+    },
+    "src/sim/engine/circuits/mna.js": {
+      "sha256": "3367dbd12d435c14b29672f6ee60ff5a0b7a9564252905c84cf87da337feaf1d",
+      "rule": "sim"
+    },
+    "src/sim/engine/circuits/solver.js": {
+      "sha256": "6966fa71ed9c20cfcafc7f49005bccbe02e79d69b77ad27ac7d03cd7bd325bf3",
+      "rule": "sim"
+    },
+    "src/sim/engine/circuits/state.js": {
+      "sha256": "70de20fc97ca90adb03b9befb6f083e16554db40fb9831d0f6a8ab34dd5680e2",
+      "rule": "sim"
+    },
+    "src/sim/engine/circuits/tracker_emit.js": {
+      "sha256": "92287febcc8ef9aa512b37b934d99132343427fdc98f6f86f6aa0d938179fc43",
+      "rule": "sim"
+    },
+    "src/sim/engine/circuits_check.js": {
+      "sha256": "2a2b6217f27e4caa91779ff03cba8f42f0bc1a746e8ea9b2a4259780dd82b28f",
+      "rule": "sim"
+    },
+    "src/sim/engine/collisions.js": {
+      "sha256": "3f725587c7999950d3da146f18709d2db628c69b9231834060be1cd0d987bac0",
+      "rule": "sim"
+    },
+    "src/sim/engine/components.js": {
+      "sha256": "1c299058f44ddb21f3737e6ce078753550dc78a9edaabbf147ad95175023b5f6",
+      "rule": "sim"
+    },
+    "src/sim/engine/conserved.js": {
+      "sha256": "08360e51de3b854446e3951144067272ffe91bd42ca2bb1cdc08df1b9f1ba80f",
+      "rule": "sim"
+    },
+    "src/sim/engine/constants.js": {
+      "sha256": "178db0983e452ad392d002f2d2813e6cc06ce5a94ad8162a66289aa7b467f852",
+      "rule": "sim"
+    },
+    "src/sim/engine/constraints.js": {
+      "sha256": "09509cceb50e009da70ee3f87a36f31f40632b9455ea9ff800c35c19cdde0315",
+      "rule": "sim"
+    },
+    "src/sim/engine/containment.js": {
+      "sha256": "144e497a5a1d4b7718f80224634f8b1ab00da61ea502b7090cd4e40a065ebb33",
+      "rule": "sim"
+    },
+    "src/sim/engine/energy.js": {
+      "sha256": "7bf6882719fdec3e0d78618b73b281a6c04180c70536317bc12e26fcecb79206",
+      "rule": "sim"
+    },
+    "src/sim/engine/extended_object_geometry.js": {
+      "sha256": "4b6805ed3d572ee845367c1d7d198eef03304a20fce120def2e5ae0372bb29be",
+      "rule": "sim"
+    },
+    "src/sim/engine/field_sampler.js": {
+      "sha256": "c75aeecef125f8413d482654e14ac7e8e47ef708a07e69f945b750cfb53eca91",
+      "rule": "sim"
+    },
+    "src/sim/engine/fields.js": {
+      "sha256": "aa943c885f7aa27b5b79d50da292baac7bd5775fde384daf2af7e49553b4a14c",
+      "rule": "sim"
+    },
+    "src/sim/engine/fluids.js": {
+      "sha256": "3a6cef374a1f88c0ce02351a3eb26421a9c7797e58c87efa00b17823066aad65",
+      "rule": "sim"
+    },
+    "src/sim/engine/flux.js": {
+      "sha256": "c4a1fdaa79aa71fa29a91b0dfe7720d03e78c96fe8a3db04c1803d0db726761a",
+      "rule": "sim"
+    },
+    "src/sim/engine/forces.js": {
+      "sha256": "9e2e4279a782d80e3c9dc96b4e118425c3b6857433dc71da37a0afda22a5654d",
+      "rule": "sim"
+    },
+    "src/sim/engine/ground_plane.js": {
+      "sha256": "f8506350218ffb4408ec0a1a8f7a95200331e782607fd60c4a5c3f07ffeea512",
+      "rule": "sim"
+    },
+    "src/sim/engine/induction.js": {
+      "sha256": "113f1212eb2bc627e955967765989500cd74e59b6b862dba1df9b1c999e15ca5",
+      "rule": "sim"
+    },
+    "src/sim/engine/inertia.js": {
+      "sha256": "64fad06d8ed657cad8b99b2a143bdd8bf5e5093120fc81c142ce7c684ebde8e0",
+      "rule": "sim"
+    },
+    "src/sim/engine/integrator.js": {
+      "sha256": "a1c0d60848da2dcf68536c5a285747715b0f47c50053a1d086fd6bdf24c0171b",
+      "rule": "sim"
+    },
+    "src/sim/engine/kinetic_theory.js": {
+      "sha256": "c0513c3bb3dc4cd3be6c24faf5786a606a0178ef2beed3eb8214b67320551a1f",
+      "rule": "sim"
+    },
+    "src/sim/engine/maneuvers.js": {
+      "sha256": "6d1a5404564e85d04e51255358627d9c6ba84b8aa132d1dfb0c427ffb798ac79",
+      "rule": "sim"
+    },
+    "src/sim/engine/output_events.js": {
+      "sha256": "5d215bcca82758bbec729ebc2ff598d21b4e44d97d7c4da8b359d53f72052893",
+      "rule": "sim"
+    },
+    "src/sim/engine/position_poke.js": {
+      "sha256": "7dbf119bc3d9c818cb3b082cb0b98e8d3884eb302bf262eb2620dc0d312ba375",
+      "rule": "sim"
+    },
+    "src/sim/engine/rail_induction.js": {
+      "sha256": "01cc100aa3253caaf37522f645a17aebda821190c44dfb29bcdfd7895077df1f",
+      "rule": "sim"
+    },
+    "src/sim/engine/runner.js": {
+      "sha256": "4e1314d8d51ab15006264d1ea2eee51503b1348a501877559c07ef5dcd6d58dc",
+      "rule": "sim"
+    },
+    "src/sim/engine/scene.js": {
+      "sha256": "70525b6de80a9f943aa5a64815a45bb28dfc67b241f8606c4252d94e07a70ac7",
+      "rule": "sim"
+    },
+    "src/sim/engine/vec.js": {
+      "sha256": "cbc146647b89dac0096fddd9a88899c84aa811fda6269b216e02ad3f7b8fde0b",
+      "rule": "sim"
+    },
+    "src/sim/index.html": {
+      "sha256": "ad8ad9afb8cc8eb0684a9a99448afdfe8c9c9b58fc641adc14a9fd34d0cd2664",
+      "rule": "sim"
+    },
+    "src/sim/main.js": {
+      "sha256": "6e945b49e9f9be63bee90d18d45c99f3c5213e059926e2d33d645cdaffd63c79",
+      "rule": "sim"
+    },
+    "src/sim/render/canvas2d.js": {
+      "sha256": "333a7826f7ac434ff0e106f6d5319cbb66994f48318b00a18f09ab603d018ce3",
+      "rule": "sim"
+    },
+    "src/sim/render/current_flow.js": {
+      "sha256": "7fbc88312485a8ba44d2736de7bf06e1374bdebbddbbc8183773adb6d7f294b1",
+      "rule": "sim"
+    },
+    "src/sim/render/divergence_foil_overlay.js": {
+      "sha256": "9ced106b50ad37a1b4de810e712c5e994d101a7f4ac7ae32adcb02ca8edadcb0",
+      "rule": "sim"
+    },
+    "src/sim/render/download.js": {
+      "sha256": "62c3ed5e9d1b59b53744662ce893b687ec7ba18cb5b1a50fb1e5135fd0c1d7ee",
+      "rule": "sim"
+    },
+    "src/sim/render/fbd_overlay.js": {
+      "sha256": "790ce913a3c20498ea0495cfef8f61b0616123c57038537376d55b8b10fc5bbf",
+      "rule": "sim"
+    },
+    "src/sim/render/field_overlay.js": {
+      "sha256": "d27331e721241c3d88d207435c19020e87c322559d7f063fac38dd6037f775a6",
+      "rule": "sim"
+    },
+    "src/sim/render/field_overlay_geometry.js": {
+      "sha256": "a0a71659be8f9846cb71246017033bd01c1bb263f603531bb1f1111af3496e73",
+      "rule": "sim"
+    },
+    "src/sim/render/ghost_store.js": {
+      "sha256": "66b82c1ac9e0f69956eaf8f3ec5a65dbdc5f972a3edb0d1d314ce0c085fbe75f",
+      "rule": "sim"
+    },
+    "src/sim/render/integrator_drift_overlay.js": {
+      "sha256": "b3454543aff9d3b25f66c517fb31acefa15c2292ec9c360b98a87f91759c5404",
+      "rule": "sim"
+    },
+    "src/sim/render/kinetic_theory_overlays.js": {
+      "sha256": "f30c519dd79f0fc81386a5e9a1b00f32cfadb19831d28c7347723f38b6edeec3",
+      "rule": "sim"
+    },
+    "src/sim/render/lol_overlay.js": {
+      "sha256": "9f503c54e731981dfefc2488b1ffcd94eaec8e8912a108e46c5b7e8348b4c917",
+      "rule": "sim"
+    },
+    "src/sim/render/motion_graph.js": {
+      "sha256": "dea099d383d6a671b0d152f18d8b2b4a3803de390fc64c85661d9c855577ffd2",
+      "rule": "sim"
+    },
+    "src/sim/render/render_primitives.js": {
+      "sha256": "0a5b65b573006d3d1026f04367e64a08cf46ae27c3a65d4807c79e3ba8ba8238",
+      "rule": "sim"
+    },
+    "src/sim/render/render_suppression.js": {
+      "sha256": "63f4b0d970fe04713a108ef28c59e198367364e4bc2028d164d2d3c9d4b5a88f",
+      "rule": "sim"
+    },
+    "src/sim/render/scatter_plot.js": {
+      "sha256": "f0964a77ff1ce75bc414a6108fe8168c9bc3a92c19ca0e7f21235211f50e1839",
+      "rule": "sim"
+    },
+    "src/sim/render/sketch_state.js": {
+      "sha256": "8da7a0e9406a024c8579a97e121fc1249cc56af99afafedc8639ccb2eea10384",
+      "rule": "sim"
+    },
+    "src/sim/render/surface_geometry.js": {
+      "sha256": "3db7d6461f759648e0c07502c5ac9a871abc33700dfb7158ec32479bdf3a1029",
+      "rule": "sim"
+    },
+    "src/sim/render/trajectory_trace.js": {
+      "sha256": "86e520c3586dd4ab1535c4bdc0498c945b6b36c5c91e82d8d0af10abfb788933",
+      "rule": "sim"
+    },
+    "src/sim/render/viewport_transform.js": {
+      "sha256": "08956d995d52e69fa01062ef003a3d26c323aca4dc74c019052e7c0f9646df81",
+      "rule": "sim"
+    },
+    "src/sim/render/whiteboard_card.js": {
+      "sha256": "07039b8cff3e6baed11d3a91bb6c5b53a36fd4d6cd014f6127a7a11076545fe0",
+      "rule": "sim"
+    },
+    "src/sim/scenarios/1st_year/k015_eulers_hilltop_full.json": {
+      "sha256": "e0bec0fb7a581034742f3398c48aadacb52084dfe64f9c17e2d134f65983798a",
+      "rule": "sim"
+    },
+    "src/sim/scenarios/_registry.js": {
+      "sha256": "4a52b79166f2007309221bd8db007613fc6558b09b7cc6bc0937c4478dcd0455",
+      "rule": "sim"
+    },
+    "src/sim/scenarios/ap_c/coulomb_two_body.json": {
+      "sha256": "8cf31f996824dab4f9736abaf2c07909cf0a643580a338b60576026304d78a4a",
+      "rule": "sim"
+    },
+    "src/sim/scenarios/ap_c/dawn_last_burn.json": {
+      "sha256": "d717ddf424fb6ab4783befb7c944e89532404b23a90615a798a4f5ea775e4ded",
+      "rule": "sim"
+    },
+    "src/sim/scenarios/ap_c/rlc_underdamped_1.json": {
+      "sha256": "4473a86438f896d76d32882457368134de7ddcc2961021192f9ea93cbe3d950f",
+      "rule": "sim"
+    },
+    "src/sim/scenarios/hello_world.json": {
+      "sha256": "7f20dbfea5265fd91c21070f4ce05d78004ede91dc7515fa73965880f30fe3be",
+      "rule": "sim"
+    },
+    "src/sim/ui/baseline.js": {
+      "sha256": "9b3dd498d91225a6dbbf51998b0b898135b266b65666550a4ae6845178770eca",
+      "rule": "sim"
+    },
+    "src/sim/ui/embed_boot.js": {
+      "sha256": "7466ac24910fe82ab8a4975d1ee2c254410661c92cfc1ead45b59a75ced6376d",
+      "rule": "sim"
+    },
+    "src/sim/ui/ghost_label.js": {
+      "sha256": "3567e8600eb4f77d32fc6ce8c718c8402080eaee0b140e0081274325baf242f2",
+      "rule": "sim"
+    },
+    "src/sim/ui/idealize_scene.js": {
+      "sha256": "17f58fdde179bb04a09fa279ebae8a6af8147274d79ba5b41c7728bae12bf7fa",
+      "rule": "sim"
+    },
+    "src/sim/ui/inspector.js": {
+      "sha256": "084a5b121529998ddf0ae9cddebcc7fe4bab66c063b4c1c32a00d473458b497f",
+      "rule": "sim"
+    },
+    "src/sim/ui/inspector_edits.js": {
+      "sha256": "cfb529a22a3089fa2d70e7c51f0041e03cb43caff0cd33ed3523fbd5a68a8a3b",
+      "rule": "sim"
+    },
+    "src/sim/ui/lab_notebook.js": {
+      "sha256": "a8e606f67046aa64de9d2f572d0cf943216b3b0fed7edbcd4500afd7598978ff",
+      "rule": "sim"
+    },
+    "src/sim/ui/pointer_drag.js": {
+      "sha256": "82a4fc4dc03b69a1c5cdc9a955961d83fd624e03bbc798315456586eeb2209d2",
+      "rule": "sim"
+    },
+    "src/sim/ui/predict.js": {
+      "sha256": "4a7c51c97c667e0970076cdaffa550d0ce0cb7fe75579650830b7fcc4a5292d2",
+      "rule": "sim"
+    },
+    "src/sim/ui/preset_gating.js": {
+      "sha256": "8a67a7d7a5f7cce70bb2b12c4227b11fa42e9a345f1a007db849a4abdbee2fdd",
+      "rule": "sim"
+    },
+    "src/sim/ui/preset_selector.js": {
+      "sha256": "fffca65c3c2ab15e3d83b6664a5119a81520139a710275da8ca1fb94cb6356cb",
+      "rule": "sim"
+    },
+    "src/sim/ui/quantities.js": {
+      "sha256": "63d0d729ace597e5890f6c16a32764e11c9f1976e06d9cb521ddff448d6e5c01",
+      "rule": "sim"
+    },
+    "src/sim/ui/scenario_loader.js": {
+      "sha256": "cc1ff5c26c0b35f1e03f8ed70fa3b0516f64757933360ac0782ad53cfcb659cd",
+      "rule": "sim"
+    },
+    "src/sim/ui/sketch_capture.js": {
+      "sha256": "5ecf1ed918f575587daf7b15325bdffdee9cc888d8225152f7ea1adfc2d45137",
+      "rule": "sim"
+    },
+    "src/sim/ui/sketch_geometry.js": {
+      "sha256": "ee2ff2a95d677d755d767c051ae6321776c382164fc21a51689f9d5acde04bfd",
+      "rule": "sim"
+    },
+    "src/sim/ui/timeline_scrub.js": {
+      "sha256": "51dc3c0c1f0e3b11f880fd8172ef1314f4994617fa733b09cde2dd47e5159020",
+      "rule": "sim"
+    },
+    "src/sim/ui/toolbar.js": {
+      "sha256": "893a60da773d0f76e00ba8250e8ffb8011f4ef1577b205030208924238b0ff2c",
+      "rule": "sim"
+    },
+    "src/sim/validate_scene_browser.js": {
+      "sha256": "290a6dd4414a464b5f00563ece4d751f580467498049e0d50bad504f07cba8f2",
+      "rule": "sim"
+    },
+    "src/sim/validation/diagnostics_validation.js": {
+      "sha256": "e77e1d3a6603edd4f3ee519cb18aa57b66754ecf23f4331d9e6d2ee1573333a4",
+      "rule": "sim"
+    },
+    "src/sim/validation/fluid_validation.js": {
+      "sha256": "865b45811895ca39e1248edef93cd69d0881361e43f7e84ab420af2a820f2ddb",
+      "rule": "sim"
+    },
+    "src/sim/validation/rail_loop_validation.js": {
+      "sha256": "840f58a4c1d74c4d831d363f11dfa0450aa8391d5ed2f46250642fd80c7798c2",
+      "rule": "sim"
+    },
+    "src/vendor/showcase_data.py": {
+      "sha256": "1b0024d79b968cf758934eddfb526e989257b8efdb5f39ff2bef70cafe214687",
+      "rule": "schema"
+    },
+    "src/videos.html": {
+      "sha256": "d28780600c91c06cb255c0287b1e654a4cc9bf3328ac317e78a6d14a8b5f5481",
+      "rule": "pages"
+    },
+    "tools/check_stats.py": {
+      "sha256": "ea7d9dd577eab021c19937469b79b5aacb7d10aff2e3eccb53cc361ed40bfb0a",
+      "rule": "verify-core"
+    },
+    "tools/deep_nav.py": {
+      "sha256": "a2b7b374b2c88c084f95d63c14aea76207981e90b9a3d3705012026d691c1845",
+      "rule": "verify-core"
+    },
+    "tools/mirror_manifest.py": {
+      "sha256": "d72a74447347fd171a57fb626b4c56cd3879af0e906e655f23591c5aeae14188",
+      "rule": "verify-core"
+    },
+    "tools/pages.yaml": {
+      "sha256": "20fe21cb1e089b05b71f0fbe6731b669d080ec10ce391e88a4d8833ca1ae5bc5",
+      "rule": "pages-manifest"
+    },
+    "tools/site_checks.py": {
+      "sha256": "660505f788c6bb76841fb03b7d01d8785011f7e6dd74953bc144daff485903c9",
+      "rule": "verify-core"
+    },
+    "tools/stat_format.py": {
+      "sha256": "c82f9ed41a9dfa4a1ca866eefef9a31d35154474a9d787944084f319f7006553",
+      "rule": "verify-core"
+    },
+    "tools/verify_live.py": {
+      "sha256": "994261c581ba63aa80944cefccb9e225188ba76418cba283fd3d787df0a5f839",
+      "rule": "verify-core"
+    }
+  }
+}

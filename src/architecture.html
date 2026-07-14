@@ -1,0 +1,1211 @@
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow">
+<title>Assessment Engine — Hexagonal Architecture</title>
+<link rel="stylesheet" href="assets/theme.css?v=1">
+<style>
+  /* This page's palette (cool blue-biased neutrals, azure hero) used to be
+     declared right here, and it is the palette the whole site now wears. It
+     moved to assets/theme.css on 2026-07-12 — one token source for every page.
+     Do not reintroduce a :root block here; edit theme.css. */
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--text);font-family:var(--sans);
+    line-height:1.55;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1180px;margin:0 auto;padding:clamp(20px,4vw,56px) clamp(16px,4vw,40px) 64px;}
+
+  /* ---------- header ---------- */
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--core);margin:0 0 14px;display:flex;align-items:center;gap:10px;}
+  .eyebrow::before{content:"";width:26px;height:2px;background:var(--core);display:inline-block;}
+  h1{font-size:clamp(30px,5vw,50px);line-height:1.05;letter-spacing:-.022em;font-weight:820;
+    margin:0 0 16px;text-wrap:balance;max-width:20ch;}
+  .dek{font-size:clamp(16px,2.1vw,19px);color:var(--muted);max-width:64ch;margin:0;}
+
+  /* ---------- diagram card ---------- */
+  .board{margin:36px 0 8px;background:var(--card);border:1px solid var(--line);
+    border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;}
+  .board__scroll{overflow-x:auto;padding:8px;}
+  svg.diagram{display:block;width:100%;min-width:840px;height:auto;}
+
+  /* svg text roles */
+  .diagram text{fill:var(--text);}
+  .t-title{font-family:var(--sans);font-weight:700;font-size:15px;}
+  .t-sub{font-family:var(--mono);font-size:11.5px;fill:var(--muted);}
+  .t-col{font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;fill:var(--muted);}
+  .t-core{font-family:var(--sans);font-weight:800;font-size:16px;fill:var(--core);}
+  .t-mech{font-family:var(--sans);font-weight:800;font-size:15px;fill:var(--mech);}
+  .t-tiny{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;fill:var(--muted);}
+  .t-gate{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;fill:var(--gate);}
+
+  /* ---------- legend ---------- */
+  .legend{display:flex;flex-wrap:wrap;gap:8px 20px;margin:20px 2px 0;padding:0;list-style:none;
+    font-family:var(--mono);font-size:12.5px;color:var(--muted);}
+  .legend li{display:flex;align-items:center;gap:8px;}
+  .swatch{width:13px;height:13px;border-radius:4px;flex:none;border:1px solid rgba(0,0,0,.12);}
+
+  /* ---------- sections ---------- */
+  .grid{display:grid;grid-template-columns:1.15fr .85fr;gap:clamp(24px,4vw,48px);margin-top:56px;align-items:start;}
+  @media (max-width:760px){.grid{grid-template-columns:1fr;gap:40px;}}
+  h2{font-size:13px;font-family:var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--muted);
+    margin:0 0 20px;font-weight:600;}
+
+  ol.flow{list-style:none;counter-reset:step;margin:0;padding:0;display:flex;flex-direction:column;gap:20px;}
+  ol.flow li{counter-increment:step;display:grid;grid-template-columns:34px 1fr;gap:16px;}
+  ol.flow li::before{content:counter(step,decimal-leading-zero);font-family:var(--mono);font-weight:700;
+    font-size:13px;color:var(--core);border:1.5px solid var(--core);border-radius:8px;
+    width:34px;height:34px;display:flex;align-items:center;justify-content:center;
+    font-variant-numeric:tabular-nums;}
+  ol.flow b{font-weight:700;}
+  ol.flow code, .foot code, td code{font-family:var(--mono);font-size:.86em;background:color-mix(in srgb,var(--core) 12%, transparent);
+    color:var(--core);padding:.08em .38em;border-radius:5px;}
+  ol.flow p{margin:2px 0 0;color:var(--muted);font-size:15px;}
+  ol.flow .lead{color:var(--text);}
+
+  table{width:100%;border-collapse:collapse;font-size:14px;}
+  caption{caption-side:top;text-align:left;}
+  thead th{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--muted);text-align:left;font-weight:600;padding:0 14px 10px 0;border-bottom:1px solid var(--line);}
+  tbody td{padding:14px 14px 14px 0;border-bottom:1px solid var(--line);vertical-align:top;}
+  tbody tr:last-child td{border-bottom:0;}
+  .lyr{font-family:var(--mono);font-weight:700;white-space:nowrap;}
+  .l1{color:var(--mech)} .l2{color:var(--core)} .l3,.l4{color:var(--subject)}
+  td.home{color:var(--muted);font-family:var(--mono);font-size:12.5px;}
+
+  .foot{margin-top:56px;padding-top:24px;border-top:1px solid var(--line);
+    font-family:var(--mono);font-size:12px;color:var(--muted);line-height:1.9;}
+  .foot .rule{color:var(--text);}
+  .foot .paths{display:block;margin-top:8px;word-break:break-word;}
+
+  /* ===========================================================================
+     THE DIAGRAM BREATHES.  ONE clock -- --beat -- drives the whole organism, and
+     one causal chain runs end to end.  Nothing fires "because it is time"; every
+     stage fires because the previous one reached it.
+
+     BOTH HEXAGONS ARE THE SAME MACHINE.  Each one CHARGES by growing, and emits
+     its wave not on impact but on the REBOUND -- the compression is the stroke.
+     That symmetry is the whole point: L2 does it to L1, and L1 does it right back.
+
+       0.00s  the Teacher UI fires.  The ask travels UI -> API -> core.
+       1.35s  the membrane (L2) begins to INFLATE, its rim glowing brighter as it
+              fills.  It is CHARGING -- the glow is stored energy.
+       3.15s  full.  The instant it BEGINS TO SHRINK it discharges that glow as a
+              compression wave, launched inward across the annulus.
+       3.99s  the wave STRIKES L1, and L1 ABSORBS it -- it flares as it swallows
+              the front, and begins to swell.  Mind the sign: a CONTRACTION wave
+              makes the inner body BULGE, the way squeezing a shell of
+              incompressible fluid pushes its middle out.
+       4.67s  L1 is FULL.  It has held the energy for 0.68s.  Now it compresses --
+              and, exactly as the membrane did, the compression is what EMITS its
+              own wavefront, outward.  Not on impact: on the rebound.
+       5.51s  L1's reply reaches the membrane...
+       5.56s  ...and THAT is what opens the ports and discharges the adapters.
+       7.54s  quiet.  The beat rests, and refills.
+
+     Every delay below is a FRACTION of --beat, never an absolute time, so the
+     whole creature -- wave, breath, springs, wavefronts, ports -- slows or
+     quickens together and stays in phase.  Change --beat, change everything.
+
+     --t-reply is NOT a free parameter.  It is L1's peak, which is decided by L1's
+     spring (T_n, zeta) in the generator, which PRINTS the value to put here.  Set
+     it by hand and L1 will emit while it is still swelling, which is the exact
+     bug this round fixed.
+     =========================================================================== */
+  .diagram{
+    --beat:9s;
+    /* the choreography, as fractions of one beat */
+    --t-api:      .089;   /* the ask reaches the API                   0.80s */
+    --t-apicard:  .122;   /*   ...and lights it up                     1.10s */
+    --t-inport:   .128;   /* the driving port opens                    1.15s */
+    --t-emit:     .350;   /* L2 is full; its COMPRESSION emits inward  3.15s */
+    --t-strike:   .443;   /* the front lands; L1 ABSORBS it, swells    3.99s */
+    --t-reply:    .518;   /* L1 is full; its COMPRESSION emits outward 4.67s */
+    --t-ports:    .612;   /* the reply reaches the membrane; ports open 5.51s */
+    --t-out:      .618;   /* the adapters are discharged               5.56s */
+    --t-outcard:  .744;   /* the beads land                            6.70s */
+  }
+
+  /* --- the beads ARE the wire ---------------------------------------------
+     The solid arrow lines are gone (only their heads remain), so these beads
+     are the only thing drawing the connection.  They can never switch off.
+     At rest they idle -- thin, dim, drifting slowly.  As the wave front passes
+     they brighten and the wire ENGORGES, then settles back to idle. */
+  .wave{
+    fill:none; stroke-linecap:round;
+    stroke-dasharray:2 11;        /* bead period = 13 user units */
+    animation:wave-travel var(--beat) linear infinite both;
+    animation-delay:var(--wd,0s);
+  }
+  .wave--drive{stroke:var(--drive);}
+  .wave--driven{stroke:var(--driven);}
+
+  /* Piecewise-linear offsets, so the SPEED is explicit: idle drift -> surge
+     (~65 px/s) -> cruise -> decay, then idle again.  The active flight is 25% of
+     an 8s beat = 2.0s, the same absolute bead speed as before; the beat is
+     longer only because there is MORE STORY, not because anything slowed down.
+     Total travel is 130 = 10 whole bead-periods, so the loop wraps seamlessly. */
+  @keyframes wave-travel{
+    0%    {stroke-dashoffset:0;    opacity:.55; stroke-width:2.2;}  /* idle */
+    3.5%  {stroke-dashoffset:-8;   opacity:1;   stroke-width:3.4;}  /* front arrives */
+    8%    {stroke-dashoffset:-38;               stroke-width:3.4;}  /* surge */
+    14%   {stroke-dashoffset:-72;  opacity:1;   stroke-width:3.2;}  /* cruise */
+    18.5% {stroke-dashoffset:-92;               stroke-width:2.8;}
+    22%   {stroke-dashoffset:-104; opacity:.55; stroke-width:2.2;}  /* tail passes */
+    100% {stroke-dashoffset:-130; opacity:.55; stroke-width:2.2;}  /* idle drift */
+  }
+
+  /* --- the membrane: charge, hold, DISCHARGE, ring, take the reply, rest ---- */
+  .corebody{
+    transform-box:view-box;
+    transform-origin:600px 340px;      /* the hexagon's centre, in viewBox units */
+    animation:core-breathe var(--beat) linear infinite both;
+  }
+  @keyframes core-breathe{
+    0%,15%  {transform:scale(1);     animation-timing-function:cubic-bezier(.35,0,.4,1);}
+    32%     {transform:scale(1.032); animation-timing-function:cubic-bezier(.3,0,.3,1);}  /* inflating */
+    35%     {transform:scale(1.040); animation-timing-function:cubic-bezier(.85,0,.1,1);} /* FULL — hold... */
+    40%     {transform:scale(0.982); animation-timing-function:cubic-bezier(.2,.8,.3,1);} /* ...DISCHARGE */
+    44%     {transform:scale(1.008); animation-timing-function:cubic-bezier(.3,0,.4,1);}  /* recoil */
+    49%     {transform:scale(0.995); animation-timing-function:cubic-bezier(.4,0,.4,1);}
+    54%     {transform:scale(1.000); animation-timing-function:cubic-bezier(.3,0,.3,1);}
+    60%     {transform:scale(1.014); animation-timing-function:cubic-bezier(.4,0,.3,1);}  /* L1's REPLY lands */
+    64%     {transform:scale(0.998); animation-timing-function:cubic-bezier(.4,0,.4,1);}
+    69%,100%{transform:scale(1);}                                                          /* rest */
+  }
+
+  /* The RIM CHARGES.  A wide soft stroke on the membrane that brightens and
+     thickens all through the inflation -- stored energy, visibly accumulating --
+     and is spent at the discharge.  The glow does not fade; it LEAVES, as the
+     wave.  (Stroke, not a filter: a blur here would re-rasterise every frame.) */
+  .rim{
+    fill:none; stroke:var(--core); stroke-linejoin:round; opacity:0;
+    animation:rim-charge var(--beat) linear infinite both;
+  }
+  @keyframes rim-charge{
+    0%,15%  {opacity:0;   stroke-width:6;}
+    25%     {opacity:.18; stroke-width:10;}
+    32%     {opacity:.34; stroke-width:14;}
+    35%     {opacity:.52; stroke-width:17;}   /* FULL — about to discharge */
+    39%     {opacity:.10; stroke-width:7;}    /* spent into the wave */
+    41%,100%{opacity:0;   stroke-width:5;}
+  }
+  .pulse{animation:core-glow var(--beat) ease-in-out infinite both;}
+  @keyframes core-glow{
+    0%,15%  {opacity:.05;}
+    32%     {opacity:.20;}
+    35%     {opacity:.26;}   /* brightest at full charge */
+    41%     {opacity:.06;}   /* driven out as the wave */
+    55%,100%{opacity:.05;}
+  }
+
+  /* --- a card lights as the pulse lands in it ------------------------------ */
+  .card{animation:card-hit var(--beat) ease-out infinite both; animation-delay:var(--wd,0s);}
+  @keyframes card-hit{
+    0%   {fill-opacity:.10;}
+    4.5% {fill-opacity:.34;}
+    7%   {fill-opacity:.26;}   /* two-stage flicker, not a clean fade */
+    17%  {fill-opacity:.10;}
+    100% {fill-opacity:.10;}
+  }
+
+  /* --- the port notches are valves: shut at rest, open on the beat --------- */
+  .port{opacity:.55; animation:port-open var(--beat) ease-out infinite both; animation-delay:var(--wd,0s);}
+  @keyframes port-open{
+    0%   {opacity:.55;}
+    4%   {opacity:1;}
+    23%  {opacity:.55;}
+    100% {opacity:.55;}
+  }
+
+  /* --- the compound spring -------------------------------------------------
+     The membrane (L2) is the DRIVER.  Two things hang off it, and both LAG it,
+     overshoot it, and are still ringing when the next beat arrives:
+
+         membrane (0s)  ->  inner hexagon (0.85s)  ->  subject arrows (1.14s)
+
+     Each is a damped harmonic oscillator driven by the membrane's displacement:
+
+         y'' + 2*zeta*wn*y' + wn^2*y  =  wn^2 * (scale_outer(t) - 1)
+
+     The disturbance reaches L1 BEFORE it reaches the plugins -- it propagates
+     outward in TIME exactly as it does in SPACE.  That consistency is free from
+     the physics; hand-timed keyframes would have to maintain it by hand.
+
+     Lag, overshoot and ring-down are three coupled consequences of two numbers
+     (T_n, zeta).  Tune them by eye and you fight yourself -- adding lag kills
+     the overshoot, adding overshoot kills the lag.  So the keyframes below are
+     NOT hand-written: they are integrated to steady state (RK4) and spliced in
+     by tools/showcase_anim/gen_core_springs.py --write.  Steady state is also
+     what guarantees offset(0%) == offset(100%), so the loop never jumps.
+
+     To retune: edit INNER_TN/INNER_ZETA/RED_TN/RED_ZETA in that script, run it
+     with --write, done.  Do not hand-edit between the sentinels.               */
+  .coreinner{
+    transform-box:view-box; transform-origin:600px 340px;
+    animation:core-inner var(--beat) linear infinite both;
+  }
+  .flowdash{animation:sub-breathe var(--beat) linear infinite both;}
+
+  /* --- the wave you can SEE ------------------------------------------------
+     A hexagonal wavefront, filled with a radial gradient that is transparent
+     inside and glows at its rim, so scaling it sweeps a soft band through the
+     annulus.  Azure travels IN (L2's push); it is absorbed at L1, and violet
+     travels back OUT (L1's answer).  1.0 -> 0.4583 is exactly the outer hex's
+     radius (240) mapped onto the inner hex's (110), so the front lands ON L1.
+     Its 0.84s inward flight is timed to the inner hexagon's 0.85s spring lag:
+     what you SEE arriving is what MAKES the inner hexagon move.                */
+  .ripple{
+    transform-box:view-box; transform-origin:600px 340px;
+    opacity:0; pointer-events:none;
+    animation-duration:var(--beat); animation-timing-function:linear;
+    animation-iteration-count:infinite; animation-fill-mode:both;
+    animation-delay:var(--wd,0s);
+  }
+  .ripple--in {fill:url(#wavefront-in);  animation-name:wave-in;}
+  .ripple--out{fill:url(#wavefront-out); animation-name:wave-out;}
+
+  /* 10.5% of an 8s beat = 0.84s of flight, each way.  These percentages are what
+     TIE the picture to the physics: the inward front's 0.84s flight is exactly
+     the delay the generator uses for L1's kick, so what you SEE arriving is what
+     MAKES L1 move.  Change one and you must change the other (T_STRIKE). */
+  @keyframes wave-in{                          /* L2's compression, travelling in */
+    0%     {transform:scale(1.02);   opacity:0;}
+    1.3%   {transform:scale(0.95);   opacity:.75;}
+    6%     {transform:scale(0.68);   opacity:.95;}
+    8.8%   {transform:scale(0.50);   opacity:1;}
+    9.33%  {transform:scale(0.4583); opacity:.5;}        /* STRIKES L1 at 0.84s */
+    10.3%  {transform:scale(0.42);   opacity:0;}         /* SWALLOWED — it does not
+                                                            bounce; L1 eats it, and
+                                                            answers later, itself */
+    100%   {transform:scale(0.42);   opacity:0;}
+  }
+  @keyframes wave-out{                         /* L1's compression, travelling out */
+    0%     {transform:scale(0.4583); opacity:0;}
+    0.9%   {transform:scale(0.49);   opacity:.85;}
+    4.5%   {transform:scale(0.63);   opacity:.65;}
+    8%     {transform:scale(0.82);   opacity:.4;}
+    9.33%  {transform:scale(1.02);   opacity:0;}         /* reaches the membrane */
+    100%   {transform:scale(1.02);   opacity:0;}
+  }
+
+  /* --- L1 ABSORBS ----------------------------------------------------------
+     L1 does not merely get pushed: it SWALLOWS the wavefront.  It flares as the
+     front lands, holds that charge for the 0.68s it spends swollen, and spends
+     it as it compresses -- at which moment it emits its own front.  Exactly the
+     membrane's rim-charge, one layer in.  Same machine, smaller scale. */
+  .l1shell{animation:l1-absorb var(--beat) linear infinite both;
+           animation-delay:calc(var(--beat) * var(--t-strike));}
+  @keyframes l1-absorb{
+    0%      {fill-opacity:.16;}
+    1%      {fill-opacity:.42;}   /* SWALLOWS the front — flares */
+    5%      {fill-opacity:.38;}
+    7.6%    {fill-opacity:.36;}   /* FULL, holding the charge */
+    11%     {fill-opacity:.24;}   /* compressing — spending it as the reply */
+    14%     {fill-opacity:.17;}
+    18%,100%{fill-opacity:.16;}
+  }
+
+  /* >>> GENERATED by tools/showcase_anim/gen_core_springs.py -- DO NOT HAND-EDIT */
+  /* L1 -- IMPULSE-KICKED spring (T_n=2.2s zeta=0.28). Quiet until the wave lands at 3.99s, then it GROWS and rings. */
+  @keyframes core-inner{
+    0%{transform:scale(1.0010);}
+    2%{transform:scale(1.0014);}
+    4%{transform:scale(1.0013);}
+    6%{transform:scale(1.0010);}
+    8%{transform:scale(1.0005);}
+    10%{transform:scale(1.0001);}
+    12%{transform:scale(0.9997);}
+    14%{transform:scale(0.9995);}
+    16%{transform:scale(0.9994);}
+    18%{transform:scale(0.9995);}
+    20%{transform:scale(0.9997);}
+    22%{transform:scale(0.9999);}
+    24%{transform:scale(1.0001);}
+    26%{transform:scale(1.0002);}
+    28%{transform:scale(1.0002);}
+    30%{transform:scale(1.0002);}
+    32%{transform:scale(1.0001);}
+    34%{transform:scale(1.0001);}
+    36%{transform:scale(1.0000);}
+    38%{transform:scale(0.9999);}
+    40%{transform:scale(0.9999);}
+    42%{transform:scale(0.9999);}
+    44%{transform:scale(0.9999);}
+    46%{transform:scale(1.0064);}
+    48%{transform:scale(1.0294);}
+    50%{transform:scale(1.0489);}
+    52%{transform:scale(1.0550);}
+    54%{transform:scale(1.0477);}
+    56%{transform:scale(1.0317);}
+    58%{transform:scale(1.0126);}
+    60%{transform:scale(0.9955);}
+    62%{transform:scale(0.9836);}
+    64%{transform:scale(0.9784);}
+    66%{transform:scale(0.9794);}
+    68%{transform:scale(0.9847);}
+    70%{transform:scale(0.9922);}
+    72%{transform:scale(0.9995);}
+    74%{transform:scale(1.0051);}
+    76%{transform:scale(1.0082);}
+    78%{transform:scale(1.0086);}
+    80%{transform:scale(1.0070);}
+    82%{transform:scale(1.0043);}
+    84%{transform:scale(1.0012);}
+    86%{transform:scale(0.9987);}
+    88%{transform:scale(0.9970);}
+    90%{transform:scale(0.9965);}
+    92%{transform:scale(0.9969);}
+    94%{transform:scale(0.9979);}
+    96%{transform:scale(0.9991);}
+    98%{transform:scale(1.0002);}
+    100%{transform:scale(1.0010);}
+  }
+  /* subject arrows -- displacement-driven spring (T_n=2.4s zeta=0.2; damping raised from 0.10, 6 reversals not 6). */
+  @keyframes sub-breathe{
+    0%{stroke-dashoffset:14.45;}
+    2%{stroke-dashoffset:16.54;}
+    4%{stroke-dashoffset:17.70;}
+    6%{stroke-dashoffset:17.86;}
+    8%{stroke-dashoffset:17.15;}
+    10%{stroke-dashoffset:15.86;}
+    12%{stroke-dashoffset:14.36;}
+    14%{stroke-dashoffset:12.97;}
+    16%{stroke-dashoffset:11.95;}
+    18%{stroke-dashoffset:11.31;}
+    20%{stroke-dashoffset:10.40;}
+    22%{stroke-dashoffset:8.07;}
+    24%{stroke-dashoffset:3.34;}
+    26%{stroke-dashoffset:-3.95;}
+    28%{stroke-dashoffset:-12.99;}
+    30%{stroke-dashoffset:-22.37;}
+    32%{stroke-dashoffset:-30.51;}
+    34%{stroke-dashoffset:-36.41;}
+    36%{stroke-dashoffset:-40.54;}
+    38%{stroke-dashoffset:-41.55;}
+    40%{stroke-dashoffset:-30.98;}
+    42%{stroke-dashoffset:-10.73;}
+    44%{stroke-dashoffset:9.72;}
+    46%{stroke-dashoffset:25.71;}
+    48%{stroke-dashoffset:36.24;}
+    50%{stroke-dashoffset:41.43;}
+    52%{stroke-dashoffset:41.19;}
+    54%{stroke-dashoffset:35.84;}
+    56%{stroke-dashoffset:26.86;}
+    58%{stroke-dashoffset:15.27;}
+    60%{stroke-dashoffset:2.40;}
+    62%{stroke-dashoffset:-9.09;}
+    64%{stroke-dashoffset:-14.98;}
+    66%{stroke-dashoffset:-13.78;}
+    68%{stroke-dashoffset:-7.08;}
+    70%{stroke-dashoffset:2.63;}
+    72%{stroke-dashoffset:12.85;}
+    74%{stroke-dashoffset:21.48;}
+    76%{stroke-dashoffset:27.07;}
+    78%{stroke-dashoffset:29.03;}
+    80%{stroke-dashoffset:27.59;}
+    82%{stroke-dashoffset:23.64;}
+    84%{stroke-dashoffset:18.37;}
+    86%{stroke-dashoffset:13.07;}
+    88%{stroke-dashoffset:8.80;}
+    90%{stroke-dashoffset:6.22;}
+    92%{stroke-dashoffset:5.56;}
+    94%{stroke-dashoffset:6.62;}
+    96%{stroke-dashoffset:8.89;}
+    98%{stroke-dashoffset:11.72;}
+    100%{stroke-dashoffset:14.45;}
+  }
+  /* <<< END GENERATED */
+
+  @media (prefers-reduced-motion: reduce){
+    .flowdash,.wave,.corebody,.coreinner,.l1shell,.pulse,.card,.port,.ripple{animation:none !important;}
+    .wave{opacity:.55;}          /* show the beads, held still */
+    .port{opacity:1;}            /* valves drawn open */
+    .corebody,.coreinner{transform:none;}
+    .ripple{display:none;}       /* the wavefront is motion; with no motion it is noise */
+  }
+
+  /* entry hand-off: this used to fade index.html's WARM paper into this page's
+     cool paper, with --entry-from hand-mirroring that page's --bg per theme.
+     Since 2026-07-12 the whole site shares this palette (assets/theme.css), so
+     there is nothing left to blend — what remains is a plain 72px of paper that
+     keeps the top of the page from starting hard against the viewport edge. */
+  .entry-fade{
+    height:72px;
+    background:var(--paper);
+  }
+</style>
+
+<style>
+/* ---------- the site rail: ONE left rail, every page ----------
+   THE ONE SOURCE for the .siterail component AND the .nextbar next-page banner.
+
+   TWO consumers, one file (do NOT paste a divergent copy into either):
+     * base.html.j2 — pulls this in with a Jinja include, inside its style
+       block, so every deep/*.html page gets it.
+     * inject_site_rail.py — reads this file as TEXT and emits it INSIDE its
+       marked block on each ROOT page (index / systems / architecture / videos),
+       which do not extend the Jinja base and so cannot inherit the styles.
+
+   WARNING — this file is parsed by Jinja (base.html.j2 includes it), so it must
+   contain NO Jinja delimiters ANYWHERE, comments included. Writing the include
+   tag literally in a comment once made _deepnav.css include ITSELF and the build
+   died with RecursionError (2026-07-12). Describe the tag in prose; never spell
+   it out here. Single CSS braces are fine and are all this file uses.
+
+   .nextbar WAS in _deepnav.css and is FOLDED IN here verbatim, on purpose: the
+   rail replaced the .deepnav strip, so a page that stopped including _deepnav.css
+   would have silently lost the bottom banner too — the very control the next
+   phase exists to refine. One file carries both, so that cannot happen.
+
+   THE NEXT BAND (review item 9) — READ THIS BEFORE TOUCHING EITHER BAND.
+   The site has TWO bottom bands, and the obvious one is the WRONG one:
+
+     * .arch-fade — the LAST CONTENT BLOCK of the FRONT page (index.html), whose
+       destination is architecture.html. Brendan's review items 1-8 are all
+       front-page items and the destination he named is Architecture, so THIS is
+       the band he hovered. Its rules used to live in index.html's own inline
+       style block, where its ONLY hover was an underline on the headline — no
+       background change at all, i.e. no affordance.
+     * .nextbar — the derived next-page banner on the deep pages and on
+       architecture.html. Its hover was a --core tint 6% -> 12% OVER TRANSPARENT,
+       which reads as nothing.
+
+   Fixing only .nextbar ships item 9 "done" while the band Brendan was actually
+   looking at still looks dead. So the affordance is ONE contract — .nextband —
+   and BOTH bands consume it: cursor, resting tint, a clear background lift on
+   hover, a border-colour change, an arrow that steps forward, an underline on
+   the destination line, and :focus-visible preserved for the keyboard. Each
+   band then adds only its own LAYOUT. Do not re-add a hover rule to either band:
+   a second copy is how the two drift apart again.
+
+   TWO PALETTES, ONE COMPONENT. The deep pages and index/architecture/videos
+   carry the CANONICAL custom properties (--text/--muted/--line/--core/--paper,
+   from theme.css or base.html.j2's inline copy). The root systems.html still
+   links the older assets/site.css, which declares ONLY the COMPAT names
+   (--ink/--ink-soft/--rule/--accent-text/--bg). So every colour below is read
+   through a --rail-* alias with a var() fallback chain: canonical first, compat
+   second, a literal last. The rail therefore renders correctly on BOTH palettes
+   without this component re-theming systems.html (not its call to make). The
+   chain flows canonical -> compat ONLY, never back — theme.css's cycle hazard.
+
+   (This comment ships inside every deep page, so it deliberately avoids the
+   word the meta wing's "no cost claims" gate scans for — see test_meta.py.)
+
+   Link ORDER and labels are NOT here — they live in deep_nav.py::SITE_NAV.
+   Hrefs are derived per directory depth by deep_nav.py::href_for. */
+
+:root{
+  --railw:208px;
+}
+
+.siterail,.nextband{
+  --rail-fg:var(--text, var(--ink, #101d31));
+  --rail-dim:var(--muted, var(--ink-soft, #566885));
+  --rail-line:var(--line, var(--rule, #d5deec));
+  --rail-accent:var(--core, var(--accent-text, #2f63ff));
+  --rail-bg:var(--paper, var(--bg, #e9eef6));
+}
+
+/* ---------- desktop: a fixed left column ---------- */
+.siterail{
+  position:fixed;top:0;left:0;bottom:0;width:var(--railw);z-index:30;
+  background:var(--rail-bg);border-right:1px solid var(--rail-line);
+  overflow-y:auto;overscroll-behavior:contain;
+}
+.siterail__inner{display:flex;flex-direction:column;padding:30px 22px 26px;}
+
+.siterail__mark{display:flex;flex-direction:column;
+  font-family:var(--serif, var(--sans, sans-serif));font-size:1.02rem;font-weight:600;
+  line-height:1.3;color:var(--rail-fg);text-decoration:none;margin:0 0 22px;}
+.siterail__mark:hover{color:var(--rail-accent);text-decoration:none;}
+
+.siterail__zone{display:flex;flex-direction:column;}
+.siterail__zone + .siterail__zone{margin-top:16px;padding-top:14px;
+  border-top:1px solid var(--rail-line);}
+.siterail__title{font-family:var(--mono, monospace);font-size:10px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--rail-dim);opacity:.7;margin:0 0 4px;}
+
+/* The CURRENT-PAGE MARKER is aria-current="page" — the HTML-spec value — for
+   BOTH zones. The rail this replaced used aria-current="true" for its scrollspy
+   while .deepnav used "page"; two spellings meant two sets of selectors that had
+   to agree. One spelling now, and the ported scrollspy sets exactly this one. */
+.siterail a.rail-anchor,.siterail a.rail-page{
+  font-family:var(--mono, monospace);font-size:11.5px;text-transform:uppercase;
+  letter-spacing:.08em;color:var(--rail-dim);text-decoration:none;
+  padding:7px 0;line-height:1.35;}
+.siterail a.rail-anchor:hover,.siterail a.rail-page:hover{
+  color:var(--rail-accent);text-decoration:none;}
+.siterail a.rail-anchor[aria-current="page"],.siterail a.rail-page[aria-current="page"]{
+  color:var(--rail-accent);}
+.siterail a.rail-anchor[aria-current="page"]::before,
+.siterail a.rail-page[aria-current="page"]::before{content:"— ";}
+.siterail a:focus-visible{outline:2px solid var(--rail-accent);outline-offset:2px;}
+
+/* The rail is FIXED, so it is out of flow and cannot push anything: every page's
+   content is inset by its width from ONE rule here. The pages themselves know
+   nothing about the rail — which is what lets the same component drop onto four
+   hand-authored root pages and six generated ones with no per-page layout edit. */
+@media (min-width:1100px){
+  body{padding-left:var(--railw);}
+}
+
+/* ---------- mobile: the rail COLLAPSES, it does not vanish ----------
+   This is a first-class deliverable, not an edge case. The rail this replaced
+   had exactly one mobile rule — .rail{display:none} at 1099px, with NO fallback
+   — while the .deepnav strip it ALSO replaced was a flex-wrap bar that worked at
+   every width. Shipping the rail as-was would therefore have removed ALL
+   navigation from every deep page below 1100px. Below the same real breakpoint
+   the rail becomes a sticky top bar: the mark, then each zone as a horizontally
+   scrollable chip row (the pattern code.html.j2's TOC already used at its narrow
+   width). Verified at 900px and at 500px — a nav is reachable at both. */
+@media (max-width:1099px){
+  .siterail{position:sticky;top:0;left:auto;bottom:auto;width:auto;height:auto;
+    border-right:0;border-bottom:1px solid var(--rail-line);
+    background:color-mix(in srgb, var(--rail-bg) 88%, transparent);
+    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+    overflow:visible;}
+  .siterail__inner{flex-direction:column;align-items:stretch;gap:4px;
+    max-width:1180px;margin:0 auto;padding:9px clamp(12px,4vw,24px);}
+  .siterail__mark{flex-direction:row;gap:.35em;margin:0 0 2px;font-size:.95rem;}
+  .siterail__title{display:none;}
+  .siterail__zone{flex-direction:row;flex-wrap:nowrap;gap:4px;
+    overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px;}
+  .siterail__zone + .siterail__zone{margin-top:0;padding-top:0;border-top:0;}
+  .siterail a.rail-anchor,.siterail a.rail-page{
+    flex:0 0 auto;white-space:nowrap;font-size:11px;
+    padding:5px 10px;border-radius:8px;}
+  .siterail a.rail-anchor[aria-current="page"],.siterail a.rail-page[aria-current="page"]{
+    color:var(--rail-fg);
+    background:color-mix(in srgb, var(--rail-accent) 15%, transparent);}
+  .siterail a.rail-anchor[aria-current="page"]::before,
+  .siterail a.rail-page[aria-current="page"]::before{content:none;}
+}
+
+/* ================= THE NEXT BAND — ONE affordance, BOTH bands =================
+   The whole band is the button. Both bands were ALREADY whole-band anchors, so
+   the click target was never the defect — the defect was that nothing on screen
+   said so. Every rule that makes a band FEEL like a control lives here, once:
+
+     resting tint     a band is visibly a control before you touch it (it used to
+                      be flat paper, indistinguishable from a footer);
+     hover lift       6% -> 18% of the accent, mixed against the PAPER, not
+                      against `transparent`. That was the old bug: a 6% -> 12%
+                      transparent tint is a ~6% alpha change over whatever is
+                      behind it, which is why the hover "did nothing";
+     border           the top rule goes accent-coloured, so the band's whole
+                      outline answers the pointer, not just its middle;
+     cursor           pointer, everywhere in the band — including its padding;
+     arrow            steps forward 5px (its own class, so a band with no arrow
+                      simply has nothing to translate);
+     label            the destination line underlines — the classic link cue,
+                      kept from .arch-fade's old hover and given to .nextbar too;
+     keyboard         :focus-visible gets the SAME lift plus the focus ring, so
+                      the affordance is not mouse-only.
+
+   The motion is the only new thing here that a reader can be hurt by, so it is
+   switched off under prefers-reduced-motion at the bottom of this block — the
+   root pages have no reduced-motion block of their own to fall back on. */
+.nextband{
+  display:block;                 /* each band overrides with its own layout */
+  cursor:pointer;
+  text-decoration:none;
+  color:var(--rail-fg);
+  border-top:1px solid var(--rail-line);
+  background:color-mix(in srgb, var(--rail-accent) 6%, var(--rail-bg));
+  transition:background-color .16s ease, border-color .16s ease;
+}
+.nextband:hover,.nextband:focus-visible{
+  background:color-mix(in srgb, var(--rail-accent) 18%, var(--rail-bg));
+  border-top-color:var(--rail-accent);
+  text-decoration:none;
+}
+.nextband:focus-visible{outline:2px solid var(--rail-accent);outline-offset:-3px;}
+.nextband__arrow{display:inline-block;transition:transform .16s ease;}
+.nextband:hover .nextband__arrow,.nextband:focus-visible .nextband__arrow{
+  transform:translateX(5px);}
+.nextband:hover .nextband__label,.nextband:focus-visible .nextband__label{
+  text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px;}
+@media (prefers-reduced-motion: reduce){
+  .nextband,.nextband__arrow{transition:none;}
+  .nextband:hover .nextband__arrow,.nextband:focus-visible .nextband__arrow{
+    transform:none;}
+}
+
+/* ---------- band 1: the next-page banner (folded in from _deepnav.css) -------
+   A full-width page-level "next" control at the FOOT of a deep page (and of
+   architecture.html), DERIVED from the deep_nav spine: the entry after the
+   active page; the last wing page -> the site front page. LAYOUT ONLY — its
+   hover/focus/cursor come from .nextband above. */
+.nextbar{display:flex;align-items:center;justify-content:space-between;gap:16px;
+  max-width:1180px;margin:24px auto 0;padding:18px clamp(16px,4vw,40px);}
+.nextbar__text{display:flex;flex-direction:column;gap:3px;min-width:0;}
+.nextbar__eyebrow{font-family:var(--mono, monospace);font-size:11px;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--rail-accent);font-weight:700;}
+.nextbar__dest{font-size:clamp(19px,2.5vw,24px);font-weight:820;
+  letter-spacing:-.015em;color:var(--rail-fg);line-height:1.1;}
+.nextbar__arrow{font-size:26px;line-height:1;color:var(--rail-accent);font-weight:700;flex:none;}
+
+/* ---------- band 2: the front page's hand-off into architecture.html ---------
+   MOVED HERE from index.html's own inline style block (2026-07-12). It stayed
+   private for as long as it was a bespoke GRADIENT — the homepage's warm paper
+   dissolving into architecture.html's cool paper. theme.css gave both pages one
+   palette, so there are no longer two papers to blend: the gradient is gone, the
+   band is flat, and what remains is the same control .nextbar is. Keeping a
+   second private copy of "how a next band behaves" is precisely how the front
+   page ends up with a dead-looking hover while the gate reports green.
+
+   LAYOUT ONLY, like .nextbar. The colours read through the --rail-* aliases (not
+   --paper/--rule directly) so the band survives on either palette, exactly as the
+   rail does. */
+.arch-fade{display:grid;justify-items:center;gap:10px;
+  margin-top:72px;padding:64px 24px;text-align:center;}
+.arch-fade .cue{font-family:var(--mono, monospace);font-size:12px;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--rail-dim);}
+.arch-fade .headline{font-family:var(--serif, serif);font-size:1.5rem;font-weight:600;
+  color:var(--rail-fg);}
+.arch-fade .sub{font-size:.95rem;color:var(--rail-dim);max-width:46ch;}
+/* The band's own bottom padding already carries the gap to whatever follows, so
+   the footer's top margin would double it. Collapse it only in that adjacency —
+   a standalone .footer keeps its own. */
+.arch-fade + .footer{margin-top:0;}</style>
+<aside class="siterail" aria-label="Site navigation">
+  <div class="siterail__inner">
+    <a class="siterail__mark" href="index.html"><span>Brendan</span><span>Wischweh</span></a>    <nav class="siterail__zone siterail__zone--site" aria-label="The site">
+      <p class="siterail__title">The site</p>      <a class="rail-page" href="index.html">Home</a>      <a class="rail-page" href="architecture.html" aria-current="page">Architecture</a>      <a class="rail-page" href="deep/code.html">Code</a>      <a class="rail-page" href="deep/verification.html">Formal&nbsp;Verification</a>      <a class="rail-page" href="deep/lab.html">The&nbsp;Lab</a>      <a class="rail-page" href="deep/meta.html">Meta&nbsp;Tools</a>      <a class="rail-page" href="deep/engine.html">Engine&nbsp;Room</a>      <a class="rail-page" href="deep/systems.html">Systems&nbsp;Atlas</a>      <a class="rail-page" href="deep/sims.html">Sims</a>      <a class="rail-page" href="deep/gallery.html">Gallery</a>      <a class="rail-page" href="videos.html">Videos</a>    </nav>
+  </div>
+</aside><script>
+(function () {
+  function start() {
+    var links = {};
+    var ids = [];
+    Array.prototype.forEach.call(
+      document.querySelectorAll('.siterail a.rail-anchor[href^="#"]'),
+      function (a) {
+        var id = a.getAttribute('href').slice(1);
+        if (!id) return;
+        links[id] = a;
+        ids.push(id);
+      }
+    );
+    if (!ids.length || !('IntersectionObserver' in window)) return;
+    var spy = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        ids.forEach(function (id) { links[id].removeAttribute('aria-current'); });
+        var link = links[e.target.id];
+        if (link) link.setAttribute('aria-current', 'page');
+      });
+    }, { rootMargin: '-35% 0px -55% 0px' });
+    ids.forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) spy.observe(el);
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', start);
+  } else {
+    start();
+  }
+})();
+</script>
+<div class="entry-fade" aria-hidden="true"></div>
+<div class="wrap">
+  <p class="eyebrow">Ports &amp; Adapters · Subject-free core</p>
+  <h1>The assessment engine, drawn as a hexagon</h1>
+  <p class="dek">One subject-free core. Everything else — the teacher UI, the LLM, the document renderer,
+    physics itself — plugs in through a <em>port</em>. Dependencies only ever point inward, and a build
+    gate proves the rule is kept rather than merely intended.</p>
+
+  <div class="board">
+    <div class="board__scroll">
+      <svg class="diagram" viewBox="0 0 1200 772" role="img"
+           aria-label="Hexagonal ports-and-adapters diagram: a subject-free assessment engine core with driving adapters on the left, driven adapters through ports on the right, and subject plugins registering from below.">
+        <defs>
+          <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--edge)"/>
+          </marker>
+          <marker id="ah-drive" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--drive)"/>
+          </marker>
+          <marker id="ah-driven" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--driven)"/>
+          </marker>
+          <marker id="ah-sub" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--subject)"/>
+          </marker>
+
+          <!-- The wavefronts.  userSpaceOnUse (not the default bounding-box) so
+               the gradient is a true CIRCLE about the hex centre rather than an
+               ellipse stretched to the hex's 416x480 box.  Transparent inside,
+               glowing at the rim: scaling the polygon sweeps that soft band
+               through the annulus, which is the visible "sound wave". -->
+          <radialGradient id="wavefront-in" gradientUnits="userSpaceOnUse" cx="600" cy="340" r="240">
+            <stop offset="0%"   stop-color="var(--core)" stop-opacity="0"/>
+            <stop offset="72%"  stop-color="var(--core)" stop-opacity="0"/>
+            <stop offset="92%"  stop-color="var(--core)" stop-opacity=".70"/>
+            <stop offset="100%" stop-color="var(--core)" stop-opacity="0"/>
+          </radialGradient>
+          <radialGradient id="wavefront-out" gradientUnits="userSpaceOnUse" cx="600" cy="340" r="240">
+            <stop offset="0%"   stop-color="var(--mech)" stop-opacity="0"/>
+            <stop offset="72%"  stop-color="var(--mech)" stop-opacity="0"/>
+            <stop offset="92%"  stop-color="var(--mech)" stop-opacity=".70"/>
+            <stop offset="100%" stop-color="var(--mech)" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+
+        <!-- column headers -->
+        <text class="t-col" x="165" y="176" text-anchor="middle">Driving adapters</text>
+        <text class="t-col" x="1045" y="120" text-anchor="middle">Driven adapters · ports</text>
+        <text class="t-col" x="600" y="762" text-anchor="middle">Subject adapters — plug in from outside</text>
+
+        <!-- ===== the dependency gate (wraps the core) =====
+             The gate does NOT breathe.  The core is alive; the rule that
+             contains it is not — that is the whole point of the drawing. -->
+        <rect x="344" y="86" width="516" height="516" rx="20" fill="none"
+              stroke="var(--gate)" stroke-width="1.4" stroke-dasharray="6 7" opacity=".85"/>
+
+        <!-- ===== core: outer hexagon = L2, inner hexagon = L1 =====
+             Everything that is part of the membrane lives in .corebody and
+             scales about the hexagon's centre (600,340).  The TEXT is left
+             outside the group on purpose — scaling type makes it shimmer. -->
+        <!-- L2, the MEMBRANE: the driver.  Everything glued to the outer shell
+             lives here and scales with it about the hex centre (600,340). -->
+        <g class="corebody">
+          <!-- soft glow behind the core; brightens as the membrane fills -->
+          <path class="pulse" id="wv-glow" d="M600,100L807.85,220L807.85,460L600,580L392.15,460L392.15,220Z" fill="var(--core)" opacity=".07"/>
+          <!-- the CHARGING rim: a wide soft stroke that brightens all through
+               the inflation, then is spent into the wave.  Behind the hex's own
+               outline, so it reads as a halo rather than a fattened line. -->
+          <path class="rim" id="wv-rim" d="M600,100L807.85,220L807.85,460L600,580L392.15,460L392.15,220Z"/>
+          <!-- L2 outer hex.  A PATH, not a polygon: its perimeter is rewritten every
+               frame into a standing wave (see the script at the end of the SVG). -->
+          <path id="wv-l2" d="M600,100L807.85,220L807.85,460L600,580L392.15,460L392.15,220Z"
+                fill="var(--core)" fill-opacity=".10" stroke="var(--core)" stroke-width="2"
+                stroke-linejoin="round"/>
+
+          <!-- port notches = valves.  The driving port opens as the ask enters.
+               The four driven ports open when L1's REPLY reaches the membrane —
+               they are not fired by the squeeze any more, they are fired by the
+               wave coming back out. -->
+          <rect class="port" style="--wd:calc(var(--beat) * var(--t-inport))" x="386" y="348" width="12" height="26" rx="2" fill="var(--core)"/>
+          <rect class="port" style="--wd:calc(var(--beat) * var(--t-ports))"          x="802" y="228" width="12" height="24" rx="2" fill="var(--core)"/>
+          <rect class="port" style="--wd:calc(var(--beat) * (var(--t-ports) + .009))" x="802" y="288" width="12" height="24" rx="2" fill="var(--core)"/>
+          <rect class="port" style="--wd:calc(var(--beat) * (var(--t-ports) + .018))" x="802" y="363" width="12" height="24" rx="2" fill="var(--core)"/>
+          <rect class="port" style="--wd:calc(var(--beat) * (var(--t-ports) + .027))" x="802" y="428" width="12" height="24" rx="2" fill="var(--core)"/>
+        </g>
+
+        <!-- L1, the SECOND MASS: no longer welded to L2.  It has its own spring
+             and its own clock (@keyframes core-inner), so it answers the
+             membrane 0.85s late, overshoots it, and rings.  The chevrons ride
+             WITH it -- they mark L1's boundary, so they must not drift off it. -->
+        <g class="coreinner">
+          <path class="l1shell" id="wv-l1" d="M600,230L695.26,285L695.26,395L600,450L504.74,395L504.74,285Z"
+                fill="var(--mech)" fill-opacity=".16" stroke="var(--mech)" stroke-width="1.8"
+                stroke-linejoin="round"/>
+          <!-- inward chevrons (L2 depends on L1) -->
+          <g stroke="var(--mech)" stroke-width="1.6" fill="none" opacity=".65">
+            <path d="M590,246 L600,254 L610,246"/>
+            <path d="M590,240 L600,248 L610,240"/>
+          </g>
+        </g>
+
+        <!-- The visible wave in the annulus.  Siblings of the two hexes, NOT
+             children -- nesting them would compound the membrane's scale onto
+             their own and the front would no longer land on L1.
+
+             ONE round trip per beat, and it does NOT start with the beat: the
+             membrane must first GROW and charge.  Only when it begins to shrink
+             (--t-emit) is the stored glow discharged inward.  The azure front
+             flies 0.84s, strikes L1 (--t-strike), and the violet reply leaves in
+             the same instant, arriving back at the membrane 0.84s later — which
+             is what fires the ports. -->
+        <g class="ripples">
+          <polygon class="ripple ripple--in"  style="--wd:calc(var(--beat) * var(--t-emit))"   points="600,100 807.85,220 807.85,460 600,580 392.15,460 392.15,220"/>
+          <polygon class="ripple ripple--out" style="--wd:calc(var(--beat) * var(--t-reply))" points="600,100 807.85,220 807.85,460 600,580 392.15,460 392.15,220"/>
+        </g>
+
+        <!-- The gate's label card paints AFTER the core, so the hexagon's top
+             vertex hides behind it at full inflation instead of stabbing through. -->
+        <rect x="452" y="73" width="296" height="26" rx="8" fill="var(--card)" stroke="var(--gate)" stroke-width="1.2"/>
+        <text class="t-gate" x="600" y="90" text-anchor="middle">Dependency gate · import-linter</text>
+
+        <!-- core labels -->
+        <text class="t-core"  x="600" y="150" text-anchor="middle">L2 · Engine core</text>
+        <text class="t-sub"   x="600" y="171" text-anchor="middle">Quiz · Item · Choice · schema</text>
+        <text class="t-sub"   x="600" y="188" text-anchor="middle">claude_tools/assessment</text>
+        <text class="t-tiny"  x="600" y="209" text-anchor="middle">subject-free</text>
+
+        <text class="t-mech"  x="600" y="330" text-anchor="middle">L1 · Pure mechanism</text>
+        <text class="t-sub"   x="600" y="351" text-anchor="middle">diagrams · DrawingML · OMML</text>
+        <text class="t-sub"   x="600" y="368" text-anchor="middle">stdlib + python-docx only</text>
+
+        <!-- ===== driving adapters (left) ===== -->
+        <g>
+          <!-- the Teacher UI is where the beat STARTS: --wd:0s -->
+          <rect class="card" style="--wd:0s" x="70" y="204" width="190" height="60" rx="10" fill="var(--drive)" fill-opacity=".10" stroke="var(--drive)" stroke-width="1.6"/>
+          <text class="t-title" x="165" y="229" text-anchor="middle">Teacher UI</text>
+          <text class="t-sub"   x="165" y="248" text-anchor="middle">tools/product/ui</text>
+
+          <rect class="card" style="--wd:calc(var(--beat) * var(--t-apicard))" x="70" y="330" width="190" height="60" rx="10" fill="var(--drive)" fill-opacity=".10" stroke="var(--drive)" stroke-width="1.6"/>
+          <text class="t-title" x="165" y="355" text-anchor="middle">Thin API · FastAPI</text>
+          <text class="t-sub"   x="165" y="374" text-anchor="middle">tools/product/api</text>
+        </g>
+        <!-- UI -> API -> core.  The LINE is gone; only the head remains.  Each
+             base path is kept but stroked at zero opacity: markers carry their
+             own fill and are painted separately, so the head survives while the
+             line vanishes.  The path's geometry still sets the head's angle, and
+             its stroke-width still sets the head's scale -- so both must stay.
+             The beads on the .wave overlay are now the only visible wire; the
+             --wd delays (0s, .8s) are what make the ripple travel the chain. -->
+        <path d="M165,264 L165,330" fill="none" stroke="var(--drive)" stroke-width="2" stroke-opacity="0" marker-end="url(#ah-drive)"/>
+        <path class="wave wave--drive" style="--wd:0s" d="M165,264 L165,330"/>
+        <text class="t-tiny" x="176" y="300" text-anchor="start">http only</text>
+        <path d="M260,360 L384,360" fill="none" stroke="var(--drive)" stroke-width="2" stroke-opacity="0" marker-end="url(#ah-drive)"/>
+        <path class="wave wave--drive" style="--wd:calc(var(--beat) * var(--t-api))" d="M260,360 L384,360"/>
+
+        <!-- ===== driven adapters (right, through ports) ===== -->
+        <g>
+          <rect class="card" style="--wd:calc(var(--beat) * var(--t-outcard))" x="938" y="150" width="212" height="54" rx="10" fill="var(--driven)" fill-opacity=".10" stroke="var(--driven)" stroke-width="1.6"/>
+          <text class="t-title" x="1044" y="173" text-anchor="middle">LLM Gateway</text>
+          <text class="t-sub"   x="1044" y="191" text-anchor="middle">gateway/port.py</text>
+
+          <rect class="card" style="--wd:calc(var(--beat) * (var(--t-outcard) + .012))" x="938" y="248" width="212" height="54" rx="10" fill="var(--driven)" fill-opacity=".10" stroke="var(--driven)" stroke-width="1.6"/>
+          <text class="t-title" x="1044" y="271" text-anchor="middle">Document renderer</text>
+          <text class="t-sub"   x="1044" y="289" text-anchor="middle">python-docx</text>
+
+          <rect class="card" style="--wd:calc(var(--beat) * (var(--t-outcard) + .024))" x="938" y="346" width="212" height="54" rx="10" fill="var(--driven)" fill-opacity=".10" stroke="var(--driven)" stroke-width="1.6"/>
+          <text class="t-title" x="1044" y="369" text-anchor="middle">Bubble-sheet scanner</text>
+          <text class="t-sub"   x="1044" y="387" text-anchor="middle">bubble_grader</text>
+
+          <rect class="card" style="--wd:calc(var(--beat) * (var(--t-outcard) + .036))" x="938" y="444" width="212" height="54" rx="10" fill="var(--driven)" fill-opacity=".10" stroke="var(--driven)" stroke-width="1.6"/>
+          <text class="t-title" x="1044" y="467" text-anchor="middle">Content bank</text>
+          <text class="t-sub"   x="1044" y="485" text-anchor="middle">fixtures / DB</text>
+        </g>
+        <!-- The systole lands at 45%->50% of the beat = 2.70s..3.00s.  These four
+             --wd delays (2.75..3.05s) sit exactly inside it: the squeeze is
+             literally what fires them, and the 100ms stagger fans them out. -->
+        <path d="M814,240 L934,177" fill="none" stroke="var(--driven)" stroke-width="2" stroke-opacity="0" marker-end="url(#ah-driven)"/>
+        <path class="wave wave--driven" style="--wd:calc(var(--beat) * var(--t-out))" d="M814,240 L934,177"/>
+        <path d="M814,300 L934,275" fill="none" stroke="var(--driven)" stroke-width="2" stroke-opacity="0" marker-end="url(#ah-driven)"/>
+        <path class="wave wave--driven" style="--wd:calc(var(--beat) * (var(--t-out) + .012))" d="M814,300 L934,275"/>
+        <path d="M814,375 L934,373" fill="none" stroke="var(--driven)" stroke-width="2" stroke-opacity="0" marker-end="url(#ah-driven)"/>
+        <path class="wave wave--driven" style="--wd:calc(var(--beat) * (var(--t-out) + .024))" d="M814,375 L934,373"/>
+        <path d="M814,440 L934,471" fill="none" stroke="var(--driven)" stroke-width="2" stroke-opacity="0" marker-end="url(#ah-driven)"/>
+        <path class="wave wave--driven" style="--wd:calc(var(--beat) * (var(--t-out) + .036))" d="M814,440 L934,471"/>
+
+        <!-- ===== subject plugins (bottom, dependency inversion) ===== -->
+        <g>
+          <rect x="352" y="648" width="236" height="72" rx="10" fill="var(--subject)" fill-opacity=".10" stroke="var(--subject)" stroke-width="1.6"/>
+          <text class="t-title" x="470" y="678" text-anchor="middle">Physics plugin · L3/L4</text>
+          <text class="t-sub"   x="470" y="697" text-anchor="middle">fv_physics · frq_completeness</text>
+          <text class="t-sub"   x="470" y="712" text-anchor="middle">build.py orchestrator</text>
+
+          <rect x="640" y="648" width="236" height="72" rx="10" fill="var(--subject)" fill-opacity=".10" stroke="var(--subject)" stroke-width="1.6"/>
+          <text class="t-title" x="758" y="678" text-anchor="middle">Digital Electronics · L3/L4</text>
+          <text class="t-sub"   x="758" y="697" text-anchor="middle">K-maps · truth tables</text>
+          <text class="t-sub"   x="758" y="712" text-anchor="middle">build.py orchestrator</text>
+        </g>
+        <!-- Dependency-inversion links.  Double-ENDED — the engine loads the plugin
+             AND the plugin registers checks back — so nothing flows one way.
+             These are now SLAVED TO THE CORE (@keyframes sub-breathe): the dashes
+             stream outward while the membrane inflates and are yanked back inward
+             the instant it clamps down.  No --wd on either: both are in phase with
+             the breath, because they are both being driven BY it. -->
+        <path class="flowdash" d="M516,533 L486,646" fill="none" stroke="var(--subject)" stroke-width="1.8"
+              stroke-dasharray="5 6" marker-start="url(#ah-sub)" marker-end="url(#ah-sub)"/>
+        <path class="flowdash" d="M684,533 L742,646" fill="none" stroke="var(--subject)" stroke-width="1.8"
+              stroke-dasharray="5 6" marker-start="url(#ah-sub)" marker-end="url(#ah-sub)"/>
+        <text class="t-tiny" x="600" y="628" text-anchor="middle" fill="var(--subject)">importlib load  ⇄  register_check()</text>
+
+        <!-- ports label -->
+        <text class="t-tiny" x="838" y="150" text-anchor="end">ports ▸</text>
+      </svg>
+
+      <script>
+      /* ======================================================================
+         THE PERIMETER RINGS.
+
+         Each hexagon edge is a STRING CLAMPED AT BOTH ENDS.  The vertices are
+         NODES -- displacement is identically zero there, for every frame, by
+         construction: the displacement is A*sin(m*pi*s) with s running 0..1
+         along each edge, and sin(0) = sin(pi) = 0.  Each edge bulges at its
+         midpoint, so a swollen hexagon blooms into a six-lobed flower.
+
+         AND IT OSCILLATES IN TIME.  That is what makes it a WAVE.
+
+         The amplitude A(t) is not the body's displacement -- it is the
+         perimeter's OWN flexural mode: a lightly damped oscillator (1.52 Hz)
+         pumped by the body's motion.  Driving A straight off (scale - 1), as
+         this first did, never crosses neutral: the edges bulge and relax and
+         that is a static distortion that GROWS, not a standing wave.  A real
+         standing wave swings THROUGH zero -- crest becomes trough becomes crest.
+         This one crosses zero 19 times a beat.
+
+         AND IT WAVES WHILE IT GROWS -- which took a second correction, because
+         the first one did not go far enough.  Pumped by the body's displacement
+         ALONE, the rim is still quasi-static during the CHARGE: a 1.8s inflation
+         ramp driving a 0.66s mode.  It does not ring on the ramp, it TRACKS it --
+         so the rim swelled outward, monotonically, for the entire growth, and only
+         began to move when the discharge hit.  No amount of retuning fixes that;
+         a linear mode rings at its own frequency only if the drive carries energy
+         AT that frequency, and a smooth 1.8s ramp carries almost none.
+
+         The missing drive was already on the page.  THE MEMBRANE IS FED BY A WAVE
+         -- the dashes streaming inward along the API lines.  The ask does not
+         arrive as one smooth shove; it arrives as an oscillating stream, and a
+         wave landing on a boundary drives that boundary AT THE WAVE'S FREQUENCY.
+         So the rim rings WHILE IT CHARGES, because the thing feeding it oscillates.
+         The stream runs at 14 cycles per beat (1.56 Hz) against the rim's own
+         1.52 Hz -- essentially ON RESONANCE, the rim tuned to its own supply --
+         which is why so small a drive suffices.  It acts only while inflow is
+         happening, so the hexagon is still exactly sharp at rest.
+
+         It also RINGS ON after the body has stopped.  The membrane is still
+         waving while the adapters discharge (26% of peak through that window),
+         decaying to 4% by the end of the beat.  And L1's perimeter is set going
+         by the WAVEFRONT'S BLOW -- strike a membrane and its edge rings.  L1 needs
+         no stream of its own: its swell lasts ~one flexural period, so the strike's
+         ring already fills it.
+
+         WHY A TABLE AND NOT AN ODE INTEGRATED HERE
+         ------------------------------------------
+         Two hard reasons.  The verification harness PINS the CSS clock and jumps
+         around inside the beat; a real-time integrator would ignore that and
+         happily keep integrating, so nothing could be stepped or frozen.  And
+         steady state -- which is what makes A(0) == A(BEAT), so the loop does not
+         jump -- only exists in the precomputed solution.  The generator owns the
+         physics; this file looks the answer up by the clock.
+
+         CSS cannot do this -- a polygon's points are not interpolable -- so it
+         is the one piece of the diagram that needs script.  Everything degrades
+         safely: the paths ship with a plain hexagon in their `d`, so with no JS
+         (or with prefers-reduced-motion) the diagram is exactly the static
+         drawing it always was.
+         ====================================================================== */
+      (function () {
+        /* >>> GENERATED RING TABLE -- gen_core_springs.py -- DO NOT HAND-EDIT */
+        /* GENERATED -- the perimeter's flexural ring, T_n=0.66s (1.52 Hz) zeta=0.08.
+           One steady-state beat of
+
+             q'' + 2*zf*wf*q' + wf^2*q = wf^2*( (scale-1)  +  0.25 * max(v,0) * sin(2pi*14*t/BEAT) )
+
+           The first term is the BULGE: the body swells, the rim bows out.
+           The second is why the rim WAVES WHILE IT GROWS instead of merely
+           bulging.  Forced by the bulge alone the rim is quasi-static -- a
+           1.8s inflation ramp driving a 0.66s mode -- so it TRACKS the ramp
+           and does not ring: monotone for the whole growth, dead until the
+           discharge.  But the membrane is FED BY A WAVE (the wave-travel
+           dashes streaming in along the API lines), and a wave landing on a
+           boundary drives it at the WAVE's frequency.  14 cycles/beat
+           = 1.56 Hz against the rim's 1.52 Hz -- ON RESONANCE, so the
+           drive is tiny (Q ~ 6 does the work).  max(v,0): the stream shakes
+           the rim only while inflow is happening, so the hexagon is still
+           EXACTLY sharp at rest.  Whole cycles per beat, so the loop closes.
+
+           A TABLE, not an ODE integrated live, for two reasons: the harness
+           PINS the CSS clock and jumps around in it, which a real-time
+           integrator would ignore; and steady state is what makes the loop
+           close exactly.  Look it up by the clock; never integrate here. */
+        var RING_BEAT = 9;
+        var RING_L2 = [-0.132,-0.178,-0.214,-0.240,-0.254,-0.256,-0.246,-0.226,-0.196,-0.159,-0.115,-0.068,-0.020,0.028,0.073,0.113,0.147,0.173,0.190,0.199,0.198,0.188,0.170,0.145,0.114,0.079,0.042,0.004,-0.032,-0.066,-0.096,-0.121,-0.139,-0.151,-0.155,-0.152,-0.143,-0.127,-0.106,-0.081,-0.054,-0.024,0.005,0.033,0.059,0.081,0.098,0.111,0.119,0.120,0.117,0.108,0.094,0.077,0.057,0.035,0.012,-0.010,-0.031,-0.051,-0.067,-0.080,-0.087,-0.088,-0.080,-0.063,-0.035,0.004,0.053,0.110,0.172,0.235,0.295,0.347,0.386,0.408,0.409,0.389,0.346,0.285,0.209,0.126,0.044,-0.026,-0.075,-0.092,-0.068,0.004,0.128,0.306,0.535,0.810,1.121,1.457,1.804,2.146,2.467,2.753,2.990,3.165,3.270,3.301,3.256,3.139,2.955,2.715,2.432,2.120,1.797,1.480,1.184,0.926,0.718,0.572,0.493,0.487,0.553,0.687,0.883,1.130,1.417,1.729,2.051,2.369,2.668,2.935,3.158,3.328,3.440,3.489,3.476,3.394,3.243,3.027,2.764,2.473,2.177,1.896,1.649,1.451,1.313,1.241,1.235,1.294,1.410,1.576,1.778,2.001,2.228,2.436,2.592,2.640,2.551,2.321,1.956,1.472,0.890,0.237,-0.457,-1.160,-1.842,-2.537,-3.276,-3.999,-4.639,-5.131,-5.426,-5.495,-5.324,-4.916,-4.290,-3.474,-2.508,-1.438,-0.315,0.810,1.885,2.864,3.704,4.373,4.843,5.097,5.128,4.939,4.541,3.957,3.214,2.350,1.403,0.418,-0.562,-1.495,-2.342,-3.068,-3.647,-4.056,-4.285,-4.329,-4.192,-3.889,-3.436,-2.872,-2.196,-1.449,-0.662,0.133,0.902,1.614,2.237,2.746,3.120,3.345,3.415,3.330,3.099,2.736,2.263,1.703,1.083,0.425,-0.246,-0.908,-1.536,-2.102,-2.579,-2.938,-3.157,-3.217,-3.112,-2.843,-2.420,-1.862,-1.194,-0.448,0.341,1.135,1.900,2.600,3.205,3.690,4.035,4.230,4.270,4.157,3.898,3.506,2.995,2.387,1.705,0.978,0.235,-0.493,-1.176,-1.786,-2.300,-2.699,-2.969,-3.103,-3.098,-2.960,-2.699,-2.328,-1.866,-1.335,-0.760,-0.167,0.418,0.967,1.457,1.866,2.179,2.383,2.474,2.449,2.315,2.081,1.761,1.373,0.936,0.472,0.002,-0.452,-0.871,-1.236,-1.533,-1.752,-1.884,-1.928,-1.883,-1.755,-1.552,-1.287,-0.973,-0.625,-0.262,0.102,0.448,0.763,1.032,1.247,1.398,1.481,1.495,1.441,1.324,1.152,0.934,0.681,0.406,0.122,-0.158,-0.421,-0.657,-0.855,-1.008,-1.110,-1.160,-1.155,-1.099,-0.995,-0.850,-0.672,-0.469,-0.253,-0.032,0.183,0.382,0.558,0.702,0.810,0.878,0.904,0.889,0.834,0.744,0.623,0.479,0.317,0.147,-0.024,-0.188,-0.338,-0.468,-0.573,-0.648,-0.692,-0.703,-0.682,-0.631,-0.554,-0.454,-0.337,-0.209,-0.076,0.056,0.181,0.294,0.389,0.464,0.516,0.542,0.544,0.521,0.475,0.410,0.328,0.234,0.133,0.030,-0.072,-0.167,-0.251,-0.321,-0.374,-0.409,-0.424,-0.419,-0.396,-0.356,-0.301,-0.235,-0.160,-0.080,-0.000,0.078,0.149,0.212,0.263,0.300,0.323,0.330,0.322,0.300,0.266,0.220,0.166,0.107,0.045,-0.018,-0.077];
+        var RING_L1 = [0.052,0.045,0.037,0.027,0.017,0.006,-0.005,-0.015,-0.025,-0.032,-0.038,-0.043,-0.045,-0.045,-0.043,-0.039,-0.033,-0.027,-0.019,-0.011,-0.002,0.006,0.014,0.021,0.027,0.031,0.034,0.035,0.034,0.032,0.029,0.025,0.019,0.013,0.006,-0.000,-0.007,-0.013,-0.018,-0.022,-0.025,-0.027,-0.027,-0.026,-0.025,-0.022,-0.018,-0.013,-0.009,-0.003,0.002,0.007,0.011,0.015,0.018,0.020,0.021,0.021,0.020,0.019,0.016,0.013,0.009,0.006,0.002,-0.002,-0.006,-0.009,-0.012,-0.014,-0.016,-0.016,-0.016,-0.015,-0.014,-0.012,-0.009,-0.006,-0.003,-0.000,0.003,0.006,0.008,0.010,0.011,0.012,0.013,0.012,0.012,0.010,0.009,0.007,0.004,0.002,-0.000,-0.003,-0.005,-0.007,-0.008,-0.009,-0.010,-0.010,-0.010,-0.009,-0.008,-0.006,-0.005,-0.003,-0.001,0.001,0.003,0.004,0.006,0.007,0.007,0.008,0.008,0.007,0.007,0.006,0.005,0.003,0.002,0.000,-0.001,-0.002,-0.004,-0.005,-0.005,-0.006,-0.006,-0.006,-0.006,-0.005,-0.004,-0.003,-0.002,-0.001,0.000,0.001,0.002,0.003,0.004,0.004,0.005,0.005,0.005,0.004,0.004,0.003,0.002,0.001,0.001,-0.000,-0.001,-0.002,-0.003,-0.003,-0.003,-0.004,-0.004,-0.003,-0.003,-0.003,-0.002,-0.002,-0.001,-0.000,0.000,0.001,0.002,0.002,0.002,0.003,0.003,0.003,0.003,0.002,0.004,0.032,0.110,0.249,0.447,0.695,0.978,1.277,1.573,1.846,2.079,2.256,2.366,2.400,2.355,2.231,2.033,1.768,1.449,1.088,0.702,0.307,-0.081,-0.438,-0.766,-1.044,-1.262,-1.413,-1.492,-1.500,-1.438,-1.313,-1.131,-0.904,-0.643,-0.361,-0.072,0.212,0.476,0.710,0.905,1.053,1.149,1.190,1.176,1.110,0.996,0.842,0.655,0.445,0.222,-0.004,-0.221,-0.422,-0.596,-0.738,-0.842,-0.905,-0.925,-0.902,-0.840,-0.742,-0.614,-0.463,-0.296,-0.122,0.052,0.218,0.369,0.498,0.600,0.672,0.711,0.717,0.690,0.634,0.551,0.445,0.324,0.192,0.056,-0.079,-0.205,-0.317,-0.412,-0.485,-0.533,-0.557,-0.554,-0.526,-0.476,-0.406,-0.320,-0.223,-0.119,-0.013,0.090,0.185,0.269,0.338,0.390,0.422,0.434,0.426,0.400,0.356,0.298,0.228,0.150,0.069,-0.013,-0.092,-0.164,-0.226,-0.276,-0.311,-0.332,-0.337,-0.327,-0.302,-0.265,-0.217,-0.160,-0.099,-0.035,0.028,0.088,0.142,0.188,0.223,0.248,0.260,0.261,0.250,0.227,0.196,0.156,0.111,0.063,0.013,-0.036,-0.081,-0.121,-0.155,-0.180,-0.196,-0.203,-0.201,-0.190,-0.170,-0.144,-0.112,-0.076,-0.038,0.001,0.038,0.072,0.102,0.126,0.144,0.155,0.158,0.154,0.144,0.127,0.105,0.079,0.051,0.021,-0.009,-0.037,-0.063,-0.085,-0.103,-0.115,-0.122,-0.123,-0.118,-0.108,-0.094,-0.076,-0.055,-0.033,-0.009,0.014,0.035,0.054,0.071,0.083,0.091,0.095,0.095,0.090,0.081,0.069,0.055,0.038,0.020,0.002,-0.015,-0.032,-0.046,-0.058,-0.067,-0.072,-0.074,-0.073,-0.068,-0.061,-0.051,-0.039,-0.026,-0.012,0.002,0.016,0.028,0.039,0.047,0.053,0.057,0.058,0.056];
+        /* <<< END GENERATED RING TABLE */
+
+        var CX = 600, CY = 340;          // the hexagons' shared centre
+        var SEG = 24;                    // samples per edge; mode 3 needs the resolution
+
+        /* MODE and GAIN are not free.  A hexagon's "flatness" -- the gap between a
+           vertex (r) and an edge midpoint (r*cos30 = .866r) -- is only 13.4% of r:
+           32 units on L2, 15 on L1.  That is the entire budget the wave has to
+           play in.
+
+           MODE 1 (one antinode per edge) spends all of it in ONE direction: every
+           edge bows outward at once, and at a visible amplitude the hexagon
+           rounds off into a blob.  It stops being a hexagon.  (It did.)
+
+           MODE 3 puts 1.5 wavelengths on each edge -- crest, trough, crest -- so
+           the mean outward push is only 0.212*A.  The perimeter RIPPLES instead
+           of inflating, the corners stay sharp, and it reads unmistakably as a
+           sine wave rather than as a swelling.  Nodes still sit exactly on the
+           vertices, plus two more per edge.
+
+           GAIN is then capped so |A| stays under a third of the flat depth. */
+        /* WAVE -- the one knob worth turning, and it is a REAL trade.
+
+           A hexagon's whole identity is that its edges are STRAIGHT.  The budget
+           the ripple has to play in is the "flat depth": the gap between a vertex
+           (r) and an edge midpoint (.866r), which is just 13.4% of r -- 32 units
+           on L2, 15 on L1.  Measured against that budget:
+
+             amp <= ~17% of flat depth : edges read as straight-but-rippling.
+                                         Still unmistakably a hexagon.   <-- HERE
+             amp ~= 25%                : edges read as CURVES.  It becomes a
+                                         six-lobed blob, and the page is titled
+                                         "drawn as a hexagon".  (It did.  Twice.)
+
+           So this is capped at the readable end, not the dramatic end.  Raise
+           WAVE to make the ripple bolder; past ~1.5 you will trade the hexagon
+           for it.  Motion is doing a lot of the work here -- a 5-unit ripple is
+           near-invisible frozen, and plainly visible once it is growing,
+           inverting and ringing. */
+        var WAVE = 1.0;
+
+        var BODIES = [
+          { pts: [[600,100],[807.85,220],[807.85,460],[600,580],[392.15,460],[392.15,220]],
+            ring: RING_L2, mode: 3,          // peaks at 5.5 units; flat depth 32
+            targets: ['#wv-glow', '#wv-rim', '#wv-l2'] },
+          { pts: [[600,230],[695.26,285],[695.26,395],[600,450],[504.74,395],[504.74,285]],
+            ring: RING_L1, mode: 3,          // peaks at 2.4 units; flat depth 15
+            targets: ['#wv-l1'] }
+        ];
+        var TAPER = 0.12;      // see CLAMPED, below
+
+        var reduced = window.matchMedia &&
+                      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        /* CLAMPED, not merely pinned.
+           A bare sin(m*pi*s) is zero in DISPLACEMENT at a vertex but its SLOPE
+           there is A*m*pi/L -- large.  The curve therefore leaves the corner at
+           an angle (~21 degrees at mode 3), and the hexagon's sharp 120-degree
+           corner rounds off into a bump.  The vertices stay nodes by the numbers
+           and the hexagon stops being a hexagon to the eye.  (It did.)
+
+           So taper the wave to zero SLOPE as well as zero displacement at each
+           corner -- a clamped edge, not a pinned one.  The taper is a raised
+           cosine over the first and last 12% of the edge, which is flat 1
+           everywhere in between, so the sine keeps its shape where you can see
+           it and the corners stay razor sharp. */
+        function taper(s) {
+          if (s < TAPER)     return 0.5 * (1 - Math.cos(Math.PI * s / TAPER));
+          if (s > 1 - TAPER) return 0.5 * (1 - Math.cos(Math.PI * (1 - s) / TAPER));
+          return 1;
+        }
+
+        function wavyPath(pts, amp, mode) {
+          var d = '', i, k;
+          for (i = 0; i < 6; i++) {
+            var p0 = pts[i], p1 = pts[(i + 1) % 6];
+            var ex = p1[0] - p0[0], ey = p1[1] - p0[1];
+            var len = Math.sqrt(ex * ex + ey * ey);
+            var nx = -ey / len, ny = ex / len;             // edge normal
+            var mx = (p0[0] + p1[0]) / 2, my = (p0[1] + p1[1]) / 2;
+            if ((mx - CX) * nx + (my - CY) * ny < 0) { nx = -nx; ny = -ny; }  // point it OUT
+            for (k = 0; k < SEG; k++) {
+              var s = k / SEG;                     // 0 at this vertex, ->1 at the next
+              // sin() gives the NODE at the corner; taper() gives the sharp corner
+              var disp = amp * taper(s) * Math.sin(mode * Math.PI * s);
+              var x = p0[0] + ex * s + nx * disp;
+              var y = p0[1] + ey * s + ny * disp;
+              d += (i === 0 && k === 0 ? 'M' : 'L') + x.toFixed(2) + ',' + y.toFixed(2);
+            }
+          }
+          return d + 'Z';
+        }
+
+        /* The beat's current time, taken from the CSS animation itself -- so the
+           perimeter is slaved to exactly the clock everything else runs on, and
+           pinning that clock pins the perimeter too. */
+        function beatTime() {
+          var el = document.querySelector('.corebody');
+          if (!el || !el.getAnimations) return 0;
+          var a = el.getAnimations()[0];
+          if (!a || a.currentTime == null) return 0;
+          return (a.currentTime / 1000) % RING_BEAT;
+        }
+
+        function ringAt(table, t) {
+          var x = t / RING_BEAT * table.length;
+          var i = Math.floor(x) % table.length;
+          var j = (i + 1) % table.length;
+          return table[i] + (table[j] - table[i]) * (x - Math.floor(x));
+        }
+
+        var nodes = BODIES.map(function (b) {
+          return b.targets.map(function (sel) { return document.querySelector(sel); })
+                          .filter(Boolean);
+        });
+
+        function frame() {
+          var t = beatTime();
+          for (var i = 0; i < BODIES.length; i++) {
+            var amp = WAVE * ringAt(BODIES[i].ring, t);
+            var d = wavyPath(BODIES[i].pts, amp, BODIES[i].mode);
+            for (var j = 0; j < nodes[i].length; j++) nodes[i][j].setAttribute('d', d);
+          }
+          requestAnimationFrame(frame);
+        }
+
+        if (!reduced) requestAnimationFrame(frame);
+      })();
+      </script>
+    </div>
+  </div>
+
+  <ul class="legend" aria-label="Legend">
+    <li><span class="swatch" style="background:var(--drive)"></span>Driving adapters (product)</li>
+    <li><span class="swatch" style="background:var(--core)"></span>L2 engine core</li>
+    <li><span class="swatch" style="background:var(--mech)"></span>L1 pure mechanism</li>
+    <li><span class="swatch" style="background:var(--driven)"></span>Driven adapters (ports)</li>
+    <li><span class="swatch" style="background:var(--subject)"></span>Subject plugins (L3/L4)</li>
+    <li><span class="swatch" style="background:var(--gate)"></span>Dependency gate</li>
+  </ul>
+
+  <div class="grid">
+    <section aria-labelledby="flow-h">
+      <h2 id="flow-h">How a test flows through it</h2>
+      <ol class="flow">
+        <li><div><span class="lead"><b>In from the left.</b></span>
+          <p>A teacher clicks in the <b>UI</b>, which calls the <b>thin API</b> over HTTP only, which calls the
+          engine. Each layer talks inward to the next — the UI never reaches around the API to the engine.</p></div></li>
+        <li><div><span class="lead"><b>The subject-free core does the work.</b></span>
+          <p>The engine assembles a <code>Quiz</code> from <code>Item</code> and <code>Choice</code> objects
+          (<b>L2</b>) using pure drawing and equation mechanism (<b>L1</b>). Nothing in here knows the word “physics.”</p></div></li>
+        <li><div><span class="lead"><b>Out through ports.</b></span>
+          <p>Need an LLM? Go out through the <b>Gateway</b> port — swap Anthropic for another backend without touching
+          the engine. Rendering, scanning, and the question bank are the same story: adapters behind ports.</p></div></li>
+        <li><div><span class="lead"><b>Subjects plug in upward.</b></span>
+          <p>At startup the engine <code>importlib</code>-loads the physics and DE plugins; each calls
+          <code>register_check()</code> to hand the core its rules. Physics reaches <em>into</em> the engine — the
+          engine never imports physics.</p></div></li>
+        <li><div><span class="lead"><b>The gate makes it true.</b></span>
+          <p><code>import-linter</code> scans the real import graph on every build. A stray
+          <code>engine → physics</code> or <code>engine → UI</code> import fails CI — the rule is enforced, not hoped for.</p></div></li>
+      </ol>
+    </section>
+
+    <section aria-labelledby="layer-h">
+      <h2 id="layer-h">The four purity layers</h2>
+      <table>
+        <thead><tr><th scope="col">Layer</th><th scope="col">Knows about</th></tr></thead>
+        <tbody>
+          <tr><td class="lyr l1">L1 · mechanism</td><td>Nothing about quizzes or subjects</td></tr>
+          <tr><td class="lyr l2">L2 · engine</td><td>Quizzes &amp; items — but subject-free</td></tr>
+          <tr><td class="lyr l3">L3 · subject</td><td>Physics <em>or</em> DE shapes (FBDs, K-maps)</td></tr>
+          <tr><td class="lyr l4">L4 · orchestrator</td><td>Wires it all together, per subject</td></tr>
+        </tbody>
+      </table>
+      <table style="margin-top:22px">
+        <thead><tr><th scope="col">Layer</th><th scope="col">Lives at</th></tr></thead>
+        <tbody>
+          <tr><td class="lyr l1">L1</td><td class="home">tools/  (diagrams · OMML)</td></tr>
+          <tr><td class="lyr l2">L2</td><td class="home">claude_tools/assessment/</td></tr>
+          <tr><td class="lyr l3">L3</td><td class="home">&lt;subject&gt;/lib/&lt;subject&gt;_subject.py</td></tr>
+          <tr><td class="lyr l4">L4</td><td class="home">&lt;subject&gt;/build.py</td></tr>
+        </tbody>
+      </table>
+    </section>
+  </div>
+
+<a class="nextbar nextband" href="deep/code.html">
+  <span class="nextbar__text">
+    <span class="nextbar__eyebrow">Next</span>
+    <span class="nextbar__dest nextband__label">Code</span>
+  </span>
+  <span class="nextbar__arrow nextband__arrow" aria-hidden="true">&rarr;</span>
+</a>
+<p class="foot">
+    <span class="rule">The invariant:</span> dependencies point only inward — UI → API → engine — and the engine
+    imports no outer layer except through a port.
+    <span class="paths">Grounded in&nbsp; scripts/audit_lib_dependencies.py&nbsp;·&nbsp; docs/runbooks/lib_layer_map.md&nbsp;·&nbsp;
+    tools/claude_tools/assessment/completeness_plugin.py&nbsp;·&nbsp; docs/plans/done/productization_build_v1.md</span>
+  </p>
+</div>

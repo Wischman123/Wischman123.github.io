@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+  <meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Physics Simulator</title>
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #fcfcfd;
+    color: #2d3138;
+    font-family: system-ui, sans-serif;
+  }
+  #app {
+    display: grid;
+    grid-template-rows: auto auto auto auto 1fr;
+    height: 100vh;
+  }
+  #app > header {
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid #d8dbe1;
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+  }
+  #app > header strong { font-size: 1.05rem; }
+  #app > header .subtitle { color: #888; font-size: 0.85rem; }
+
+  #app > main {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    min-height: 0;
+  }
+  #canvas-wrap {
+    position: relative;
+    min-height: 0;
+    background: #fff;
+  }
+  canvas#scene {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  #app > main > aside {
+    border-left: 1px solid #d8dbe1;
+    overflow: auto;
+    padding: 0.75rem;
+    background: #fafafd;
+  }
+
+  /* Mobile: stack the canvas above the inspector. */
+  @media (max-width: 760px) {
+    #app > main {
+      grid-template-columns: 1fr;
+      grid-template-rows: minmax(40vh, 1fr) auto;
+    }
+    #app > main > aside {
+      border-left: none;
+      border-top: 1px solid #d8dbe1;
+      max-height: 50vh;
+    }
+  }
+
+  /* --- Whiteboard "Print" path (sim_whiteboard_export P3) ---
+     #sim-print-card is a sibling of #app (see <body>), hidden on screen.
+     main.js's openCardForPrint injects the composed whiteboard card image
+     here, then calls window.print(). Under @media print we hide the
+     on-screen chrome recorded from main.js's runtime scaffold
+     (main.js:40-55) — the header, the scenario / banner / toolbar rows,
+     the inspector aside, and the on-screen canvas wrap — and reveal only
+     the card, so the printed page is just the title + captured canvas +
+     clock caption. */
+  #sim-print-card { display: none; }
+
+  @media print {
+    /* Collapse the on-screen shell so the hidden grid reserves no page
+       height (its screen height:100vh would otherwise leave a blank first
+       page before the card). */
+    #app { display: block; height: auto; }
+    /* Hide every recorded on-screen chrome element. */
+    #app > header,
+    #scenario-row,
+    #banner-row,
+    #toolbar-row,
+    #canvas-wrap,
+    #app > main > aside {
+      display: none !important;
+    }
+    /* Reveal only the composed whiteboard card. */
+    #sim-print-card { display: block; }
+    #sim-print-card img { display: block; width: 100%; height: auto; }
+  }
+
+  /* --- Showcase embed minimal chrome (systems_wing_review_edits W3) ---
+     When main.js resolves &embed=1 (resolveEmbedChrome in ui/embed_boot.js)
+     it adds .sim-embed-minimal to <body>. The publicity wing embeds this app
+     in an <iframe> and wants ONLY the live canvas — no authoring chrome. Hide
+     the same runtime scaffold rows the @media print path hides (the header,
+     the scenario / banner / toolbar rows, and the inspector aside), but KEEP
+     #canvas-wrap and let it fill the frame. The hidden auto-sized grid rows
+     collapse to 0, so #app's `main` (the 1fr track) fills the iframe.
+     CSS-only; the engine and canvas are untouched, so a standalone (unflagged)
+     load is unaffected. */
+  body.sim-embed-minimal #app > header,
+  body.sim-embed-minimal #scenario-row,
+  body.sim-embed-minimal #banner-row,
+  body.sim-embed-minimal #toolbar-row,
+  body.sim-embed-minimal #app > main > aside {
+    display: none !important;
+  }
+  /* Collapse the two-column main so the canvas fills the whole frame. */
+  body.sim-embed-minimal #app > main {
+    grid-template-columns: 1fr;
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<!-- sim_whiteboard_export P3 — print-only host for the composed whiteboard
+     card. Sibling of #app (NOT a child) so the @media print chrome-hiding
+     rules that target #app's subtree do not also hide it. main.js's
+     openCardForPrint injects an <img> here and calls window.print(). -->
+<div id="sim-print-card"></div>
+<script>window.__SHOWCASE_EXPORT__ = true;</script>
+<script type="module" src="./main.js"></script>
+</body>
+</html>

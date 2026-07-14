@@ -1,0 +1,33 @@
+# pages.yaml — the canonical published-page SET for showcase_site_architecture_v1.
+#
+# DERIVED, NEVER HAND-EDITED. Regenerate with:
+#   python docs/plans/state/showcase_site_architecture_v1/derive_pages_yaml.py
+# Drift-check (no write):  ... derive_pages_yaml.py --check
+#
+# ONE COLUMN — `path`: the published, ROOT-RELATIVE path. It is era-invariant:
+# `deep/code.html` is `deep/code.html` whether the tree is served from public/
+# or _site/. The FILE relocates at D1.1 step 0; its CONTENT does not change.
+#
+# This is the SINGLE referent every later phase iterates: verify_live.py's page
+# set, C1's completeness check, E2's analytics + noindex coverage, F1's
+# page-count trigger. A hand-enumerated page list anywhere else is a bug.
+#
+# pages.yaml is the PAGE set. The referenced-ASSET half is owned by
+# verify_live.py's per-asset HTTP-200 crawl. Two mechanisms, no gap.
+#
+# NO phase of this plan mutates this file. If the page SET itself moves, this
+# file is REGENERATED and committed in the same commit as the change that moved it.
+pages:
+  - path: architecture.html
+  - path: deep/code.html
+  - path: deep/engine.html
+  - path: deep/gallery.html
+  - path: deep/lab.html
+  - path: deep/meta.html
+  - path: deep/sims.html
+  - path: deep/systems.html
+  - path: deep/verification.html
+  - path: index.html
+  - path: plain-vs-engine.html
+  - path: sim/index.html
+  - path: videos.html

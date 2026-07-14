@@ -1,0 +1,46 @@
+# daily_check.yml — a scheduled crawl of the LIVE site.
+#
+# WHY IT EXISTS (showcase_site_architecture_v1, D1.1 step 3)
+# ---------------------------------------------------------
+# BRIEF 2 asks Brendan to approve a ONE-WAY deletion (the old published tree, the
+# only cheap rollback) on the strength of the live site being healthy. Without this
+# workflow, that evidence is a single check that ran once, at the flip. This turns
+# it into a daily signal, and D1.2's opening condition — 7 consecutive green days —
+# is read off its run history.
+#
+# It needs NO private access and therefore NO PAT: it crawls the public URL.
+#
+# BOTH TRIGGERS, ON PURPOSE:
+#   schedule:          the daily heartbeat.
+#   workflow_dispatch: a GitHub cron tick is not reachable on demand, so the FIRST
+#                      run must be forceable in the same sitting that lands the
+#                      file — and Brendan can re-run it by hand after a red day.
+#
+# E1 later adds one more call (check_freshness.py) to THIS workflow. It is not a
+# second mechanism.
+
+name: Daily live check
+
+on:
+  schedule:
+    # 13:10 UTC daily. A scheduled workflow fires ONLY from the default branch.
+    - cron: "10 13 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Crawl the live site (verify_live.py --base-url)
+        # Liveness + structure: HTTP 200 for every page in pages.yaml and every
+        # referenced asset; on the rail-bearing pages, rail href-set equality vs
+        # SITE_NAV and exactly one aria-current. It reads NO baseline.
+        run: python build.py --smoke --base-url "https://wischman123.github.io"

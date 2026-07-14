@@ -1,0 +1,95 @@
+{
+  "group": "gallery",
+  "purpose": "the artifact-gallery placards (P7): one problem's life + the correctness gate + a blank engineering form",
+  "generated": "2026-07-14",
+  "assets": [
+    {
+      "file": "dawn_p1.png",
+      "source": "../publicity/anthropic/application/site/assets/dawns_last_burn_p1.png",
+      "crop_origin": "verbatim copy of ../publicity/anthropic/application/site/assets/dawns_last_burn_p1.png",
+      "generation_command": "python tools/showcase/render_gallery.py --curate",
+      "pii_checked": "2026-07-14",
+      "pii_note": "generated physics worked-example page (Dawn's Last Burn, a year-end review problem, teacher answer-key edition); scientist bio (Konstantin Tsiolkovsky) only, no student data"
+    },
+    {
+      "file": "dawn_p2.png",
+      "source": "../publicity/anthropic/application/site/assets/dawns_last_burn_p2.png",
+      "crop_origin": "verbatim copy of ../publicity/anthropic/application/site/assets/dawns_last_burn_p2.png",
+      "generation_command": "python tools/showcase/render_gallery.py --curate",
+      "pii_checked": "2026-07-14",
+      "pii_note": "generated physics worked-example page (Dawn's Last Burn, a year-end review problem, teacher answer-key edition); scientist bio (Konstantin Tsiolkovsky) only, no student data"
+    },
+    {
+      "file": "dawn_p3.png",
+      "source": "../publicity/anthropic/application/site/assets/dawns_last_burn_p3.png",
+      "crop_origin": "verbatim copy of ../publicity/anthropic/application/site/assets/dawns_last_burn_p3.png",
+      "generation_command": "python tools/showcase/render_gallery.py --curate",
+      "pii_checked": "2026-07-14",
+      "pii_note": "generated physics worked-example page (Dawn's Last Burn, a year-end review problem, teacher answer-key edition); scientist bio (Konstantin Tsiolkovsky) only, no student data"
+    },
+    {
+      "file": "dawn_p4.png",
+      "source": "../publicity/anthropic/application/site/assets/dawns_last_burn_p4.png",
+      "crop_origin": "verbatim copy of ../publicity/anthropic/application/site/assets/dawns_last_burn_p4.png",
+      "generation_command": "python tools/showcase/render_gallery.py --curate",
+      "pii_checked": "2026-07-14",
+      "pii_note": "generated physics worked-example page (Dawn's Last Burn, a year-end review problem, teacher answer-key edition); scientist bio (Konstantin Tsiolkovsky) only, no student data"
+    },
+    {
+      "file": "dawn_p5.png",
+      "source": "../publicity/anthropic/application/site/assets/dawns_last_burn_p5.png",
+      "crop_origin": "verbatim copy of ../publicity/anthropic/application/site/assets/dawns_last_burn_p5.png",
+      "generation_command": "python tools/showcase/render_gallery.py --curate",
+      "pii_checked": "2026-07-14",
+      "pii_note": "generated physics worked-example page (Dawn's Last Burn, a year-end review problem, teacher answer-key edition); scientist bio (Konstantin Tsiolkovsky) only, no student data"
+    },
+    {
+      "file": "regen_review_before.png",
+      "source": "../publicity/anthropic/application/site/assets/d1_before_regeneration.png",
+      "crop_origin": "before half of the PIL wipe pair (both scaled to h=1200px, then padded to a common 927x1200 canvas so the wipe overlay aligns) of ../publicity/anthropic/application/site/assets/d1_before_regeneration.png + ../publicity/anthropic/application/site/assets/d1_after_regeneration.png",
+      "generation_command": "python tools/showcase/render_gallery.py --curate",
+      "pii_note": "generated physics problem-page renders (Lovelace's Loop — flawed vs. regenerated ground geometry); physics only, no student data",
+      "pii_checked": "2026-07-14"
+    },
+    {
+      "file": "regen_review_after.png",
+      "source": "../publicity/anthropic/application/site/assets/d1_after_regeneration.png",
+      "crop_origin": "after half of the PIL wipe pair (both scaled to h=1200px, then padded to a common 927x1200 canvas so the wipe overlay aligns) of ../publicity/anthropic/application/site/assets/d1_before_regeneration.png + ../publicity/anthropic/application/site/assets/d1_after_regeneration.png",
+      "generation_command": "python tools/showcase/render_gallery.py --curate",
+      "pii_note": "generated physics problem-page renders (Lovelace's Loop — flawed vs. regenerated ground geometry); physics only, no student data",
+      "pii_checked": "2026-07-14"
+    },
+    {
+      "file": "era_compare_before.png",
+      "source": "../publicity/anthropic/application/site/assets/handwritten_era_test_2000.png",
+      "crop_origin": "before half of the PIL wipe pair (both scaled to h=1200px, then padded to a common 927x1200 canvas so the wipe overlay aligns) of ../publicity/anthropic/application/site/assets/handwritten_era_test_2000.png + ../publicity/anthropic/application/site/assets/k15_eulers_hilltop_page.png",
+      "generation_command": "python tools/showcase/render_gallery.py --curate",
+      "pii_note": "left: an author-typed friction test from decades ago (blank, unfilled name line, no student work); right: a generated physics page (energy-K015); no student data",
+      "pii_checked": "2026-07-14"
+    },
+    {
+      "file": "era_compare_after.png",
+      "source": "../publicity/anthropic/application/site/assets/k15_eulers_hilltop_page.png",
+      "crop_origin": "after half of the PIL wipe pair (both scaled to h=1200px, then padded to a common 927x1200 canvas so the wipe overlay aligns) of ../publicity/anthropic/application/site/assets/handwritten_era_test_2000.png + ../publicity/anthropic/application/site/assets/k15_eulers_hilltop_page.png",
+      "generation_command": "python tools/showcase/render_gallery.py --curate",
+      "pii_note": "left: an author-typed friction test from decades ago (blank, unfilled name line, no student work); right: a generated physics page (energy-K015); no student data",
+      "pii_checked": "2026-07-14"
+    },
+    {
+      "file": "plain_vs_system_before.png",
+      "source": "tools/showcase/plain_vs_system/pages/d1_plain_solution_p2.png",
+      "crop_origin": "before half of the PIL wipe pair (both scaled to h=1200px, then padded to a common 927x1200 canvas so the wipe overlay aligns) of tools/showcase/plain_vs_system/pages/d1_plain_solution_p2.png + tools/showcase/plain_vs_system/pages/d1_system_solution_p2.png",
+      "generation_command": "python tools/showcase/render_gallery.py --curate",
+      "pii_note": "the worked SOLUTION page of one assignment (D1, a car cresting a circular hill) produced two ways — before: a plain isolated Claude agent; after: the engine (circular-D001). Both are real Word renderings; physics only, no student data",
+      "pii_checked": "2026-07-14"
+    },
+    {
+      "file": "plain_vs_system_after.png",
+      "source": "tools/showcase/plain_vs_system/pages/d1_system_solution_p2.png",
+      "crop_origin": "after half of the PIL wipe pair (both scaled to h=1200px, then padded to a common 927x1200 canvas so the wipe overlay aligns) of tools/showcase/plain_vs_system/pages/d1_plain_solution_p2.png + tools/showcase/plain_vs_system/pages/d1_system_solution_p2.png",
+      "generation_command": "python tools/showcase/render_gallery.py --curate",
+      "pii_note": "the worked SOLUTION page of one assignment (D1, a car cresting a circular hill) produced two ways — before: a plain isolated Claude agent; after: the engine (circular-D001). Both are real Word renderings; physics only, no student data",
+      "pii_checked": "2026-07-14"
+    }
+  ]
+}

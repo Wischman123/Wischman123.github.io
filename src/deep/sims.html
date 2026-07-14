@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- showcase-generated:systems_showcase_deepdive_v2 -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex, nofollow">
+  <title>Instruments, not illustrations — the live exhibit</title>
+  <style>
+    /* ---------- palette (echoes docs/architecture/hexagonal_engine_v1.html) ---------- */
+    :root{
+      --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --mono: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+
+      --paper:#e9eef6; --card:#ffffff; --text:#101d31; --muted:#566885; --line:#d5deec;
+      --core:#2f63ff; --mech:#7a5cf0; --drive:#0f9d8f; --driven:#c67f22;
+      --subject:#dc4046; --gate:#5d6c82; --edge:#6a7a92;
+      --radius:14px;
+      --shadow:0 1px 2px rgba(16,29,49,.06), 0 10px 30px rgba(16,29,49,.07);
+    }
+    @media (prefers-color-scheme: dark){
+      :root{
+        --paper:#080d18; --card:#0e1626; --text:#e6edf8; --muted:#93a2bd; --line:#1d2942;
+        --core:#5f8bff; --mech:#9a86ff; --drive:#2fd4bf; --driven:#eab24a;
+        --subject:#ff6a70; --gate:#8b9ab2; --edge:#8494ad;
+        --shadow:0 1px 2px rgba(0,0,0,.4), 0 18px 46px rgba(0,0,0,.45);
+      }
+    }
+    /* explicit toggle wins in both directions */
+    :root[data-theme="light"]{
+      --paper:#e9eef6; --card:#ffffff; --text:#101d31; --muted:#566885; --line:#d5deec;
+      --core:#2f63ff; --mech:#7a5cf0; --drive:#0f9d8f; --driven:#c67f22;
+      --subject:#dc4046; --gate:#5d6c82; --edge:#6a7a92;
+      --shadow:0 1px 2px rgba(16,29,49,.06), 0 10px 30px rgba(16,29,49,.07);
+    }
+    :root[data-theme="dark"]{
+      --paper:#080d18; --card:#0e1626; --text:#e6edf8; --muted:#93a2bd; --line:#1d2942;
+      --core:#5f8bff; --mech:#9a86ff; --drive:#2fd4bf; --driven:#eab24a;
+      --subject:#ff6a70; --gate:#8b9ab2; --edge:#8494ad;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 18px 46px rgba(0,0,0,.45);
+    }
+
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;background:var(--paper);color:var(--text);font-family:var(--sans);
+      line-height:1.6;-webkit-font-smoothing:antialiased;}
+    a{color:var(--core);text-decoration:none}
+    a:hover{text-decoration:underline}
+    .wrap{max-width:1180px;margin:0 auto;padding:clamp(20px,4vw,56px) clamp(16px,4vw,40px) 40px;}
+
+    .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.22em;text-transform:uppercase;
+      color:var(--core);margin:0 0 14px;display:flex;align-items:center;gap:10px;}
+    .eyebrow::before{content:"";width:26px;height:2px;background:var(--core);display:inline-block;}
+    h1{font-size:clamp(30px,5vw,50px);line-height:1.05;letter-spacing:-.022em;font-weight:820;
+      margin:0 0 16px;text-wrap:balance;max-width:22ch;}
+    .dek{font-size:clamp(16px,2.1vw,19px);color:var(--muted);max-width:66ch;margin:0;}
+
+    /* ---------- the stat contract (gate e) ---------- */
+    .stat{font-family:var(--mono);font-weight:700;font-variant-numeric:tabular-nums;
+      color:var(--text);background:color-mix(in srgb,var(--core) 12%, transparent);
+      border-radius:6px;padding:.04em .4em;white-space:nowrap;}
+    .stat--pinned{background:color-mix(in srgb,var(--driven) 16%, transparent);}
+    .stat__pin{font-size:.8em;color:var(--driven);margin-left:.15em;vertical-align:super;}
+
+    .foot{margin-top:64px;padding-top:24px;border-top:1px solid var(--line);
+      font-family:var(--mono);font-size:12px;color:var(--muted);line-height:1.9;}
+    .foot .rule{color:var(--text);}
+
+    /* ---------- accessibility: honor a reduced-motion preference ---------- */
+    @media (prefers-reduced-motion: reduce){
+      html{scroll-behavior:auto}
+      *,*::before,*::after{
+        animation-duration:.001ms !important; animation-iteration-count:1 !important;
+        transition-duration:.001ms !important; scroll-behavior:auto !important;
+      }
+    }
+
+    /* ---------- the shared site rail + next-page banner ----------
+       The whole SITE is one narrative and the LINK ORDER is a deliberate spine
+       (not alphabetical). Order + labels live in ONE canonical (slug, label)
+       list — tools/showcase/deep_nav.py::SITE_NAV — installed as the `site_nav`
+       Jinja global; the rail below AND the bottom .nextbar banner both DERIVE
+       from it, so this template and the root-page injector cannot drift.
+
+       HREFS are derived per directory depth by deep_nav.py::href_for(slug,
+       context) — NOT baked. From here the context is always "deep": wing peers
+       are bare filenames, and a ROOT page (index/systems/architecture/videos,
+       which live one directory UP from deep/) correctly becomes ../x.html.
+
+       The STYLING below is included from _siterail.css — the same file
+       inject_site_rail.py reads as text and emits inside its marked block on
+       each root page (they do not extend this template, so they cannot inherit
+       these rules). One source, two consumers. _deepnav.css is RETIRED BY
+       DISUSE (its .nextbar block was folded into _siterail.css); it and
+       inject_arch_nav.py are left on disk — deleting source files needs
+       Brendan's explicit approval. */
+/* ---------- the site rail: ONE left rail, every page ----------
+   THE ONE SOURCE for the .siterail component AND the .nextbar next-page banner.
+
+   TWO consumers, one file (do NOT paste a divergent copy into either):
+     * base.html.j2 — pulls this in with a Jinja include, inside its style
+       block, so every deep/*.html page gets it.
+     * inject_site_rail.py — reads this file as TEXT and emits it INSIDE its
+       marked block on each ROOT page (index / systems / architecture / videos),
+       which do not extend the Jinja base and so cannot inherit the styles.
+
+   WARNING — this file is parsed by Jinja (base.html.j2 includes it), so it must
+   contain NO Jinja delimiters ANYWHERE, comments included. Writing the include
+   tag literally in a comment once made _deepnav.css include ITSELF and the build
+   died with RecursionError (2026-07-12). Describe the tag in prose; never spell
+   it out here. Single CSS braces are fine and are all this file uses.
+
+   .nextbar WAS in _deepnav.css and is FOLDED IN here verbatim, on purpose: the
+   rail replaced the .deepnav strip, so a page that stopped including _deepnav.css
+   would have silently lost the bottom banner too — the very control the next
+   phase exists to refine. One file carries both, so that cannot happen.
+
+   THE NEXT BAND (review item 9) — READ THIS BEFORE TOUCHING EITHER BAND.
+   The site has TWO bottom bands, and the obvious one is the WRONG one:
+
+     * .arch-fade — the LAST CONTENT BLOCK of the FRONT page (index.html), whose
+       destination is architecture.html. Brendan's review items 1-8 are all
+       front-page items and the destination he named is Architecture, so THIS is
+       the band he hovered. Its rules used to live in index.html's own inline
+       style block, where its ONLY hover was an underline on the headline — no
+       background change at all, i.e. no affordance.
+     * .nextbar — the derived next-page banner on the deep pages and on
+       architecture.html. Its hover was a --core tint 6% -> 12% OVER TRANSPARENT,
+       which reads as nothing.
+
+   Fixing only .nextbar ships item 9 "done" while the band Brendan was actually
+   looking at still looks dead. So the affordance is ONE contract — .nextband —
+   and BOTH bands consume it: cursor, resting tint, a clear background lift on
+   hover, a border-colour change, an arrow that steps forward, an underline on
+   the destination line, and :focus-visible preserved for the keyboard. Each
+   band then adds only its own LAYOUT. Do not re-add a hover rule to either band:
+   a second copy is how the two drift apart again.
+
+   TWO PALETTES, ONE COMPONENT. The deep pages and index/architecture/videos
+   carry the CANONICAL custom properties (--text/--muted/--line/--core/--paper,
+   from theme.css or base.html.j2's inline copy). The root systems.html still
+   links the older assets/site.css, which declares ONLY the COMPAT names
+   (--ink/--ink-soft/--rule/--accent-text/--bg). So every colour below is read
+   through a --rail-* alias with a var() fallback chain: canonical first, compat
+   second, a literal last. The rail therefore renders correctly on BOTH palettes
+   without this component re-theming systems.html (not its call to make). The
+   chain flows canonical -> compat ONLY, never back — theme.css's cycle hazard.
+
+   (This comment ships inside every deep page, so it deliberately avoids the
+   word the meta wing's "no cost claims" gate scans for — see test_meta.py.)
+
+   Link ORDER and labels are NOT here — they live in deep_nav.py::SITE_NAV.
+   Hrefs are derived per directory depth by deep_nav.py::href_for. */
+
+:root{
+  --railw:208px;
+}
+
+.siterail,.nextband{
+  --rail-fg:var(--text, var(--ink, #101d31));
+  --rail-dim:var(--muted, var(--ink-soft, #566885));
+  --rail-line:var(--line, var(--rule, #d5deec));
+  --rail-accent:var(--core, var(--accent-text, #2f63ff));
+  --rail-bg:var(--paper, var(--bg, #e9eef6));
+}
+
+/* ---------- desktop: a fixed left column ---------- */
+.siterail{
+  position:fixed;top:0;left:0;bottom:0;width:var(--railw);z-index:30;
+  background:var(--rail-bg);border-right:1px solid var(--rail-line);
+  overflow-y:auto;overscroll-behavior:contain;
+}
+.siterail__inner{display:flex;flex-direction:column;padding:30px 22px 26px;}
+
+.siterail__mark{display:flex;flex-direction:column;
+  font-family:var(--serif, var(--sans, sans-serif));font-size:1.02rem;font-weight:600;
+  line-height:1.3;color:var(--rail-fg);text-decoration:none;margin:0 0 22px;}
+.siterail__mark:hover{color:var(--rail-accent);text-decoration:none;}
+
+.siterail__zone{display:flex;flex-direction:column;}
+.siterail__zone + .siterail__zone{margin-top:16px;padding-top:14px;
+  border-top:1px solid var(--rail-line);}
+.siterail__title{font-family:var(--mono, monospace);font-size:10px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--rail-dim);opacity:.7;margin:0 0 4px;}
+
+/* The CURRENT-PAGE MARKER is aria-current="page" — the HTML-spec value — for
+   BOTH zones. The rail this replaced used aria-current="true" for its scrollspy
+   while .deepnav used "page"; two spellings meant two sets of selectors that had
+   to agree. One spelling now, and the ported scrollspy sets exactly this one. */
+.siterail a.rail-anchor,.siterail a.rail-page{
+  font-family:var(--mono, monospace);font-size:11.5px;text-transform:uppercase;
+  letter-spacing:.08em;color:var(--rail-dim);text-decoration:none;
+  padding:7px 0;line-height:1.35;}
+.siterail a.rail-anchor:hover,.siterail a.rail-page:hover{
+  color:var(--rail-accent);text-decoration:none;}
+.siterail a.rail-anchor[aria-current="page"],.siterail a.rail-page[aria-current="page"]{
+  color:var(--rail-accent);}
+.siterail a.rail-anchor[aria-current="page"]::before,
+.siterail a.rail-page[aria-current="page"]::before{content:"— ";}
+.siterail a:focus-visible{outline:2px solid var(--rail-accent);outline-offset:2px;}
+
+/* The rail is FIXED, so it is out of flow and cannot push anything: every page's
+   content is inset by its width from ONE rule here. The pages themselves know
+   nothing about the rail — which is what lets the same component drop onto four
+   hand-authored root pages and six generated ones with no per-page layout edit. */
+@media (min-width:1100px){
+  body{padding-left:var(--railw);}
+}
+
+/* ---------- mobile: the rail COLLAPSES, it does not vanish ----------
+   This is a first-class deliverable, not an edge case. The rail this replaced
+   had exactly one mobile rule — .rail{display:none} at 1099px, with NO fallback
+   — while the .deepnav strip it ALSO replaced was a flex-wrap bar that worked at
+   every width. Shipping the rail as-was would therefore have removed ALL
+   navigation from every deep page below 1100px. Below the same real breakpoint
+   the rail becomes a sticky top bar: the mark, then each zone as a horizontally
+   scrollable chip row (the pattern code.html.j2's TOC already used at its narrow
+   width). Verified at 900px and at 500px — a nav is reachable at both. */
+@media (max-width:1099px){
+  .siterail{position:sticky;top:0;left:auto;bottom:auto;width:auto;height:auto;
+    border-right:0;border-bottom:1px solid var(--rail-line);
+    background:color-mix(in srgb, var(--rail-bg) 88%, transparent);
+    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+    overflow:visible;}
+  .siterail__inner{flex-direction:column;align-items:stretch;gap:4px;
+    max-width:1180px;margin:0 auto;padding:9px clamp(12px,4vw,24px);}
+  .siterail__mark{flex-direction:row;gap:.35em;margin:0 0 2px;font-size:.95rem;}
+  .siterail__title{display:none;}
+  .siterail__zone{flex-direction:row;flex-wrap:nowrap;gap:4px;
+    overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px;}
+  .siterail__zone + .siterail__zone{margin-top:0;padding-top:0;border-top:0;}
+  .siterail a.rail-anchor,.siterail a.rail-page{
+    flex:0 0 auto;white-space:nowrap;font-size:11px;
+    padding:5px 10px;border-radius:8px;}
+  .siterail a.rail-anchor[aria-current="page"],.siterail a.rail-page[aria-current="page"]{
+    color:var(--rail-fg);
+    background:color-mix(in srgb, var(--rail-accent) 15%, transparent);}
+  .siterail a.rail-anchor[aria-current="page"]::before,
+  .siterail a.rail-page[aria-current="page"]::before{content:none;}
+}
+
+/* ================= THE NEXT BAND — ONE affordance, BOTH bands =================
+   The whole band is the button. Both bands were ALREADY whole-band anchors, so
+   the click target was never the defect — the defect was that nothing on screen
+   said so. Every rule that makes a band FEEL like a control lives here, once:
+
+     resting tint     a band is visibly a control before you touch it (it used to
+                      be flat paper, indistinguishable from a footer);
+     hover lift       6% -> 18% of the accent, mixed against the PAPER, not
+                      against `transparent`. That was the old bug: a 6% -> 12%
+                      transparent tint is a ~6% alpha change over whatever is
+                      behind it, which is why the hover "did nothing";
+     border           the top rule goes accent-coloured, so the band's whole
+                      outline answers the pointer, not just its middle;
+     cursor           pointer, everywhere in the band — including its padding;
+     arrow            steps forward 5px (its own class, so a band with no arrow
+                      simply has nothing to translate);
+     label            the destination line underlines — the classic link cue,
+                      kept from .arch-fade's old hover and given to .nextbar too;
+     keyboard         :focus-visible gets the SAME lift plus the focus ring, so
+                      the affordance is not mouse-only.
+
+   The motion is the only new thing here that a reader can be hurt by, so it is
+   switched off under prefers-reduced-motion at the bottom of this block — the
+   root pages have no reduced-motion block of their own to fall back on. */
+.nextband{
+  display:block;                 /* each band overrides with its own layout */
+  cursor:pointer;
+  text-decoration:none;
+  color:var(--rail-fg);
+  border-top:1px solid var(--rail-line);
+  background:color-mix(in srgb, var(--rail-accent) 6%, var(--rail-bg));
+  transition:background-color .16s ease, border-color .16s ease;
+}
+.nextband:hover,.nextband:focus-visible{
+  background:color-mix(in srgb, var(--rail-accent) 18%, var(--rail-bg));
+  border-top-color:var(--rail-accent);
+  text-decoration:none;
+}
+.nextband:focus-visible{outline:2px solid var(--rail-accent);outline-offset:-3px;}
+.nextband__arrow{display:inline-block;transition:transform .16s ease;}
+.nextband:hover .nextband__arrow,.nextband:focus-visible .nextband__arrow{
+  transform:translateX(5px);}
+.nextband:hover .nextband__label,.nextband:focus-visible .nextband__label{
+  text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px;}
+@media (prefers-reduced-motion: reduce){
+  .nextband,.nextband__arrow{transition:none;}
+  .nextband:hover .nextband__arrow,.nextband:focus-visible .nextband__arrow{
+    transform:none;}
+}
+
+/* ---------- band 1: the next-page banner (folded in from _deepnav.css) -------
+   A full-width page-level "next" control at the FOOT of a deep page (and of
+   architecture.html), DERIVED from the deep_nav spine: the entry after the
+   active page; the last wing page -> the site front page. LAYOUT ONLY — its
+   hover/focus/cursor come from .nextband above. */
+.nextbar{display:flex;align-items:center;justify-content:space-between;gap:16px;
+  max-width:1180px;margin:24px auto 0;padding:18px clamp(16px,4vw,40px);}
+.nextbar__text{display:flex;flex-direction:column;gap:3px;min-width:0;}
+.nextbar__eyebrow{font-family:var(--mono, monospace);font-size:11px;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--rail-accent);font-weight:700;}
+.nextbar__dest{font-size:clamp(19px,2.5vw,24px);font-weight:820;
+  letter-spacing:-.015em;color:var(--rail-fg);line-height:1.1;}
+.nextbar__arrow{font-size:26px;line-height:1;color:var(--rail-accent);font-weight:700;flex:none;}
+
+/* ---------- band 2: the front page's hand-off into architecture.html ---------
+   MOVED HERE from index.html's own inline style block (2026-07-12). It stayed
+   private for as long as it was a bespoke GRADIENT — the homepage's warm paper
+   dissolving into architecture.html's cool paper. theme.css gave both pages one
+   palette, so there are no longer two papers to blend: the gradient is gone, the
+   band is flat, and what remains is the same control .nextbar is. Keeping a
+   second private copy of "how a next band behaves" is precisely how the front
+   page ends up with a dead-looking hover while the gate reports green.
+
+   LAYOUT ONLY, like .nextbar. The colours read through the --rail-* aliases (not
+   --paper/--rule directly) so the band survives on either palette, exactly as the
+   rail does. */
+.arch-fade{display:grid;justify-items:center;gap:10px;
+  margin-top:72px;padding:64px 24px;text-align:center;}
+.arch-fade .cue{font-family:var(--mono, monospace);font-size:12px;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--rail-dim);}
+.arch-fade .headline{font-family:var(--serif, serif);font-size:1.5rem;font-weight:600;
+  color:var(--rail-fg);}
+.arch-fade .sub{font-size:.95rem;color:var(--rail-dim);max-width:46ch;}
+/* The band's own bottom padding already carries the gap to whatever follows, so
+   the footer's top margin would double it. Collapse it only in that adjacency —
+   a standalone .footer keeps its own. */
+.arch-fade + .footer{margin-top:0;}
+
+  .lede{margin:22px 0 0;font-size:14px;color:var(--muted);max-width:62ch;}
+
+  /* ---------- the Electric Field Lab (ported from public/systems.html) ----------
+     RE-THEMED to the canonical tokens. The wing's site.css declares only the COMPAT
+     names (--ink / --rule / --accent / --bg-raised); this page inlines base.html.j2's
+     palette, which declares only the CANONICAL ones — so a var(--ink) copied over
+     verbatim would resolve to NOTHING here and the lab would render unstyled with no
+     error logged. Mapping used (theme.css's own compat layer, read backwards):
+       --ink -> --text   --ink-soft -> --muted   --rule -> --line
+       --accent, --accent-text -> --core         --bg-raised -> --card
+     field_tracer.js paints its canvas from the same tokens, canonical-first with a
+     compat fallback, so the two agree. */
+  .fieldlab{position:relative;background:var(--card);border:1px solid var(--line);
+    border-radius:var(--radius);margin:18px 0 10px;overflow:hidden;box-shadow:var(--shadow);}
+  .fieldlab canvas{display:block;width:100%;aspect-ratio:10/9;touch-action:none;cursor:grab;}
+  .fieldlab canvas:focus-visible{outline:2px solid var(--core);outline-offset:-2px;}
+
+  .fieldlab-controls{font-size:14px;color:var(--muted);margin:8px 0 0;}
+  .fieldlab-controls button{font-family:var(--mono);font-size:13px;padding:3px 11px;
+    margin:0 3px;border:1px solid var(--core);border-radius:5px;background:transparent;
+    color:var(--core);cursor:pointer;}
+  .fieldlab-controls button:hover{background:var(--core);color:var(--card);}
+  .fieldlab-controls button:focus-visible{outline:3px solid var(--core);outline-offset:2px;}
+
+  /* The per-charge q editor field_tracer.js injects on a tap. `display` is toggled
+     INLINE by the module (none <-> flex), so this rule must not set it. */
+  .fieldlab-charge-editor{align-items:center;gap:7px;z-index:3;background:var(--card);
+    border:1px solid var(--core);border-radius:7px;padding:4px 8px;
+    box-shadow:0 2px 10px rgba(16,29,49,.22);font-family:var(--mono);font-size:12px;
+    color:var(--text);}
+  .fieldlab-charge-editor__val{min-width:3.4em;color:var(--core);font-weight:600;
+    white-space:nowrap;}
+  .fieldlab-charge-editor__range{width:96px;margin:0;accent-color:var(--core);min-height:22px;}
+
+  kbd{font-family:var(--mono);font-size:.86em;background:var(--paper);
+    border:1px solid var(--line);border-radius:4px;padding:.05em .4em;}
+
+  .instrument{margin-top:clamp(32px,6vw,60px);background:var(--card);
+    border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);
+    padding:clamp(18px,2.6vw,30px);}
+  .instrument h2{font-size:clamp(20px,2.6vw,27px);line-height:1.15;margin:.3em 0 .55em;
+    font-weight:760;}
+  .instrument p{margin:0 0 .9em;font-size:clamp(15px,1.7vw,16px);max-width:62ch;}
+  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--core);}
+  .hint{margin:0;font-size:13px;color:var(--muted);}
+
+  details{margin-top:14px;border-top:1px dashed var(--line);padding-top:10px;}
+  details > summary{cursor:pointer;font-family:var(--mono);font-size:13px;color:var(--core);}
+  details .depth{margin-top:10px;color:var(--muted);font-size:15px;}
+  details .depth p{margin:0;max-width:62ch;}
+
+  .exhibits{display:flex;flex-direction:column;gap:clamp(28px,5vw,56px);
+    margin-top:clamp(32px,6vw,60px);}
+  .ex{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);overflow:hidden;}
+  .ex__grid{display:grid;grid-template-columns:1.5fr 1fr;gap:0;align-items:stretch;}
+  @media (max-width:820px){.ex__grid{grid-template-columns:1fr;}}
+
+  /* min-width:0 is LOAD-BEARING. A `1fr` grid track is minmax(auto,1fr), and `auto`
+     resolves to the item's MIN-CONTENT width. .ex__frame carries aspect-ratio 16/10
+     + min-height:360px, so its min-content width is 360*1.6 = 576px — without this
+     the phone's single column inflates to 576px, the stage overflows its 324px of
+     screen, and the sim's overlay panel (drawn at the canvas edge) is clipped off
+     rather than shown. min-width:0 lets the track shrink to the space available. */
+  .ex__stage{position:relative;padding:16px;border-right:1px solid var(--line);
+    display:flex;flex-direction:column;gap:12px;min-width:0;
+    background:color-mix(in srgb,var(--core) 4%, var(--card));}
+  @media (max-width:820px){.ex__stage{border-right:none;border-bottom:1px solid var(--line);}}
+
+  /* The live-embed frame: poster underneath, run control centered, iframe revealed
+     over the poster once booted. Aspect-locked so the poster and the live canvas
+     occupy the same box (no layout jump on activation).
+
+     min-height is LOAD-BEARING, not styling. The embedded sim draws its overlay
+     panels at a FIXED size (lol_overlay.js: PANEL_H_PX 200 + PANEL_MARGIN_PX 16),
+     anchored to a canvas corner — so it needs ~216 CSS px of CANVAS height or its
+     lower half clips off. The app's toolbar takes ~65px of the frame, so the frame
+     needs ~281px; 360 is that plus headroom for a narrower phone whose toolbar wraps.
+     At 16:10 a frame only reaches 360px once it is ~576px wide, so on a phone
+     (frame ~324px) the aspect-ratio alone would give a 203px box -> a 138px canvas.
+     min-height engages exactly there and leaves every roomy stage on 16:10.
+     Do NOT "fix" a narrow stage by CSS-scaling the iframe instead (transform/zoom):
+     a transformed iframe wrapping a live <canvas> composites a STALE raster in
+     Chromium and the overlay vanishes entirely. See assets/sims/embed.js (5). */
+  .ex__frame{position:relative;width:100%;aspect-ratio:16/10;min-height:360px;
+    border-radius:10px;
+    overflow:hidden;background:color-mix(in srgb,var(--core) 6%, var(--card));}
+  /* contain, NOT cover: the poster is the 16:10 design still, and a taller (phone)
+     frame would crop `cover` horizontally — cropping the sim's overlay panel straight
+     out of the poster. Identical to cover on a 16:10 stage. */
+  .ex__poster{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;
+    display:block;}
+  .ex__iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;
+    opacity:0;transition:opacity .25s ease;background:var(--card);}
+  .ex__stage.is-booted .ex__iframe{opacity:1;}
+  .ex__stage.is-booted .ex__poster{opacity:0;}
+
+  .ex__run{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    font-family:var(--mono);font-size:14px;font-weight:700;color:var(--card);
+    background:var(--core);border:none;border-radius:999px;padding:11px 22px;
+    cursor:pointer;box-shadow:0 6px 20px rgba(16,29,49,.28);display:inline-flex;
+    align-items:center;gap:9px;}
+  .ex__run:hover{filter:brightness(1.07);}
+  .ex__run:focus-visible{outline:3px solid var(--core);outline-offset:3px;}
+  .ex__run[disabled]{display:none;}
+  .ex__run-icon{font-size:12px;line-height:1;}
+
+  .ex__fallback{position:absolute;left:12px;right:12px;bottom:12px;margin:0;
+    font-family:var(--mono);font-size:12px;color:var(--card);
+    background:rgba(16,29,49,.82);border-radius:8px;padding:8px 10px;}
+
+  .ex__hint{margin:0;font-size:13px;color:var(--muted);}
+  .ex__legend{list-style:none;margin:4px 0 0;padding:0;display:flex;flex-wrap:wrap;
+    gap:6px 14px;font-family:var(--mono);font-size:12px;color:var(--muted);}
+  .ex__legend li{display:flex;align-items:center;gap:7px;white-space:nowrap;}
+  .sw{width:13px;height:13px;border-radius:3px;flex:none;}
+  .sw.k{background:#2E8B57;} .sw.ug{background:#2980b9;}
+  .sw.ue{background:#7C4DFF;} .sw.uth{background:#E74C3C;}
+
+  /* min-width:0 for the same reason as .ex__stage — the other `1fr` grid item must
+     not size its track to its min-content width either. */
+  .ex__body{padding:clamp(18px,2.4vw,26px);display:flex;flex-direction:column;min-width:0;}
+  .ex__kicker{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--core);}
+  .ex__body h2{font-size:clamp(20px,2.6vw,27px);line-height:1.15;margin:.3em 0 .55em;font-weight:760;}
+  .ex__body p{margin:0 0 .9em;font-size:clamp(15px,1.7vw,16px);max-width:52ch;}
+  .ex__meta{margin-top:auto;padding-top:12px;border-top:1px solid var(--line);
+    display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13px;color:var(--muted);}
+  .ex__meta span.lab{color:var(--text);font-weight:600;}
+
+  .note{margin-top:8px;font-size:14px;color:var(--muted);}
+  </style>
+</head>
+<body class="sims">
+<aside class="siterail" aria-label="Site navigation">
+  <div class="siterail__inner">
+    <a class="siterail__mark" href="../index.html"><span>Brendan</span><span>Wischweh</span></a>    <nav class="siterail__zone siterail__zone--site" aria-label="The site">
+      <p class="siterail__title">The site</p>      <a class="rail-page" href="../index.html">Home</a>      <a class="rail-page" href="../architecture.html">Architecture</a>      <a class="rail-page" href="code.html">Code</a>      <a class="rail-page" href="verification.html">Formal&nbsp;Verification</a>      <a class="rail-page" href="lab.html">The&nbsp;Lab</a>      <a class="rail-page" href="meta.html">Meta&nbsp;Tools</a>      <a class="rail-page" href="engine.html">Engine&nbsp;Room</a>      <a class="rail-page" href="systems.html">Systems&nbsp;Atlas</a>      <a class="rail-page" href="sims.html" aria-current="page">Sims</a>      <a class="rail-page" href="gallery.html">Gallery</a>      <a class="rail-page" href="../videos.html">Videos</a>    </nav>
+  </div>
+</aside><script>
+(function () {
+  function start() {
+    var links = {};
+    var ids = [];
+    Array.prototype.forEach.call(
+      document.querySelectorAll('.siterail a.rail-anchor[href^="#"]'),
+      function (a) {
+        var id = a.getAttribute('href').slice(1);
+        if (!id) return;
+        links[id] = a;
+        ids.push(id);
+      }
+    );
+    if (!ids.length || !('IntersectionObserver' in window)) return;
+    var spy = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        ids.forEach(function (id) { links[id].removeAttribute('aria-current'); });
+        var link = links[e.target.id];
+        if (link) link.setAttribute('aria-current', 'page');
+      });
+    }, { rootMargin: '-35% 0px -55% 0px' });
+    ids.forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) spy.observe(el);
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', start);
+  } else {
+    start();
+  }
+})();
+</script>
+<main class="wrap">
+
+  <header>
+    <p class="eyebrow">Systems showcase &middot; deep dive</p>
+    <h1>Instruments, not illustrations</h1>
+    <p class="dek">Nothing on this page is a picture of physics. Drag a charge and the
+      field lines are re-traced by the same integrator that draws the diagrams in the
+      worksheets. Press <em>Run the simulation</em> and the engine solves the motion,
+      live, in your browser. No movies, no recordings, no requests off this page.</p>
+    <p class="lede">Every figure in a <span class="stat" data-source="legend" data-verified="2026-07-13" data-provenance="verified">highlighted box</span>
+      is read from the curated scene or the repository, with a source and a verified
+      date &mdash; hover to read them. Of <span class="stat" data-source="node sim/scripts/dump_registry.js (scenario registry)" data-verified="2026-07-13" data-provenance="verified" title="source: node sim/scripts/dump_registry.js (scenario registry) · verified 2026-07-13">104</span> registered scenarios,
+      <span class="stat" data-source="tools/sim_coverage.py --json" data-verified="2026-07-13" data-provenance="verified" title="source: tools/sim_coverage.py --json · verified 2026-07-13">39</span> weld their physics to an independent check.</p>
+  </header>
+
+  <!-- =================== The Electric Field Lab (item 8a) =================== -->
+  <section class="instrument" id="field-lab" aria-labelledby="fieldlab-h">
+    <span class="kicker">Drag it</span>
+    <h2 id="fieldlab-h">The Electric Field Lab</h2>
+    <p>Drag either charge. The electric field lines re-trace as you move it &mdash; this
+      is not a picture, it is the same field-line integrator the platform uses to draw
+      its diagrams, running in your browser. Select a charge and use the
+      <kbd>&larr;</kbd> <kbd>&rarr;</kbd> <kbd>&uarr;</kbd> <kbd>&darr;</kbd> keys to
+      nudge it; <kbd>Tab</kbd> switches which charge is focused. Drag the two together
+      and the lines stay well-behaved &mdash; a minimum-separation clamp keeps the field
+      finite.</p>
+
+    <div class="fieldlab">
+      <canvas id="fieldlab-canvas" role="img"
+        aria-label="Two point charges, one positive and one negative, with electric
+        field lines traced from the positive charge. Drag a charge or use the arrow
+        keys to move it and the field re-traces. Tap a charge, or use the plus and
+        minus keys, to set its strength from minus three to plus three. Click empty
+        space or use the Add charge button to add a negative charge; select a charge
+        and press Delete to remove an added one."></canvas>
+    </div>
+    <p class="hint">Idle until you touch it &mdash; nothing animates on its own.</p>
+    <p class="fieldlab-controls">Drag a charge, tap it to set its strength, or click
+      empty space to add another.
+      <button type="button" id="fieldlab-add">Add a &minus; charge</button>
+      Select a charge and press <kbd>Delete</kbd> to remove an added one; the
+      <kbd>+</kbd> / <kbd>&minus;</kbd> keys change its charge.</p>
+
+    <details>
+      <summary>How the live math is pinned to the library</summary>
+      <div class="depth">
+        <p>The tracer in <code>assets/fieldlab/field_tracer.js</code> is a port of the
+        platform&rsquo;s own reference implementation &mdash; <code>lib/charges.py</code>&rsquo;s
+        <code>compute_field_line</code>, the same fixed-step integration along the unit
+        field direction. A build-time check (<code>tools/test_field_tracer.py</code>)
+        drives <em>this</em> browser tracer from the parameters recorded in a
+        <code>charges.py</code>-generated fixture and asserts the polylines match within
+        tolerance, so the interactive exhibit cannot silently drift from the library it
+        demonstrates. When it last ran, the two agreed to the last floating-point bit.</p>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== The live sim exhibits ===================== -->
+  <section class="exhibits" aria-label="Live simulation exhibits">
+    <article class="ex">
+      <figure class="ex__grid" style="margin:0;"><div class="ex__stage js-embed"
+             data-embed-src="../sim/index.html?scene=coulomb_two_body&amp;embed=1"
+             data-scene="coulomb_two_body"
+             data-scene-src="scenarios/ap_c/coulomb_two_body.json"
+             data-lol="0"
+             data-label="the charge pair">
+          <div class="ex__frame">
+            <img class="ex__poster" src="assets/sims/coulomb_two_body.poster.png" alt="A still of the live simulation: two small charged bodies, one positive and one negative, circling their common centre under their mutual electrostatic attraction. Run it to watch them orbit.">
+          </div>
+          <p class="ex__hint">Runs live in the simulator &mdash; the engine solves it as it
+            plays. Scroll away and it pauses itself.</p>
+        </div>
+
+        <figcaption class="ex__body">
+          <span class="ex__kicker">Two charges, orbiting</span>
+          <h2>Bound by the inverse-square law alone</h2>
+          <p>Two bodies of <span class="stat" data-source="curated scene: sim/scenarios/ap_c/coulomb_two_body.json" data-verified="2026-07-13" data-provenance="verified" title="source: curated scene: sim/scenarios/ap_c/coulomb_two_body.json · verified 2026-07-13">1 g</span> each, carrying <span class="stat" data-source="curated scene: sim/scenarios/ap_c/coulomb_two_body.json" data-verified="2026-07-13" data-provenance="verified" title="source: curated scene: sim/scenarios/ap_c/coulomb_two_body.json · verified 2026-07-13">1 µC</span> of
+            opposite sign and starting <span class="stat" data-source="curated scene: sim/scenarios/ap_c/coulomb_two_body.json" data-verified="2026-07-13" data-provenance="verified" title="source: curated scene: sim/scenarios/ap_c/coulomb_two_body.json · verified 2026-07-13">1 m</span> apart, circle their common
+            centre. Gravity is switched off in this scene: the only force in it is their
+            mutual electrostatic attraction, integrated step by step.</p>
+          <p>No orbit is drawn and no path is scripted &mdash; the closed loop is what falls
+            out of the force law when the engine integrates it, and one full circuit comes to
+            <span class="stat" data-source="curated scene: sim/scenarios/ap_c/coulomb_two_body.json" data-verified="2026-07-13" data-provenance="verified" title="source: curated scene: sim/scenarios/ap_c/coulomb_two_body.json · verified 2026-07-13">1.482 s</span>. Watch it long enough and it comes back to where it
+            started, which is the whole claim.</p>
+          <div class="ex__meta">
+            <span><span class="lab">Each body</span> <span class="stat" data-source="curated scene: sim/scenarios/ap_c/coulomb_two_body.json" data-verified="2026-07-13" data-provenance="verified" title="source: curated scene: sim/scenarios/ap_c/coulomb_two_body.json · verified 2026-07-13">1 g</span></span>
+            <span><span class="lab">Charge on each</span> <span class="stat" data-source="curated scene: sim/scenarios/ap_c/coulomb_two_body.json" data-verified="2026-07-13" data-provenance="verified" title="source: curated scene: sim/scenarios/ap_c/coulomb_two_body.json · verified 2026-07-13">1 µC</span></span>
+            <span><span class="lab">Separation</span> <span class="stat" data-source="curated scene: sim/scenarios/ap_c/coulomb_two_body.json" data-verified="2026-07-13" data-provenance="verified" title="source: curated scene: sim/scenarios/ap_c/coulomb_two_body.json · verified 2026-07-13">1 m</span></span>
+            <span><span class="lab">Orbital period</span> <span class="stat" data-source="curated scene: sim/scenarios/ap_c/coulomb_two_body.json" data-verified="2026-07-13" data-provenance="verified" title="source: curated scene: sim/scenarios/ap_c/coulomb_two_body.json · verified 2026-07-13">1.482 s</span></span>
+          </div>
+        </figcaption>
+      </figure>
+    </article>
+    <article class="ex">
+      <figure class="ex__grid" style="margin:0;"><div class="ex__stage js-embed"
+             data-embed-src="../sim/index.html?scene=rlc_underdamped_1&amp;embed=1"
+             data-scene="rlc_underdamped_1"
+             data-scene-src="scenarios/ap_c/rlc_underdamped_1.json"
+             data-lol="0"
+             data-label="the circuit">
+          <div class="ex__frame">
+            <img class="ex__poster" src="assets/sims/rlc_underdamped_1.poster.png" alt="A still of the live simulation: a schematic of a series capacitor, inductor and resistor loop, with the live element voltages and the current-flow markers drawn on the wires. Run it to watch the ring-down decay.">
+          </div>
+          <p class="ex__hint">Runs live in the simulator &mdash; the engine solves it as it
+            plays. Scroll away and it pauses itself.</p>
+        </div>
+
+        <figcaption class="ex__body">
+          <span class="ex__kicker">A circuit, ringing down</span>
+          <h2>Charge, sloshing, and dying away</h2>
+          <p>A charged capacitor (<span class="stat" data-source="curated scene: sim/scenarios/ap_c/rlc_underdamped_1.json" data-verified="2026-07-13" data-provenance="verified" title="source: curated scene: sim/scenarios/ap_c/rlc_underdamped_1.json · verified 2026-07-13">1 F</span>, holding
+            <span class="stat" data-source="curated scene: sim/scenarios/ap_c/rlc_underdamped_1.json" data-verified="2026-07-13" data-provenance="verified" title="source: curated scene: sim/scenarios/ap_c/rlc_underdamped_1.json · verified 2026-07-13">5 V</span>) is dumped into an inductor (<span class="stat" data-source="curated scene: sim/scenarios/ap_c/rlc_underdamped_1.json" data-verified="2026-07-13" data-provenance="verified" title="source: curated scene: sim/scenarios/ap_c/rlc_underdamped_1.json · verified 2026-07-13">1 H</span>)
+            and a resistor (<span class="stat" data-source="curated scene: sim/scenarios/ap_c/rlc_underdamped_1.json" data-verified="2026-07-13" data-provenance="verified" title="source: curated scene: sim/scenarios/ap_c/rlc_underdamped_1.json · verified 2026-07-13">0.2 Ω</span>). Charge sloshes back and forth
+            between the capacitor&rsquo;s electric field and the inductor&rsquo;s magnetic
+            one, overshooting every time, while the resistor bleeds the swing away. That is
+            an underdamped ring-down, and the engine solves it &mdash; a different subsystem
+            entirely from the one that moves a cart down a ramp.</p>
+          <p>The <span class="stat" data-source="curated scene: sim/scenarios/ap_c/rlc_underdamped_1.json" data-verified="2026-07-13" data-provenance="verified" title="source: curated scene: sim/scenarios/ap_c/rlc_underdamped_1.json · verified 2026-07-13">12.5 J</span> the capacitor starts with ends up entirely
+            in the resistor. The schematic is laid out from the netlist itself, and the
+            markers drifting along the wires carry the live branch current: solved, not
+            animated.</p>
+          <div class="ex__meta">
+            <span><span class="lab">Capacitor</span> <span class="stat" data-source="curated scene: sim/scenarios/ap_c/rlc_underdamped_1.json" data-verified="2026-07-13" data-provenance="verified" title="source: curated scene: sim/scenarios/ap_c/rlc_underdamped_1.json · verified 2026-07-13">1 F</span></span>
+            <span><span class="lab">Inductor</span> <span class="stat" data-source="curated scene: sim/scenarios/ap_c/rlc_underdamped_1.json" data-verified="2026-07-13" data-provenance="verified" title="source: curated scene: sim/scenarios/ap_c/rlc_underdamped_1.json · verified 2026-07-13">1 H</span></span>
+            <span><span class="lab">Resistor</span> <span class="stat" data-source="curated scene: sim/scenarios/ap_c/rlc_underdamped_1.json" data-verified="2026-07-13" data-provenance="verified" title="source: curated scene: sim/scenarios/ap_c/rlc_underdamped_1.json · verified 2026-07-13">0.2 Ω</span></span>
+            <span><span class="lab">Energy at the start</span> <span class="stat" data-source="curated scene: sim/scenarios/ap_c/rlc_underdamped_1.json" data-verified="2026-07-13" data-provenance="verified" title="source: curated scene: sim/scenarios/ap_c/rlc_underdamped_1.json · verified 2026-07-13">12.5 J</span></span>
+          </div>
+        </figcaption>
+      </figure>
+    </article>
+    <article class="ex">
+      <figure class="ex__grid" style="margin:0;"><div class="ex__stage js-embed"
+             data-embed-src="../sim/index.html?scene=dawn_last_burn&amp;embed=1&amp;theme=worksheet"
+             data-scene="dawn_last_burn"
+             data-scene-src="scenarios/ap_c/dawn_last_burn.json"
+             data-lol="0"
+             data-label="the orbit">
+          <div class="ex__frame">
+            <img class="ex__poster" src="assets/sims/dawn_last_burn.poster.png" alt="A still of the live simulation: a spacecraft circling Ceres, the wider ellipse a scheduled prograde burn throws it into, and the debris fragment drifting at the far end of that ellipse. Run it to watch the burn, the long coast out, and the impact.">
+          </div>
+          <p class="ex__hint">Runs live in the simulator &mdash; the engine solves it as it
+            plays. Scroll away and it pauses itself.</p>
+        </div>
+
+        <figcaption class="ex__body">
+          <span class="ex__kicker">A spacecraft, and one last burn</span>
+          <h2>One burn, and everything after it follows</h2>
+          <p>A spacecraft circles Ceres. At a scheduled moment it burns prograde &mdash; a
+            nudge of <span class="stat" data-source="curated scene: sim/scenarios/ap_c/dawn_last_burn.json" data-verified="2026-07-13" data-provenance="verified" title="source: curated scene: sim/scenarios/ap_c/dawn_last_burn.json · verified 2026-07-13">8.02%</span> of its orbital speed, and the only thing in the
+            scene that is ever <em>told</em> what to do. Everything after it is consequence:
+            the circle opens into an ellipse that carries the craft out to
+            <span class="stat" data-source="curated scene: sim/scenarios/ap_c/dawn_last_burn.json" data-verified="2026-07-13" data-provenance="verified" title="source: curated scene: sim/scenarios/ap_c/dawn_last_burn.json · verified 2026-07-13">1.4×</span> its old radius, where a drifting fragment of
+            <span class="stat" data-source="curated scene: sim/scenarios/ap_c/dawn_last_burn.json" data-verified="2026-07-13" data-provenance="verified" title="source: curated scene: sim/scenarios/ap_c/dawn_last_burn.json · verified 2026-07-13">0.5%</span> is waiting.</p>
+          <p>The impact is <span class="stat" data-source="curated scene: sim/scenarios/ap_c/dawn_last_burn.json" data-verified="2026-07-13" data-provenance="verified" title="source: curated scene: sim/scenarios/ap_c/dawn_last_burn.json · verified 2026-07-13">perfectly inelastic</span> &mdash; the two ride on together, and the
+            engine conserves momentum through the collision rather than being told the answer.
+            This is the same problem the printed worksheet poses, running: no orbit is drawn,
+            no path is scripted, and the ellipse is what the force law produces when the
+            integrator is left alone with it.</p>
+          <div class="ex__meta">
+            <span><span class="lab">Speed the burn adds</span> <span class="stat" data-source="curated scene: sim/scenarios/ap_c/dawn_last_burn.json" data-verified="2026-07-13" data-provenance="verified" title="source: curated scene: sim/scenarios/ap_c/dawn_last_burn.json · verified 2026-07-13">8.02%</span></span>
+            <span><span class="lab">Orbit grows to</span> <span class="stat" data-source="curated scene: sim/scenarios/ap_c/dawn_last_burn.json" data-verified="2026-07-13" data-provenance="verified" title="source: curated scene: sim/scenarios/ap_c/dawn_last_burn.json · verified 2026-07-13">1.4×</span></span>
+            <span><span class="lab">Fragment, against the craft</span> <span class="stat" data-source="curated scene: sim/scenarios/ap_c/dawn_last_burn.json" data-verified="2026-07-13" data-provenance="verified" title="source: curated scene: sim/scenarios/ap_c/dawn_last_burn.json · verified 2026-07-13">0.5%</span></span>
+            <span><span class="lab">At the far end</span> <span class="stat" data-source="curated scene: sim/scenarios/ap_c/dawn_last_burn.json" data-verified="2026-07-13" data-provenance="verified" title="source: curated scene: sim/scenarios/ap_c/dawn_last_burn.json · verified 2026-07-13">perfectly inelastic</span></span>
+          </div>
+        </figcaption>
+      </figure>
+    </article>
+  </section>
+
+  <p class="note">Prefer no motion? The field lab idles until you touch it, each simulation
+    waits for an explicit <em>Run</em>, and the embedded simulator honors
+    <em>reduced-motion</em> &mdash; it loads the scene and holds rather than autoplaying.
+    With JavaScript off, the poster still and this caption remain.</p>
+
+  <footer class="foot">
+    <span class="rule">The engine&rsquo;s physics, running live.</span>
+    The field lab traces with the library&rsquo;s own integrator; each simulation boots the
+    real simulator in a same-origin frame &mdash; sourced and dated, with no external
+    request. Nothing here is a recording.
+    <br>Back to <a href="../index.html#story">&larr; one problem&rsquo;s life</a>.
+  </footer>
+</main>
+  <a class="nextbar nextband" href="gallery.html">
+    <span class="nextbar__text">
+      <span class="nextbar__eyebrow">Next</span>
+      <span class="nextbar__dest nextband__label">Gallery</span>
+    </span>
+    <span class="nextbar__arrow nextband__arrow" aria-hidden="true">&rarr;</span>
+  </a>
+<script src="assets/sims/embed.js"></script><script type="module">
+  import { initFieldLab } from "./assets/fieldlab/field_tracer.js";
+  const canvas = document.getElementById("fieldlab-canvas");
+  if (canvas) {
+    window.__fieldlab = initFieldLab(canvas, {});
+    const addBtn = document.getElementById("fieldlab-add");
+    if (addBtn && window.__fieldlab) {
+      addBtn.addEventListener("click", () => {
+        const idx = window.__fieldlab.addCharge(-1);
+        if (typeof idx === "number" && idx >= 0) window.__fieldlab.editCharge(idx);
+      });
+    }
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+# The local build output. Untracked from the FIRST build, not from D1.2 —
+# a generated tree that is tracked is a second author of the published pages,
+# which is the exact disease showcase_site_architecture_v1 exists to cure.
+_site/
+
+__pycache__/
+*.pyc

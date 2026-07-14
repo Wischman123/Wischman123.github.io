@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- showcase-generated:systems_showcase_deepdive_v2 -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex, nofollow">
+  <title>The gallery — what the system makes</title>
+  <style>
+    /* ---------- palette (echoes docs/architecture/hexagonal_engine_v1.html) ---------- */
+    :root{
+      --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --mono: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+
+      --paper:#e9eef6; --card:#ffffff; --text:#101d31; --muted:#566885; --line:#d5deec;
+      --core:#2f63ff; --mech:#7a5cf0; --drive:#0f9d8f; --driven:#c67f22;
+      --subject:#dc4046; --gate:#5d6c82; --edge:#6a7a92;
+      --radius:14px;
+      --shadow:0 1px 2px rgba(16,29,49,.06), 0 10px 30px rgba(16,29,49,.07);
+    }
+    @media (prefers-color-scheme: dark){
+      :root{
+        --paper:#080d18; --card:#0e1626; --text:#e6edf8; --muted:#93a2bd; --line:#1d2942;
+        --core:#5f8bff; --mech:#9a86ff; --drive:#2fd4bf; --driven:#eab24a;
+        --subject:#ff6a70; --gate:#8b9ab2; --edge:#8494ad;
+        --shadow:0 1px 2px rgba(0,0,0,.4), 0 18px 46px rgba(0,0,0,.45);
+      }
+    }
+    /* explicit toggle wins in both directions */
+    :root[data-theme="light"]{
+      --paper:#e9eef6; --card:#ffffff; --text:#101d31; --muted:#566885; --line:#d5deec;
+      --core:#2f63ff; --mech:#7a5cf0; --drive:#0f9d8f; --driven:#c67f22;
+      --subject:#dc4046; --gate:#5d6c82; --edge:#6a7a92;
+      --shadow:0 1px 2px rgba(16,29,49,.06), 0 10px 30px rgba(16,29,49,.07);
+    }
+    :root[data-theme="dark"]{
+      --paper:#080d18; --card:#0e1626; --text:#e6edf8; --muted:#93a2bd; --line:#1d2942;
+      --core:#5f8bff; --mech:#9a86ff; --drive:#2fd4bf; --driven:#eab24a;
+      --subject:#ff6a70; --gate:#8b9ab2; --edge:#8494ad;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 18px 46px rgba(0,0,0,.45);
+    }
+
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;background:var(--paper);color:var(--text);font-family:var(--sans);
+      line-height:1.6;-webkit-font-smoothing:antialiased;}
+    a{color:var(--core);text-decoration:none}
+    a:hover{text-decoration:underline}
+    .wrap{max-width:1180px;margin:0 auto;padding:clamp(20px,4vw,56px) clamp(16px,4vw,40px) 40px;}
+
+    .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.22em;text-transform:uppercase;
+      color:var(--core);margin:0 0 14px;display:flex;align-items:center;gap:10px;}
+    .eyebrow::before{content:"";width:26px;height:2px;background:var(--core);display:inline-block;}
+    h1{font-size:clamp(30px,5vw,50px);line-height:1.05;letter-spacing:-.022em;font-weight:820;
+      margin:0 0 16px;text-wrap:balance;max-width:22ch;}
+    .dek{font-size:clamp(16px,2.1vw,19px);color:var(--muted);max-width:66ch;margin:0;}
+
+    /* ---------- the stat contract (gate e) ---------- */
+    .stat{font-family:var(--mono);font-weight:700;font-variant-numeric:tabular-nums;
+      color:var(--text);background:color-mix(in srgb,var(--core) 12%, transparent);
+      border-radius:6px;padding:.04em .4em;white-space:nowrap;}
+    .stat--pinned{background:color-mix(in srgb,var(--driven) 16%, transparent);}
+    .stat__pin{font-size:.8em;color:var(--driven);margin-left:.15em;vertical-align:super;}
+
+    .foot{margin-top:64px;padding-top:24px;border-top:1px solid var(--line);
+      font-family:var(--mono);font-size:12px;color:var(--muted);line-height:1.9;}
+    .foot .rule{color:var(--text);}
+
+    /* ---------- accessibility: honor a reduced-motion preference ---------- */
+    @media (prefers-reduced-motion: reduce){
+      html{scroll-behavior:auto}
+      *,*::before,*::after{
+        animation-duration:.001ms !important; animation-iteration-count:1 !important;
+        transition-duration:.001ms !important; scroll-behavior:auto !important;
+      }
+    }
+
+    /* ---------- the shared site rail + next-page banner ----------
+       The whole SITE is one narrative and the LINK ORDER is a deliberate spine
+       (not alphabetical). Order + labels live in ONE canonical (slug, label)
+       list — tools/showcase/deep_nav.py::SITE_NAV — installed as the `site_nav`
+       Jinja global; the rail below AND the bottom .nextbar banner both DERIVE
+       from it, so this template and the root-page injector cannot drift.
+
+       HREFS are derived per directory depth by deep_nav.py::href_for(slug,
+       context) — NOT baked. From here the context is always "deep": wing peers
+       are bare filenames, and a ROOT page (index/systems/architecture/videos,
+       which live one directory UP from deep/) correctly becomes ../x.html.
+
+       The STYLING below is included from _siterail.css — the same file
+       inject_site_rail.py reads as text and emits inside its marked block on
+       each root page (they do not extend this template, so they cannot inherit
+       these rules). One source, two consumers. _deepnav.css is RETIRED BY
+       DISUSE (its .nextbar block was folded into _siterail.css); it and
+       inject_arch_nav.py are left on disk — deleting source files needs
+       Brendan's explicit approval. */
+/* ---------- the site rail: ONE left rail, every page ----------
+   THE ONE SOURCE for the .siterail component AND the .nextbar next-page banner.
+
+   TWO consumers, one file (do NOT paste a divergent copy into either):
+     * base.html.j2 — pulls this in with a Jinja include, inside its style
+       block, so every deep/*.html page gets it.
+     * inject_site_rail.py — reads this file as TEXT and emits it INSIDE its
+       marked block on each ROOT page (index / systems / architecture / videos),
+       which do not extend the Jinja base and so cannot inherit the styles.
+
+   WARNING — this file is parsed by Jinja (base.html.j2 includes it), so it must
+   contain NO Jinja delimiters ANYWHERE, comments included. Writing the include
+   tag literally in a comment once made _deepnav.css include ITSELF and the build
+   died with RecursionError (2026-07-12). Describe the tag in prose; never spell
+   it out here. Single CSS braces are fine and are all this file uses.
+
+   .nextbar WAS in _deepnav.css and is FOLDED IN here verbatim, on purpose: the
+   rail replaced the .deepnav strip, so a page that stopped including _deepnav.css
+   would have silently lost the bottom banner too — the very control the next
+   phase exists to refine. One file carries both, so that cannot happen.
+
+   THE NEXT BAND (review item 9) — READ THIS BEFORE TOUCHING EITHER BAND.
+   The site has TWO bottom bands, and the obvious one is the WRONG one:
+
+     * .arch-fade — the LAST CONTENT BLOCK of the FRONT page (index.html), whose
+       destination is architecture.html. Brendan's review items 1-8 are all
+       front-page items and the destination he named is Architecture, so THIS is
+       the band he hovered. Its rules used to live in index.html's own inline
+       style block, where its ONLY hover was an underline on the headline — no
+       background change at all, i.e. no affordance.
+     * .nextbar — the derived next-page banner on the deep pages and on
+       architecture.html. Its hover was a --core tint 6% -> 12% OVER TRANSPARENT,
+       which reads as nothing.
+
+   Fixing only .nextbar ships item 9 "done" while the band Brendan was actually
+   looking at still looks dead. So the affordance is ONE contract — .nextband —
+   and BOTH bands consume it: cursor, resting tint, a clear background lift on
+   hover, a border-colour change, an arrow that steps forward, an underline on
+   the destination line, and :focus-visible preserved for the keyboard. Each
+   band then adds only its own LAYOUT. Do not re-add a hover rule to either band:
+   a second copy is how the two drift apart again.
+
+   TWO PALETTES, ONE COMPONENT. The deep pages and index/architecture/videos
+   carry the CANONICAL custom properties (--text/--muted/--line/--core/--paper,
+   from theme.css or base.html.j2's inline copy). The root systems.html still
+   links the older assets/site.css, which declares ONLY the COMPAT names
+   (--ink/--ink-soft/--rule/--accent-text/--bg). So every colour below is read
+   through a --rail-* alias with a var() fallback chain: canonical first, compat
+   second, a literal last. The rail therefore renders correctly on BOTH palettes
+   without this component re-theming systems.html (not its call to make). The
+   chain flows canonical -> compat ONLY, never back — theme.css's cycle hazard.
+
+   (This comment ships inside every deep page, so it deliberately avoids the
+   word the meta wing's "no cost claims" gate scans for — see test_meta.py.)
+
+   Link ORDER and labels are NOT here — they live in deep_nav.py::SITE_NAV.
+   Hrefs are derived per directory depth by deep_nav.py::href_for. */
+
+:root{
+  --railw:208px;
+}
+
+.siterail,.nextband{
+  --rail-fg:var(--text, var(--ink, #101d31));
+  --rail-dim:var(--muted, var(--ink-soft, #566885));
+  --rail-line:var(--line, var(--rule, #d5deec));
+  --rail-accent:var(--core, var(--accent-text, #2f63ff));
+  --rail-bg:var(--paper, var(--bg, #e9eef6));
+}
+
+/* ---------- desktop: a fixed left column ---------- */
+.siterail{
+  position:fixed;top:0;left:0;bottom:0;width:var(--railw);z-index:30;
+  background:var(--rail-bg);border-right:1px solid var(--rail-line);
+  overflow-y:auto;overscroll-behavior:contain;
+}
+.siterail__inner{display:flex;flex-direction:column;padding:30px 22px 26px;}
+
+.siterail__mark{display:flex;flex-direction:column;
+  font-family:var(--serif, var(--sans, sans-serif));font-size:1.02rem;font-weight:600;
+  line-height:1.3;color:var(--rail-fg);text-decoration:none;margin:0 0 22px;}
+.siterail__mark:hover{color:var(--rail-accent);text-decoration:none;}
+
+.siterail__zone{display:flex;flex-direction:column;}
+.siterail__zone + .siterail__zone{margin-top:16px;padding-top:14px;
+  border-top:1px solid var(--rail-line);}
+.siterail__title{font-family:var(--mono, monospace);font-size:10px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--rail-dim);opacity:.7;margin:0 0 4px;}
+
+/* The CURRENT-PAGE MARKER is aria-current="page" — the HTML-spec value — for
+   BOTH zones. The rail this replaced used aria-current="true" for its scrollspy
+   while .deepnav used "page"; two spellings meant two sets of selectors that had
+   to agree. One spelling now, and the ported scrollspy sets exactly this one. */
+.siterail a.rail-anchor,.siterail a.rail-page{
+  font-family:var(--mono, monospace);font-size:11.5px;text-transform:uppercase;
+  letter-spacing:.08em;color:var(--rail-dim);text-decoration:none;
+  padding:7px 0;line-height:1.35;}
+.siterail a.rail-anchor:hover,.siterail a.rail-page:hover{
+  color:var(--rail-accent);text-decoration:none;}
+.siterail a.rail-anchor[aria-current="page"],.siterail a.rail-page[aria-current="page"]{
+  color:var(--rail-accent);}
+.siterail a.rail-anchor[aria-current="page"]::before,
+.siterail a.rail-page[aria-current="page"]::before{content:"— ";}
+.siterail a:focus-visible{outline:2px solid var(--rail-accent);outline-offset:2px;}
+
+/* The rail is FIXED, so it is out of flow and cannot push anything: every page's
+   content is inset by its width from ONE rule here. The pages themselves know
+   nothing about the rail — which is what lets the same component drop onto four
+   hand-authored root pages and six generated ones with no per-page layout edit. */
+@media (min-width:1100px){
+  body{padding-left:var(--railw);}
+}
+
+/* ---------- mobile: the rail COLLAPSES, it does not vanish ----------
+   This is a first-class deliverable, not an edge case. The rail this replaced
+   had exactly one mobile rule — .rail{display:none} at 1099px, with NO fallback
+   — while the .deepnav strip it ALSO replaced was a flex-wrap bar that worked at
+   every width. Shipping the rail as-was would therefore have removed ALL
+   navigation from every deep page below 1100px. Below the same real breakpoint
+   the rail becomes a sticky top bar: the mark, then each zone as a horizontally
+   scrollable chip row (the pattern code.html.j2's TOC already used at its narrow
+   width). Verified at 900px and at 500px — a nav is reachable at both. */
+@media (max-width:1099px){
+  .siterail{position:sticky;top:0;left:auto;bottom:auto;width:auto;height:auto;
+    border-right:0;border-bottom:1px solid var(--rail-line);
+    background:color-mix(in srgb, var(--rail-bg) 88%, transparent);
+    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+    overflow:visible;}
+  .siterail__inner{flex-direction:column;align-items:stretch;gap:4px;
+    max-width:1180px;margin:0 auto;padding:9px clamp(12px,4vw,24px);}
+  .siterail__mark{flex-direction:row;gap:.35em;margin:0 0 2px;font-size:.95rem;}
+  .siterail__title{display:none;}
+  .siterail__zone{flex-direction:row;flex-wrap:nowrap;gap:4px;
+    overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px;}
+  .siterail__zone + .siterail__zone{margin-top:0;padding-top:0;border-top:0;}
+  .siterail a.rail-anchor,.siterail a.rail-page{
+    flex:0 0 auto;white-space:nowrap;font-size:11px;
+    padding:5px 10px;border-radius:8px;}
+  .siterail a.rail-anchor[aria-current="page"],.siterail a.rail-page[aria-current="page"]{
+    color:var(--rail-fg);
+    background:color-mix(in srgb, var(--rail-accent) 15%, transparent);}
+  .siterail a.rail-anchor[aria-current="page"]::before,
+  .siterail a.rail-page[aria-current="page"]::before{content:none;}
+}
+
+/* ================= THE NEXT BAND — ONE affordance, BOTH bands =================
+   The whole band is the button. Both bands were ALREADY whole-band anchors, so
+   the click target was never the defect — the defect was that nothing on screen
+   said so. Every rule that makes a band FEEL like a control lives here, once:
+
+     resting tint     a band is visibly a control before you touch it (it used to
+                      be flat paper, indistinguishable from a footer);
+     hover lift       6% -> 18% of the accent, mixed against the PAPER, not
+                      against `transparent`. That was the old bug: a 6% -> 12%
+                      transparent tint is a ~6% alpha change over whatever is
+                      behind it, which is why the hover "did nothing";
+     border           the top rule goes accent-coloured, so the band's whole
+                      outline answers the pointer, not just its middle;
+     cursor           pointer, everywhere in the band — including its padding;
+     arrow            steps forward 5px (its own class, so a band with no arrow
+                      simply has nothing to translate);
+     label            the destination line underlines — the classic link cue,
+                      kept from .arch-fade's old hover and given to .nextbar too;
+     keyboard         :focus-visible gets the SAME lift plus the focus ring, so
+                      the affordance is not mouse-only.
+
+   The motion is the only new thing here that a reader can be hurt by, so it is
+   switched off under prefers-reduced-motion at the bottom of this block — the
+   root pages have no reduced-motion block of their own to fall back on. */
+.nextband{
+  display:block;                 /* each band overrides with its own layout */
+  cursor:pointer;
+  text-decoration:none;
+  color:var(--rail-fg);
+  border-top:1px solid var(--rail-line);
+  background:color-mix(in srgb, var(--rail-accent) 6%, var(--rail-bg));
+  transition:background-color .16s ease, border-color .16s ease;
+}
+.nextband:hover,.nextband:focus-visible{
+  background:color-mix(in srgb, var(--rail-accent) 18%, var(--rail-bg));
+  border-top-color:var(--rail-accent);
+  text-decoration:none;
+}
+.nextband:focus-visible{outline:2px solid var(--rail-accent);outline-offset:-3px;}
+.nextband__arrow{display:inline-block;transition:transform .16s ease;}
+.nextband:hover .nextband__arrow,.nextband:focus-visible .nextband__arrow{
+  transform:translateX(5px);}
+.nextband:hover .nextband__label,.nextband:focus-visible .nextband__label{
+  text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px;}
+@media (prefers-reduced-motion: reduce){
+  .nextband,.nextband__arrow{transition:none;}
+  .nextband:hover .nextband__arrow,.nextband:focus-visible .nextband__arrow{
+    transform:none;}
+}
+
+/* ---------- band 1: the next-page banner (folded in from _deepnav.css) -------
+   A full-width page-level "next" control at the FOOT of a deep page (and of
+   architecture.html), DERIVED from the deep_nav spine: the entry after the
+   active page; the last wing page -> the site front page. LAYOUT ONLY — its
+   hover/focus/cursor come from .nextband above. */
+.nextbar{display:flex;align-items:center;justify-content:space-between;gap:16px;
+  max-width:1180px;margin:24px auto 0;padding:18px clamp(16px,4vw,40px);}
+.nextbar__text{display:flex;flex-direction:column;gap:3px;min-width:0;}
+.nextbar__eyebrow{font-family:var(--mono, monospace);font-size:11px;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--rail-accent);font-weight:700;}
+.nextbar__dest{font-size:clamp(19px,2.5vw,24px);font-weight:820;
+  letter-spacing:-.015em;color:var(--rail-fg);line-height:1.1;}
+.nextbar__arrow{font-size:26px;line-height:1;color:var(--rail-accent);font-weight:700;flex:none;}
+
+/* ---------- band 2: the front page's hand-off into architecture.html ---------
+   MOVED HERE from index.html's own inline style block (2026-07-12). It stayed
+   private for as long as it was a bespoke GRADIENT — the homepage's warm paper
+   dissolving into architecture.html's cool paper. theme.css gave both pages one
+   palette, so there are no longer two papers to blend: the gradient is gone, the
+   band is flat, and what remains is the same control .nextbar is. Keeping a
+   second private copy of "how a next band behaves" is precisely how the front
+   page ends up with a dead-looking hover while the gate reports green.
+
+   LAYOUT ONLY, like .nextbar. The colours read through the --rail-* aliases (not
+   --paper/--rule directly) so the band survives on either palette, exactly as the
+   rail does. */
+.arch-fade{display:grid;justify-items:center;gap:10px;
+  margin-top:72px;padding:64px 24px;text-align:center;}
+.arch-fade .cue{font-family:var(--mono, monospace);font-size:12px;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--rail-dim);}
+.arch-fade .headline{font-family:var(--serif, serif);font-size:1.5rem;font-weight:600;
+  color:var(--rail-fg);}
+.arch-fade .sub{font-size:.95rem;color:var(--rail-dim);max-width:46ch;}
+/* The band's own bottom padding already carries the gap to whatever follows, so
+   the footer's top margin would double it. Collapse it only in that adjacency —
+   a standalone .footer keeps its own. */
+.arch-fade + .footer{margin-top:0;}
+
+/* _wipe.css — the deep-dive SKIN for the shared before/after wipe slider.
+   =========================================================================
+   WHAT THIS IS. The site has exactly ONE wipe-slider implementation: the JS
+   module publicity/.../site/public/assets/js/wipe_slider.js (its own docstring
+   names the "D-0 single-module rule"). That module owns the BEHAVIOUR and the
+   DOM contract — it builds .wipe__frame / .wipe__img--before / .wipe__img--after
+   / .wipe__badge / .wipe__handle / .wipe__grab / .wipe__range inside any mount
+   carrying the data-wipe attribute, and render_gallery.render_page ships the
+   module's BYTES (never a retyped copy). This file only SKINS those class names
+   for the deep-dive palette.
+
+   WHY A SEPARATE SKIN. The front page's copy of these rules (public/assets/
+   site.css) is written against that design system's CSS custom properties —
+   --accent / --rule / --bg / --bg-raised / --ink. The deep-dive family uses a
+   different vocabulary — --drive / --line / --paper / --card / --text. The bridge
+   below maps one onto the other in ONE place, so the rules themselves stay
+   verbatim-comparable to the canonical block.
+
+   WHERE IT IS INCLUDED. In the styles block of each page that mounts a wipe
+   (today: gallery.html.j2) — deliberately NOT in base.html.j2. A deep page with
+   no slider should not carry this CSS, and base is shared with meta.html, whose
+   exit gate scans the rendered page for cost-claim wording. Keep this file's
+   prose clear of that vocabulary.
+
+   KNOWN DUPLICATION (deliberate, and dated 2026-07-12). These layout rules exist
+   twice: here and in site.css. Collapsing them means ONE stylesheet serving both
+   trees — exactly what the showcase site-restructure (merging the deep dive into
+   wischman123.github.io) makes possible. Collapse it THERE and delete this note.
+   Do not fork a third copy in the meantime.
+   ========================================================================= */
+
+/* ---- the bridge: front-page property names -> deep-dive palette ---- */
+.wipe{
+  --accent:var(--drive);       /* divider, knob ring, range thumb */
+  --rule:var(--line);          /* frame border */
+  --bg:var(--paper);           /* knob fill, badge text */
+  --bg-raised:var(--card);     /* frame backdrop behind a letterboxed page */
+  --ink:var(--text);           /* badge fill */
+  margin:1rem 0 .4rem;
+}
+
+.wipe__frame{
+  position:relative; border:1px solid var(--rule); border-radius:10px;
+  overflow:hidden; background:var(--bg-raised); line-height:0;
+}
+/* The pair is curated dimension-identical (render_gallery mode 'pair'), so the
+   absolutely-positioned "after" image lands exactly on top of the "before" one
+   and the divider lines up with the artifact underneath it. Unequal sizes here
+   would stretch one side — a comparison that quietly lies about the artifact. */
+.wipe__img{display:block; width:100%; height:auto;}
+.wipe__img--after{position:absolute; inset:0; width:100%;}
+
+.wipe__badge{
+  position:absolute; top:8px; font-family:var(--mono); font-size:.72rem;
+  background:var(--ink); color:var(--bg); padding:.15em .55em; border-radius:4px;
+  line-height:1.3;
+}
+.wipe__badge--before{left:8px;}
+.wipe__badge--after{right:8px;}
+
+.wipe__handle{
+  position:absolute; top:0; bottom:0; width:2px; background:var(--accent);
+  transform:translateX(-1px); pointer-events:none;
+}
+.wipe__handle::after{
+  content:""; position:absolute; top:50%; left:50%; width:22px; height:22px;
+  margin:-11px 0 0 -11px; border-radius:50%; background:var(--bg);
+  border:2px solid var(--accent); box-shadow:0 1px 3px rgba(0,0,0,.22);
+}
+/* touch-action:none is scoped to the 24px grab strip ONLY — a touch anywhere
+   else on the image still scrolls the page (the anti-scroll-hijack invariant the
+   module's docstring documents). */
+.wipe__grab{
+  position:absolute; top:0; bottom:0; left:0; width:24px; margin-left:-12px;
+  cursor:ew-resize; touch-action:none; pointer-events:auto;
+}
+/* the native range input is the keyboard driver — arrow keys move the divider */
+.wipe__range{
+  width:100%; margin-bottom:.6rem; min-height:40px; accent-color:var(--accent);
+}
+
+/* JS off: the module never runs, the mount keeps its <noscript> children, and the
+   comparison degrades to a readable side-by-side instead of vanishing. */
+.wipe noscript{display:grid; grid-template-columns:1fr 1fr; gap:.6rem;}
+.wipe noscript img{
+  width:100%; height:auto; border:1px solid var(--rule); border-radius:8px;
+}
+/* _lightbox.css — the deep-dive SKIN for the shared click-to-enlarge lightbox.
+   =========================================================================
+   WHAT THIS IS. The site has exactly ONE lightbox implementation: the JS module
+   publicity/.../site/public/assets/js/lightbox.js (the same "D-0 single-module
+   rule" wipe_slider.js names). That module owns the BEHAVIOUR and the DOM
+   contract — it upgrades any img[data-zoomable] into a control and builds a
+   single .lightbox > img dialog on the body — and render_gallery.render_page
+   ships the module's BYTES (never a retyped copy). This file only SKINS those
+   class names for the deep-dive palette.
+
+   WHY A SEPARATE SKIN. Same split _wipe.css documents: the front page's copy of
+   these rules (public/assets/site.css) is written against that design system's
+   custom properties (--rule), the deep-dive family against its own (--line /
+   --card). The module is shared; the skin is per-design-system.
+
+   THE ONE RULE THAT MATTERS — "page-width zoom", not "fit on screen". The
+   enlarged image is sized to the WIDTH of the viewport (capped), with height:auto
+   and the dialog scrolling vertically. A printed problem page is tall; fitting it
+   inside the viewport would shrink it back to unreadable, which defeats the
+   click. So: fill the width, let the reader scroll. margin:auto (not
+   place-items:center) centers a SHORT image both ways while still letting a TALL
+   one overflow scrollably — a centered flex item cannot be scrolled back to its
+   own top edge, and its first lines would be unreachable. This is the same
+   geometry the front page's #story lightbox uses.
+
+   KNOWN DUPLICATION (deliberate, and dated 2026-07-13). These rules exist twice:
+   here and in site.css. Collapse them when the showcase site-restructure merges
+   the two trees into one stylesheet — and delete this note then. Do not fork a
+   third copy in the meantime.
+   ========================================================================= */
+
+  /* The affordance: only a zoomable image advertises the zoom. The JS adds the
+     attribute's behaviour; the attribute itself is authored in the template, so
+     with JS off this cursor is the only thing that over-promises — and it costs
+     nothing. Wipe sliders and their images are deliberately absent here: their
+     click already means "drag me". */
+  img[data-zoomable]{cursor:zoom-in;}
+  img[data-zoomable]:focus-visible{outline:3px solid var(--drive);outline-offset:3px;}
+
+  .lightbox{position:fixed;inset:0;z-index:1200;display:flex;overflow-y:auto;
+    padding:20px;background:rgba(14,17,16,.88);cursor:zoom-out;}
+  .lightbox[hidden]{display:none;}
+  .lightbox img{margin:auto;width:min(1600px,96vw);height:auto;
+    border:1px solid var(--line);background:#fff;border-radius:4px;
+    box-shadow:0 18px 60px rgba(0,0,0,.5);}
+  @media (prefers-reduced-motion:no-preference){
+    .lightbox:not([hidden]) img{animation:lightbox-zoom .18s ease;}
+  }
+  @keyframes lightbox-zoom{from{transform:scale(.965);opacity:.55;}
+    to{transform:none;opacity:1;}}
+
+  header.hero{margin-bottom:8px;}
+  .lede{font-size:15px;color:var(--muted);max-width:66ch;margin:18px 0 0;}
+  .counts{display:flex;flex-wrap:wrap;gap:10px 26px;margin:26px 0 4px;
+    font-family:var(--mono);font-size:13px;color:var(--muted);}
+  .counts b{color:var(--text);}
+
+  /* ROW-MAJOR, one grid per ROW GROUP (render_gallery._GROUP_ORDER).
+
+     This was CSS multi-column masonry (`columns:3`) until 2026-07-13. Masonry
+     fills COLUMN BY COLUMN, so with the worked example split into four page
+     cards, page one headed column one and page FOUR headed column two: the one
+     problem read ACROSS the top of the wall instead of down it, and no ordering
+     of the source list could have fixed it, because column-major CSS is what was
+     deciding the layout. A grid fills row by row, so source order is what you see.
+
+     One grid PER GROUP, rather than one grid with the groups laid out inside it:
+     a group must begin on a fresh row at EVERY column count, and a single grid
+     can only be made to do that at one specific window width. Separate grids get
+     it for free at three columns, at two, and at one.
+
+     The column count is explicit, never `auto-fit`: the row structure IS the
+     content here (three pages across, then the fourth beside the sim; the three
+     sliders as exactly one row), and auto-fit would silently re-flow it on a wide
+     monitor. `align-items:start` keeps each card at its natural height — these
+     artifacts are deliberately mixed-aspect (portrait pages, wide terminal
+     captures), and stretching them to a common row height would only pad the
+     short ones with dead space. */
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;
+    align-items:start;margin-top:34px;}
+  .grid + .grid{margin-top:22px;}
+  @media (max-width:980px){.grid{grid-template-columns:repeat(2,1fr);}}
+  @media (max-width:640px){.grid{grid-template-columns:1fr;}}
+
+  /* A RESERVED cell: it holds a space and draws NOTHING. The live sim welded to
+     the worked example lands here (render_gallery: the `dawn_sim` placard). No
+     border, no "coming soon" — this page is public, and scaffolding meant for the
+     people building the site is not content for the people visiting it. */
+  .slot-reserved{display:block;}
+
+  figure.card{margin:0;background:var(--card);
+    border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);overflow:hidden;}
+  figure.card .frame{background:color-mix(in srgb,var(--paper) 60%, var(--card));
+    padding:14px;display:flex;align-items:center;justify-content:center;}
+  /* STILL placards only (a direct child of .frame). Deliberately NOT `figure.card
+     img` — that would also cap the wipe slider's images at 360px, and since the
+     wipe's "after" image is absolutely positioned to fill its frame, a height cap
+     on only the "before" one tears the overlay: the divider stops lining up with
+     the page underneath it. The wipe's own images are styled by the .wipe skin. */
+  figure.card .frame > img{max-width:100%;max-height:360px;height:auto;border-radius:6px;
+    border:1px solid var(--line);background:#fff;}
+  /* the wipe slider fills its card (the pair is portrait; the column sets width) */
+  figure.card .frame:has(.wipe){padding:12px;display:block;}
+  figure.card .wipe{width:100%;margin:0;}
+  figcaption{padding:16px 18px 20px;}
+  figcaption .t{font-weight:720;letter-spacing:-.01em;margin:0 0 6px;}
+  figcaption .c{font-size:14px;color:var(--muted);margin:0;line-height:1.55;}
+  /* a placard's link to the full artifact behind its teaser still */
+  figcaption .more{margin:12px 0 0;font-size:14px;}
+  figcaption .more a{font-weight:700;color:var(--drive);text-decoration:none;}
+  figcaption .more a:hover{text-decoration:underline;}
+
+  </style>
+</head>
+<body class="gallery">
+<aside class="siterail" aria-label="Site navigation">
+  <div class="siterail__inner">
+    <a class="siterail__mark" href="../index.html"><span>Brendan</span><span>Wischweh</span></a>    <nav class="siterail__zone siterail__zone--site" aria-label="The site">
+      <p class="siterail__title">The site</p>      <a class="rail-page" href="../index.html">Home</a>      <a class="rail-page" href="../architecture.html">Architecture</a>      <a class="rail-page" href="code.html">Code</a>      <a class="rail-page" href="verification.html">Formal&nbsp;Verification</a>      <a class="rail-page" href="lab.html">The&nbsp;Lab</a>      <a class="rail-page" href="meta.html">Meta&nbsp;Tools</a>      <a class="rail-page" href="engine.html">Engine&nbsp;Room</a>      <a class="rail-page" href="systems.html">Systems&nbsp;Atlas</a>      <a class="rail-page" href="sims.html">Sims</a>      <a class="rail-page" href="gallery.html" aria-current="page">Gallery</a>      <a class="rail-page" href="../videos.html">Videos</a>    </nav>
+  </div>
+</aside><script>
+(function () {
+  function start() {
+    var links = {};
+    var ids = [];
+    Array.prototype.forEach.call(
+      document.querySelectorAll('.siterail a.rail-anchor[href^="#"]'),
+      function (a) {
+        var id = a.getAttribute('href').slice(1);
+        if (!id) return;
+        links[id] = a;
+        ids.push(id);
+      }
+    );
+    if (!ids.length || !('IntersectionObserver' in window)) return;
+    var spy = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        ids.forEach(function (id) { links[id].removeAttribute('aria-current'); });
+        var link = links[e.target.id];
+        if (link) link.setAttribute('aria-current', 'page');
+      });
+    }, { rootMargin: '-35% 0px -55% 0px' });
+    ids.forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) spy.observe(el);
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', start);
+  } else {
+    start();
+  }
+})();
+</script>
+<main class="wrap">
+
+  <header class="hero">
+    <p class="eyebrow">Systems showcase · deep dive</p>
+    <h1>The gallery</h1>
+    <p class="dek">A wall of what the system actually makes &mdash; one harder
+      problem worked through in full, page by page, and the correctness machinery
+      that keeps it honest. Every artifact here was generated by the pipeline, not
+      hand-built for show. <b>Click any page to read it full size.</b></p>
+    <div class="counts">
+      <span><b><span class="stat" data-source="sum of data/problems/frq/*.json record counts" data-verified="2026-07-13" data-provenance="verified" title="source: sum of data/problems/frq/*.json record counts · verified 2026-07-13">51</span></b> free-response problems</span>
+      <span><b><span class="stat" data-source="sum of data/problems/mc/*.json record counts" data-verified="2026-07-13" data-provenance="verified" title="source: sum of data/problems/mc/*.json record counts · verified 2026-07-13">72</span></b> multiple-choice items</span>
+      <span><b><span class="stat" data-source="node sim/scripts/dump_registry.js (scenario registry)" data-verified="2026-07-13" data-provenance="verified" title="source: node sim/scripts/dump_registry.js (scenario registry) · verified 2026-07-13">104</span></b> simulation scenes</span>
+    </div>
+    <p class="lede">Every figure in a
+      <span class="stat" data-source="legend" data-verified="2026-07-13" data-provenance="verified">highlighted box</span>
+      is harvested live from the repository with a source and a verified date &mdash;
+      hover to read them.</p>
+  </header>  <div class="grid" data-group="dawn">
+    <figure class="card">
+<div class="frame">
+        <img src="assets/gallery/dawn_p1.png" alt="The problem page of a generated physics worked example, Dawn&#39;s Last Burn: a spacecraft in a circular orbit around the dwarf planet Ceres fires one tangential burn and later collides with debris. A computed orbit diagram shows Ceres, the burn point, the high point of the new orbit, the exhaust, and the debris; a Given box closes the page." loading="lazy" data-zoomable>
+      </div>
+      <figcaption>
+        <p class="t">A harder problem: the assignment</p>
+        <p class="c">One harder problem, generated end to end: the scenario, a computed orbit diagram, and the quantities the student is handed. Nothing here is hand-typed — the page is directed from code.</p>      </figcaption>
+    </figure>
+    <figure class="card">
+<div class="frame">
+        <img src="assets/gallery/dawn_p2.png" alt="The first solution page: the orbital speed and period derived from Newton&#39;s second law for circular motion, with a free-body diagram and radial axes, followed by the exhaust speed of a single xenon ion from the work-energy theorem — each derivation annotated line by line in the margin." loading="lazy" data-zoomable>
+      </div>
+      <figcaption>
+        <p class="t">Solutions Page 1 of 4</p>
+        <p class="c">The opening parts, worked: the orbit from Newton&#39;s second law, then the ion&#39;s exhaust speed from the work-energy theorem — an exhaust roughly ten times faster than a chemical rocket&#39;s. Every step carries its reason beside it.</p>      </figcaption>
+    </figure>
+    <figure class="card">
+<div class="frame">
+        <img src="assets/gallery/dawn_p3.png" alt="The second solution page: the change in the spacecraft&#39;s speed produced by the burn, derived from conservation of momentum in Dawn&#39;s own rest frame, where the ejected xenon carries momentum one way and the spacecraft the other." loading="lazy" data-zoomable>
+      </div>
+      <figcaption>
+        <p class="t">Solutions Page 2 of 4</p>
+        <p class="c">The burn, worked in the spacecraft&#39;s own rest frame: conservation of momentum turns half a kilogram of ejected xenon into the change in speed that reshapes the whole orbit.</p>      </figcaption>
+    </figure>
+    <figure class="card">
+<div class="frame">
+        <img src="assets/gallery/dawn_p4.png" alt="The third solution page: the burn turns the circular orbit into an ellipse, and conservation of energy plus conservation of angular momentum are combined into a quadratic for the radius at the high point, then solved and converted to an altitude above Ceres&#39; surface." loading="lazy" data-zoomable>
+      </div>
+      <figcaption>
+        <p class="t">Solutions Page 3 of 4</p>
+        <p class="c">The hardest part of the problem: energy and angular momentum combined into a quadratic, solved — and the discarded root turns out to be the burn point itself, a built-in check that the algebra is sound.</p>      </figcaption>
+    </figure>
+    <figure class="card">
+<div class="frame">
+        <img src="assets/gallery/dawn_p5.png" alt="The final solution page: an inelastic head-on collision with the debris solved for the joined object&#39;s speed and the kinetic energy lost, followed by a closing vignette about Konstantin Tsiolkovsky, the deaf schoolteacher who derived the rocket equation." loading="lazy" data-zoomable>
+      </div>
+      <figcaption>
+        <p class="t">Solutions Page 4 of 4</p>
+        <p class="c">The closing parts, and the beat the whole page is built toward: a deaf schoolteacher who worked out the rocket equation with a pen, decades before anyone flew one. Every problem ends with the person behind the physics.</p>      </figcaption>
+    </figure>
+<div class="slot-reserved" data-reserved="dawn_sim" aria-hidden="true"></div>
+  </div>
+  <div class="grid" data-group="compare">
+    <figure class="card">
+<div class="frame">
+        <div class="wipe" data-wipe
+             data-before="assets/gallery/plain_vs_system_before.png"
+             data-after="assets/gallery/plain_vs_system_after.png"
+             data-before-alt="The worked solution page a plain assistant produced, with no access to the platform: a hand-drawn free-body diagram of a car at the crest, and a correct derivation — but its equations are typed as ordinary text, and it labels the normal force with a capital N."
+             data-after-alt="The engine&#39;s solution page for the same problem: typeset equation objects, a free-body diagram in the course&#39;s own notation with a lowercase n for the normal force, and each step annotated with its reason in the margin."
+             data-before-label="Plain Claude"
+             data-after-label="This platform">
+          <noscript>
+            <img src="assets/gallery/plain_vs_system_before.png" alt="The worked solution page a plain assistant produced, with no access to the platform: a hand-drawn free-body diagram of a car at the crest, and a correct derivation — but its equations are typed as ordinary text, and it labels the normal force with a capital N." loading="lazy">
+            <img src="assets/gallery/plain_vs_system_after.png" alt="The engine&#39;s solution page for the same problem: typeset equation objects, a free-body diagram in the course&#39;s own notation with a lowercase n for the normal force, and each step annotated with its reason in the margin." loading="lazy">
+          </noscript>
+        </div>
+      </div>
+      <figcaption>
+        <p class="t">Plain Claude VS the Platform</p>
+        <p class="c">The same assignment — a car cresting a hilltop — worked two ways, and the same page of each: the solution, which is where they part. A plain assistant, working alone, is genuinely capable: its physics is right and its diagram is real. What it cannot bring is the course. Its equations are typed as ordinary text rather than set as real equations, the energy chart students reason with is absent, and it names the normal force with the very letter that also means newtons — so its own answer collides with its own units. Drag the divider.</p>        <p class="more"><a href="../plain-vs-engine.html">Open the full side-by-side comparison &rarr;</a></p>
+      </figcaption>
+    </figure>
+    <figure class="card">
+<div class="frame">
+        <div class="wipe" data-wipe
+             data-before="assets/gallery/era_compare_before.png"
+             data-after="assets/gallery/era_compare_after.png"
+             data-before-alt="A typed friction test from a generation ago: text only, no diagrams — every figure was drawn on the board by hand."
+             data-after-alt="A generated physics page (energy-K015) with a computed hill-and-track diagram and energy bar charts."
+             data-before-label="A generation ago"
+             data-after-label="Today">
+          <noscript>
+            <img src="assets/gallery/era_compare_before.png" alt="A typed friction test from a generation ago: text only, no diagrams — every figure was drawn on the board by hand." loading="lazy">
+            <img src="assets/gallery/era_compare_after.png" alt="A generated physics page (energy-K015) with a computed hill-and-track diagram and energy bar charts." loading="lazy">
+          </noscript>
+        </div>
+      </div>
+      <figcaption>
+        <p class="t">A quarter century of the same course</p>
+        <p class="c">A friction test the teacher typed a generation ago — text only, every diagram drawn by hand — and a page the engine generates today from code, diagram and energy scaffolds and all. Drag the divider.</p>      </figcaption>
+    </figure>
+    <figure class="card">
+<div class="frame">
+        <div class="wipe" data-wipe
+             data-before="assets/gallery/regen_review_before.png"
+             data-after="assets/gallery/regen_review_after.png"
+             data-before-alt="An earlier render of the physics problem page with flawed two-level ground under the hill."
+             data-after-alt="The same page re-derived from corrected drawing code, with continuous ground under the hill."
+             data-before-label="Caught in review"
+             data-after-label="Regenerated">
+          <noscript>
+            <img src="assets/gallery/regen_review_before.png" alt="An earlier render of the physics problem page with flawed two-level ground under the hill." loading="lazy">
+            <img src="assets/gallery/regen_review_after.png" alt="The same page re-derived from corrected drawing code, with continuous ground under the hill." loading="lazy">
+          </noscript>
+        </div>
+      </div>
+      <figcaption>
+        <p class="t">Caught in Review: Validators Hard at Work</p>
+        <p class="c">An earlier render with flawed ground geometry, and the page re-derived from corrected drawing code. The fix lands in the code and the page is regenerated — never patched by hand. Drag the divider to watch the ground heal.</p>      </figcaption>
+    </figure>
+  </div>
+
+  <footer class="foot">
+    <span class="rule">Every placard is a real generated artifact &mdash; the
+      machinery keeps them honest so the teacher&rsquo;s judgment is the one that
+      counts.</span><br>
+    Curated copies only; every image carries a source and a pixel-checked date.
+    Numbers are harvested live from the repository.
+  </footer>
+</main>
+  <a class="nextbar nextband nextbar--home" href="../index.html">
+    <span class="nextbar__text">
+      <span class="nextbar__eyebrow">Back to</span>
+      <span class="nextbar__dest nextband__label">the front page</span>
+    </span>
+    <span class="nextbar__arrow nextband__arrow" aria-hidden="true">&rarr;</span>
+  </a>
+<script src="assets/js/wipe_slider.js" defer></script>
+<script src="assets/js/lightbox.js" defer></script>
+</body>
+</html>

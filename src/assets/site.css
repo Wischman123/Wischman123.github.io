@@ -1,0 +1,308 @@
+/* site.css -- shared design tokens for the systems-wing exhibit pages.
+ *
+ * EXTRACTED VERBATIM (SW1) from public/index.html's :root blocks so every wing
+ * page (systems.html, grading.html, verification.html, explorable.html) shares
+ * the live site's visual identity -- one token source, no per-page drift.
+ * Themes: light = worksheet paper, dark = chalkboard. Both the OS-preference
+ * (@media prefers-color-scheme) and the explicit data-theme override are kept,
+ * exactly as the live index defines them.
+ *
+ * If the live index's :root tokens change, re-extract them here (they are the
+ * source of truth; this file mirrors them). Wing pages must NOT redefine
+ * tokens inline -- link this file and use the var(--token) names.
+ */
+
+:root {
+  --bg: #FAF9F5;
+  --bg-raised: #FFFFFF;
+  --ink: #1E2B33;
+  --ink-soft: #56666F;
+  --rule: #DDD7CB;
+  --accent: #A15A26;
+  --accent-text: #8E4E1F;
+  --equip: #5B7B92;
+  --gridline: rgba(30, 43, 51, 0.08);
+  --banner-bg: #F3E7D6;
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #212927;
+    --bg-raised: #29322F;
+    --ink: #E9E7DE;
+    --ink-soft: #A2ABA1;
+    --rule: #3D4744;
+    --accent: #D68C4E;
+    --accent-text: #D68C4E;
+    --equip: #8FAEC4;
+    --gridline: rgba(233, 231, 222, 0.07);
+    --banner-bg: #33302A;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #212927;
+  --bg-raised: #29322F;
+  --ink: #E9E7DE;
+  --ink-soft: #A2ABA1;
+  --rule: #3D4744;
+  --accent: #D68C4E;
+  --accent-text: #D68C4E;
+  --equip: #8FAEC4;
+  --gridline: rgba(233, 231, 222, 0.07);
+  --banner-bg: #33302A;
+}
+
+:root[data-theme="light"] {
+  --bg: #FAF9F5;
+  --bg-raised: #FFFFFF;
+  --ink: #1E2B33;
+  --ink-soft: #56666F;
+  --rule: #DDD7CB;
+  --accent: #A15A26;
+  --accent-text: #8E4E1F;
+  --equip: #5B7B92;
+  --gridline: rgba(30, 43, 51, 0.08);
+  --banner-bg: #F3E7D6;
+}
+
+/* Reduced-motion: honored site-wide. Exhibit animations MUST also respect this
+ * (the sim_embed.js wrapper checks it before painting). */
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+  html { scroll-behavior: auto; }
+}
+
+/* ===========================================================================
+ * SW2 — systems-wing exhibit styles (T1-a … T1-f). Consumed by systems.html.
+ * Tokens above are the source of truth; everything here is var(--token)-driven.
+ * ======================================================================== */
+
+/* --- page chrome -------------------------------------------------------- */
+html { box-sizing: border-box; }
+*, *::before, *::after { box-sizing: inherit; }
+body.wing {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--serif);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+.wing .wrap { max-width: 60rem; margin: 0 auto; padding: 0 1.25rem; }
+.wing header.wing-hero {
+  border-bottom: 1px solid var(--rule);
+  padding: 2.4rem 0 1.6rem;
+}
+.wing .eyebrow {
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--accent-text);
+  margin: 0 0 0.4rem;
+}
+.wing h1 { font-size: clamp(1.7rem, 4vw, 2.5rem); margin: 0 0 0.5rem; line-height: 1.12; }
+.wing .subtitle { font-size: 1.2rem; font-weight: 600; color: var(--ink-soft); margin: 0 0 0.3rem; line-height: 1.25; }
+.wing .lede { font-size: 1.08rem; color: var(--ink-soft); max-width: 44rem; margin: 0.5rem 0 0; }
+.wing .fieldlab-controls { font-size: 0.92rem; color: var(--ink-soft); margin: 0.4rem 0 0; }
+.wing .fieldlab-controls button { font-family: var(--mono); font-size: 0.82rem; padding: 0.15rem 0.6rem; margin: 0 0.15rem; border: 1px solid var(--accent); border-radius: 4px; background: transparent; color: var(--accent-text); cursor: pointer; }
+.wing .fieldlab-controls button:hover { background: var(--accent); color: var(--bg); }
+.wing nav.wing-nav { margin-top: 1.2rem; display: flex; flex-wrap: wrap; gap: 0.5rem 1.1rem; }
+.wing nav.wing-nav a { color: var(--accent-text); text-decoration: none; font-size: 0.95rem; border-bottom: 1px solid transparent; }
+.wing nav.wing-nav a:hover { border-bottom-color: var(--accent); }
+
+/* --- left navigation rail --------------------------------------------------
+ * REUSES the canonical .rail component from public/index.html (identical
+ * .layout / .rail / .rail-inner / .mark / a.nav / .ext structure and verbatim
+ * values), so the wing's sidebar is visually indistinguishable from the home
+ * page's nav — one nav language across the site. Scoped under .wing. The
+ * in-hero .wing-nav stays in the markup as the <1100px fallback (rail hides
+ * there, exactly as index.html hides its rail). Token-driven; theme-agnostic.
+ * If index.html's .rail rules change, re-mirror them here. */
+.wing .layout { display: grid; grid-template-columns: 208px minmax(0, 1fr); }
+.wing .rail { border-right: 1px solid var(--rule); }
+.wing .rail-inner {
+  position: sticky; top: 0; padding: 30px 22px;
+  display: flex; flex-direction: column;
+}
+.wing .rail .mark {
+  font-family: var(--serif); font-size: 1.02rem; font-weight: 600;
+  color: var(--ink); text-decoration: none; margin-bottom: 22px; line-height: 1.3;
+}
+.wing .rail a.nav {
+  font-family: var(--mono); font-size: 11.5px; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--ink-soft); text-decoration: none; padding: 7px 0;
+}
+.wing .rail a.nav:hover { color: var(--accent-text); }
+.wing .rail a.nav[aria-current="true"] { color: var(--accent-text); }
+.wing .rail a.nav[aria-current="true"]::before { content: "— "; }
+.wing .rail .ext { margin-top: 16px; border-top: 1px solid var(--rule); padding-top: 14px; }
+@media (max-width: 1099px) {
+  .wing .layout { display: block; }
+  .wing .rail { display: none; }
+}
+@media (min-width: 1100px) {
+  .wing nav.wing-nav { display: none; }   /* rail replaces the hero jump-list on desktop */
+}
+
+.wing .exhibit { border-bottom: 1px solid var(--rule); padding: 2.2rem 0; }
+.wing .exhibit:last-of-type { border-bottom: none; }
+.wing .exhibit h2 { font-size: 1.5rem; margin: 0.2rem 0 0.4rem; }
+.wing .exhibit .system-tag {
+  font-family: var(--mono); font-size: 0.72rem; color: var(--ink-soft);
+  letter-spacing: 0.06em; text-transform: uppercase;
+}
+.wing .exhibit p { max-width: 44rem; }
+.wing .plain { font-size: 1.05rem; }
+.wing details { margin-top: 1rem; border-top: 1px dashed var(--rule); padding-top: 0.7rem; }
+.wing details > summary {
+  cursor: pointer; font-family: var(--mono); font-size: 0.85rem;
+  color: var(--accent-text); list-style: none;
+}
+.wing details > summary::-webkit-details-marker { display: none; }
+.wing details > summary::before { content: "▸ "; }
+.wing details[open] > summary::before { content: "▾ "; }
+.wing details .depth { margin-top: 0.7rem; color: var(--ink-soft); font-size: 0.98rem; }
+.wing code, .wing kbd { font-family: var(--mono); font-size: 0.9em; }
+.wing kbd {
+  background: var(--bg-raised); border: 1px solid var(--rule);
+  border-radius: 4px; padding: 0.05em 0.4em;
+}
+
+/* --- field lab (T1-a) --------------------------------------------------- */
+.fieldlab {
+  position: relative; background: var(--bg-raised);
+  border: 1px solid var(--rule); border-radius: 10px;
+  margin: 1rem 0 0.6rem; overflow: hidden;
+}
+.fieldlab canvas {
+  display: block; width: 100%; aspect-ratio: 10 / 9;
+  touch-action: none; cursor: grab;
+}
+.fieldlab canvas:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.fieldlab .hint { font-size: 0.85rem; color: var(--ink-soft); padding: 0 0.2rem; }
+
+/* Per-charge q editor (item 3): a small range slider anchored beside a tapped
+   charge. display is toggled inline by field_tracer.js (none <-> flex). */
+.fieldlab-charge-editor {
+  align-items: center; gap: 0.4rem; z-index: 3;
+  background: var(--bg-raised); border: 1px solid var(--accent);
+  border-radius: 7px; padding: 0.25rem 0.5rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.22);
+  font-family: var(--mono); font-size: 0.78rem; color: var(--ink);
+}
+.fieldlab-charge-editor__val { min-width: 3.4em; color: var(--accent-text); font-weight: 600; white-space: nowrap; }
+.fieldlab-charge-editor__range { width: 96px; margin: 0; accent-color: var(--accent); min-height: 22px; }
+
+/* --- sim embed (T1-b): the SW1 wrapper's classes ------------------------ */
+.sim-embed {
+  position: relative; display: block; background: var(--bg-raised);
+  border: 1px solid var(--rule); border-radius: 10px; overflow: hidden;
+  min-height: 220px;
+}
+.sim-embed__poster { position: relative; display: block; }
+.sim-embed__poster img { display: block; width: 100%; height: auto; }
+.sim-embed__engage {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  font-family: var(--mono); font-size: 0.9rem; min-height: 44px; padding: 0.5rem 1.1rem;
+  background: var(--accent); color: #fff; border: none; border-radius: 8px; cursor: pointer;
+}
+.sim-embed__frame { display: block; width: 100%; height: 420px; border: 0; background: var(--bg-raised); }
+.sim-embed__controls { display: flex; gap: 0.5rem; padding: 0.5rem; border-top: 1px solid var(--rule); }
+.sim-embed__controls button {
+  font-family: var(--mono); font-size: 0.85rem; min-height: 44px; min-width: 44px;
+  padding: 0.4rem 0.9rem; background: var(--bg); color: var(--ink);
+  border: 1px solid var(--rule); border-radius: 6px; cursor: pointer;
+}
+.sim-embed__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+@media (max-width: 640px) { .sim-embed__grid { grid-template-columns: 1fr; } }
+/* D5 — a card that spans every column of the embed grid. For scenes that need
+   horizontal room (an orbit) and for any odd card that would otherwise orphan
+   in the 1fr 1fr row. Collapses to a normal single column at the mobile break
+   automatically, since the grid is one column there. */
+.sim-embed__wide { grid-column: 1 / -1; }
+.sim-embed__cap { font-size: 0.85rem; color: var(--ink-soft); margin: 0.4rem 0 0; }
+/* W3 — the embedded frame runs canvas-only (minimal chrome); this per-card
+   link opens the SAME scene in the full simulator (all controls) in a new tab. */
+.sim-embed__full { font-family: var(--mono); white-space: nowrap; }
+
+/* --- wipe slider (T1-c) — consumes public/assets/js/wipe_slider.js ------ */
+.wipe { margin: 1rem 0 0.4rem; }
+.wipe__frame {
+  position: relative; border: 1px solid var(--rule); border-radius: 10px;
+  overflow: hidden; background: var(--bg-raised); line-height: 0;
+}
+.wipe__img { display: block; width: 100%; height: auto; }
+.wipe__img--after { position: absolute; inset: 0; width: 100%; }
+.wipe__badge {
+  position: absolute; top: 8px; font-family: var(--mono); font-size: 0.72rem;
+  background: var(--ink); color: var(--bg); padding: 0.15em 0.55em; border-radius: 4px;
+  line-height: 1.3;
+}
+.wipe__badge--before { left: 8px; }
+.wipe__badge--after { right: 8px; }
+.wipe__handle {
+  position: absolute; top: 0; bottom: 0; width: 2px; background: var(--accent);
+  transform: translateX(-1px); pointer-events: none;
+}
+.wipe__range { width: 100%; margin-bottom: 0.6rem; min-height: 40px; accent-color: var(--accent); }
+.wipe__grab { position: absolute; top: 0; bottom: 0; left: 0; width: 24px; margin-left: -12px; cursor: ew-resize; touch-action: none; pointer-events: auto; }
+.wipe__handle::after { content: ""; position: absolute; top: 50%; left: 50%; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; background: var(--bg); border: 2px solid var(--accent); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.22); }
+.wipe--crop .wipe__frame { aspect-ratio: 1.43; }
+.wipe--crop .wipe__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.wipe noscript { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+.wipe noscript img { width: 100%; height: auto; border: 1px solid var(--rule); border-radius: 8px; }
+
+/* --- terminal replay (T1-d) — consumes assets/terminal_replay.js -------- */
+.term {
+  background: #12171b; color: #d6dde2; border: 1px solid var(--rule);
+  border-radius: 10px; padding: 0.9rem 1rem; font-family: var(--mono);
+  font-size: 0.86rem; line-height: 1.7; overflow-x: auto; margin: 1rem 0 0.4rem;
+}
+.term [data-ty] { display: block; white-space: pre-wrap; }
+.term [data-ty="input"]::before { content: "$ "; color: #7fd3a3; }
+.term [data-ty="input"] { color: #eef3f6; }
+.term [data-ty="comment"] { color: #7d8b95; }
+.term [data-ty="ok"] { color: #7fd3a3; font-weight: 600; }
+/* JS-armed only: hide not-yet-typed lines. JS OFF => attribute absent =>
+ * every line stays visible (the no-JS fallback). */
+.term[data-term-js] [data-ty]:not([data-ty-shown]) { visibility: hidden; }
+.term__replay {
+  margin-top: 0.7rem; font-family: var(--mono); font-size: 0.8rem; min-height: 40px;
+  padding: 0.35rem 0.9rem; background: transparent; color: #7fd3a3;
+  border: 1px solid #33413b; border-radius: 6px; cursor: pointer;
+}
+
+/* --- numbers with receipts (T1-e): reuse the index .readout convention -- */
+.wing .readout { margin-top: 1rem; border-top: 1px solid var(--rule); }
+.wing .readout .row {
+  display: grid; grid-template-columns: auto 1fr auto; gap: 0.4rem 1rem;
+  align-items: baseline; padding: 0.7rem 0; border-bottom: 1px solid var(--rule);
+}
+.wing .readout .val { font-family: var(--mono); font-size: 1.35rem; color: var(--ink); font-variant-numeric: tabular-nums; }
+.wing .readout .lab { font-size: 0.98rem; color: var(--ink-soft); }
+.wing .readout .lab b { color: var(--ink); font-weight: 600; }
+.wing .readout .date { font-family: var(--mono); font-size: 0.74rem; color: var(--accent-text); white-space: nowrap; }
+@media (max-width: 620px) {
+  .wing .readout .row { grid-template-columns: 1fr; gap: 2px; }
+}
+
+/* --- footer ------------------------------------------------------------- */
+.wing footer.wing-foot {
+  border-top: 1px solid var(--rule); padding: 1.6rem 0; margin-top: 1rem;
+  font-size: 0.9rem; color: var(--ink-soft);
+}
+
+/* --- the index systems strip (merged below the fold by the runner) ------ */
+.systems-strip {
+  border-top: 1px solid var(--rule); margin-top: 26px; padding-top: 22px;
+}
+.systems-strip h2 { font-size: 1.3rem; margin: 0.2rem 0 0.4rem; }
+.systems-strip p { color: var(--ink-soft); max-width: 42rem; }
+.systems-strip .strip-link {
+  font-family: var(--mono); font-size: 0.95rem; color: var(--accent-text); text-decoration: none;
+}
+.systems-strip .strip-link:hover { text-decoration: underline; }

@@ -1,0 +1,99 @@
+# pages.yml — build the site and deploy it to GitHub Pages.
+#
+# TWO JOBS, NOT ONE (showcase_site_architecture_v1, D1.1 step 1).
+#
+#   build   runs on ANY branch / PR. Assembles _site/ and runs THE GATE
+#           (build.py stages 0-6), then uploads the Pages artifact.
+#   deploy  needs: build, and `if: github.ref == 'refs/heads/main'`.
+#           It is the ONLY job that can publish.
+#
+# So a branch push PROVES the build and the gate green without touching the live
+# site — and a red gate means the deploy job never starts. That is the whole point:
+# with `actions/deploy-pages`, once the deploy job runs the artifact IS live, and a
+# later check can only turn the workflow red, never un-deploy.
+#
+# WHAT A BRANCH RUN CANNOT PROVE, stated honestly: `actions/deploy-pages` works only
+# when Pages `build_type == workflow`, and the `github-pages` environment restricts
+# deployments to the default branch. So on a branch the BUILD and the GATE are
+# proven and the artifact uploads; the DEPLOY job is first exercised on main.
+#
+# NOT peaceiris: that pushes build output to a branch, recreating the
+# committed-build-output artifact this plan exists to eliminate.
+
+name: Pages
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install the build's only dependency
+        # stage 0 validates the committed JSON against the VENDORED pydantic model.
+        # Nothing else is needed: the build is stdlib + pydantic, by design.
+        run: python -m pip install --quiet "pydantic>=2,<3"
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+        with:
+          # PINNED FALSE ON PURPOSE. `enablement: true` flips the repo's Pages
+          # source to Actions via the API AS A SIDE EFFECT — it would open the
+          # one-way door from inside a branch run. The flip is a deliberate,
+          # ordered, human step (D1.1 step 2).
+          enablement: false
+
+      - name: Build + THE GATE (build.py stages 0-6)
+        run: python build.py --check
+
+      - name: Upload the Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      pages: write
+      id-token: write
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+  smoke:
+    # STAGE 7 — an ALARM, not a gate. It runs AFTER the deploy, so it cannot
+    # prevent one; a red here means: revert the source commit and re-run the
+    # workflow, which re-deploys the previous good artifact.
+    needs: deploy
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Wait for the CDN to settle
+        run: sleep 30
+      - name: Post-deploy smoke (build.py stage 7)
+        run: python build.py --smoke --base-url "https://wischman123.github.io"

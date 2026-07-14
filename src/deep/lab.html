@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- showcase-generated:systems_showcase_deepdive_v2 -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex, nofollow">
+  <title>The lab — the collaboration experiments on itself</title>
+  <style>
+    /* ---------- palette (echoes docs/architecture/hexagonal_engine_v1.html) ---------- */
+    :root{
+      --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --mono: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+
+      --paper:#e9eef6; --card:#ffffff; --text:#101d31; --muted:#566885; --line:#d5deec;
+      --core:#2f63ff; --mech:#7a5cf0; --drive:#0f9d8f; --driven:#c67f22;
+      --subject:#dc4046; --gate:#5d6c82; --edge:#6a7a92;
+      --radius:14px;
+      --shadow:0 1px 2px rgba(16,29,49,.06), 0 10px 30px rgba(16,29,49,.07);
+    }
+    @media (prefers-color-scheme: dark){
+      :root{
+        --paper:#080d18; --card:#0e1626; --text:#e6edf8; --muted:#93a2bd; --line:#1d2942;
+        --core:#5f8bff; --mech:#9a86ff; --drive:#2fd4bf; --driven:#eab24a;
+        --subject:#ff6a70; --gate:#8b9ab2; --edge:#8494ad;
+        --shadow:0 1px 2px rgba(0,0,0,.4), 0 18px 46px rgba(0,0,0,.45);
+      }
+    }
+    /* explicit toggle wins in both directions */
+    :root[data-theme="light"]{
+      --paper:#e9eef6; --card:#ffffff; --text:#101d31; --muted:#566885; --line:#d5deec;
+      --core:#2f63ff; --mech:#7a5cf0; --drive:#0f9d8f; --driven:#c67f22;
+      --subject:#dc4046; --gate:#5d6c82; --edge:#6a7a92;
+      --shadow:0 1px 2px rgba(16,29,49,.06), 0 10px 30px rgba(16,29,49,.07);
+    }
+    :root[data-theme="dark"]{
+      --paper:#080d18; --card:#0e1626; --text:#e6edf8; --muted:#93a2bd; --line:#1d2942;
+      --core:#5f8bff; --mech:#9a86ff; --drive:#2fd4bf; --driven:#eab24a;
+      --subject:#ff6a70; --gate:#8b9ab2; --edge:#8494ad;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 18px 46px rgba(0,0,0,.45);
+    }
+
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;background:var(--paper);color:var(--text);font-family:var(--sans);
+      line-height:1.6;-webkit-font-smoothing:antialiased;}
+    a{color:var(--core);text-decoration:none}
+    a:hover{text-decoration:underline}
+    .wrap{max-width:1180px;margin:0 auto;padding:clamp(20px,4vw,56px) clamp(16px,4vw,40px) 40px;}
+
+    .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.22em;text-transform:uppercase;
+      color:var(--core);margin:0 0 14px;display:flex;align-items:center;gap:10px;}
+    .eyebrow::before{content:"";width:26px;height:2px;background:var(--core);display:inline-block;}
+    h1{font-size:clamp(30px,5vw,50px);line-height:1.05;letter-spacing:-.022em;font-weight:820;
+      margin:0 0 16px;text-wrap:balance;max-width:22ch;}
+    .dek{font-size:clamp(16px,2.1vw,19px);color:var(--muted);max-width:66ch;margin:0;}
+
+    /* ---------- the stat contract (gate e) ---------- */
+    .stat{font-family:var(--mono);font-weight:700;font-variant-numeric:tabular-nums;
+      color:var(--text);background:color-mix(in srgb,var(--core) 12%, transparent);
+      border-radius:6px;padding:.04em .4em;white-space:nowrap;}
+    .stat--pinned{background:color-mix(in srgb,var(--driven) 16%, transparent);}
+    .stat__pin{font-size:.8em;color:var(--driven);margin-left:.15em;vertical-align:super;}
+
+    .foot{margin-top:64px;padding-top:24px;border-top:1px solid var(--line);
+      font-family:var(--mono);font-size:12px;color:var(--muted);line-height:1.9;}
+    .foot .rule{color:var(--text);}
+
+    /* ---------- accessibility: honor a reduced-motion preference ---------- */
+    @media (prefers-reduced-motion: reduce){
+      html{scroll-behavior:auto}
+      *,*::before,*::after{
+        animation-duration:.001ms !important; animation-iteration-count:1 !important;
+        transition-duration:.001ms !important; scroll-behavior:auto !important;
+      }
+    }
+
+    /* ---------- the shared site rail + next-page banner ----------
+       The whole SITE is one narrative and the LINK ORDER is a deliberate spine
+       (not alphabetical). Order + labels live in ONE canonical (slug, label)
+       list — tools/showcase/deep_nav.py::SITE_NAV — installed as the `site_nav`
+       Jinja global; the rail below AND the bottom .nextbar banner both DERIVE
+       from it, so this template and the root-page injector cannot drift.
+
+       HREFS are derived per directory depth by deep_nav.py::href_for(slug,
+       context) — NOT baked. From here the context is always "deep": wing peers
+       are bare filenames, and a ROOT page (index/systems/architecture/videos,
+       which live one directory UP from deep/) correctly becomes ../x.html.
+
+       The STYLING below is included from _siterail.css — the same file
+       inject_site_rail.py reads as text and emits inside its marked block on
+       each root page (they do not extend this template, so they cannot inherit
+       these rules). One source, two consumers. _deepnav.css is RETIRED BY
+       DISUSE (its .nextbar block was folded into _siterail.css); it and
+       inject_arch_nav.py are left on disk — deleting source files needs
+       Brendan's explicit approval. */
+/* ---------- the site rail: ONE left rail, every page ----------
+   THE ONE SOURCE for the .siterail component AND the .nextbar next-page banner.
+
+   TWO consumers, one file (do NOT paste a divergent copy into either):
+     * base.html.j2 — pulls this in with a Jinja include, inside its style
+       block, so every deep/*.html page gets it.
+     * inject_site_rail.py — reads this file as TEXT and emits it INSIDE its
+       marked block on each ROOT page (index / systems / architecture / videos),
+       which do not extend the Jinja base and so cannot inherit the styles.
+
+   WARNING — this file is parsed by Jinja (base.html.j2 includes it), so it must
+   contain NO Jinja delimiters ANYWHERE, comments included. Writing the include
+   tag literally in a comment once made _deepnav.css include ITSELF and the build
+   died with RecursionError (2026-07-12). Describe the tag in prose; never spell
+   it out here. Single CSS braces are fine and are all this file uses.
+
+   .nextbar WAS in _deepnav.css and is FOLDED IN here verbatim, on purpose: the
+   rail replaced the .deepnav strip, so a page that stopped including _deepnav.css
+   would have silently lost the bottom banner too — the very control the next
+   phase exists to refine. One file carries both, so that cannot happen.
+
+   THE NEXT BAND (review item 9) — READ THIS BEFORE TOUCHING EITHER BAND.
+   The site has TWO bottom bands, and the obvious one is the WRONG one:
+
+     * .arch-fade — the LAST CONTENT BLOCK of the FRONT page (index.html), whose
+       destination is architecture.html. Brendan's review items 1-8 are all
+       front-page items and the destination he named is Architecture, so THIS is
+       the band he hovered. Its rules used to live in index.html's own inline
+       style block, where its ONLY hover was an underline on the headline — no
+       background change at all, i.e. no affordance.
+     * .nextbar — the derived next-page banner on the deep pages and on
+       architecture.html. Its hover was a --core tint 6% -> 12% OVER TRANSPARENT,
+       which reads as nothing.
+
+   Fixing only .nextbar ships item 9 "done" while the band Brendan was actually
+   looking at still looks dead. So the affordance is ONE contract — .nextband —
+   and BOTH bands consume it: cursor, resting tint, a clear background lift on
+   hover, a border-colour change, an arrow that steps forward, an underline on
+   the destination line, and :focus-visible preserved for the keyboard. Each
+   band then adds only its own LAYOUT. Do not re-add a hover rule to either band:
+   a second copy is how the two drift apart again.
+
+   TWO PALETTES, ONE COMPONENT. The deep pages and index/architecture/videos
+   carry the CANONICAL custom properties (--text/--muted/--line/--core/--paper,
+   from theme.css or base.html.j2's inline copy). The root systems.html still
+   links the older assets/site.css, which declares ONLY the COMPAT names
+   (--ink/--ink-soft/--rule/--accent-text/--bg). So every colour below is read
+   through a --rail-* alias with a var() fallback chain: canonical first, compat
+   second, a literal last. The rail therefore renders correctly on BOTH palettes
+   without this component re-theming systems.html (not its call to make). The
+   chain flows canonical -> compat ONLY, never back — theme.css's cycle hazard.
+
+   (This comment ships inside every deep page, so it deliberately avoids the
+   word the meta wing's "no cost claims" gate scans for — see test_meta.py.)
+
+   Link ORDER and labels are NOT here — they live in deep_nav.py::SITE_NAV.
+   Hrefs are derived per directory depth by deep_nav.py::href_for. */
+
+:root{
+  --railw:208px;
+}
+
+.siterail,.nextband{
+  --rail-fg:var(--text, var(--ink, #101d31));
+  --rail-dim:var(--muted, var(--ink-soft, #566885));
+  --rail-line:var(--line, var(--rule, #d5deec));
+  --rail-accent:var(--core, var(--accent-text, #2f63ff));
+  --rail-bg:var(--paper, var(--bg, #e9eef6));
+}
+
+/* ---------- desktop: a fixed left column ---------- */
+.siterail{
+  position:fixed;top:0;left:0;bottom:0;width:var(--railw);z-index:30;
+  background:var(--rail-bg);border-right:1px solid var(--rail-line);
+  overflow-y:auto;overscroll-behavior:contain;
+}
+.siterail__inner{display:flex;flex-direction:column;padding:30px 22px 26px;}
+
+.siterail__mark{display:flex;flex-direction:column;
+  font-family:var(--serif, var(--sans, sans-serif));font-size:1.02rem;font-weight:600;
+  line-height:1.3;color:var(--rail-fg);text-decoration:none;margin:0 0 22px;}
+.siterail__mark:hover{color:var(--rail-accent);text-decoration:none;}
+
+.siterail__zone{display:flex;flex-direction:column;}
+.siterail__zone + .siterail__zone{margin-top:16px;padding-top:14px;
+  border-top:1px solid var(--rail-line);}
+.siterail__title{font-family:var(--mono, monospace);font-size:10px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--rail-dim);opacity:.7;margin:0 0 4px;}
+
+/* The CURRENT-PAGE MARKER is aria-current="page" — the HTML-spec value — for
+   BOTH zones. The rail this replaced used aria-current="true" for its scrollspy
+   while .deepnav used "page"; two spellings meant two sets of selectors that had
+   to agree. One spelling now, and the ported scrollspy sets exactly this one. */
+.siterail a.rail-anchor,.siterail a.rail-page{
+  font-family:var(--mono, monospace);font-size:11.5px;text-transform:uppercase;
+  letter-spacing:.08em;color:var(--rail-dim);text-decoration:none;
+  padding:7px 0;line-height:1.35;}
+.siterail a.rail-anchor:hover,.siterail a.rail-page:hover{
+  color:var(--rail-accent);text-decoration:none;}
+.siterail a.rail-anchor[aria-current="page"],.siterail a.rail-page[aria-current="page"]{
+  color:var(--rail-accent);}
+.siterail a.rail-anchor[aria-current="page"]::before,
+.siterail a.rail-page[aria-current="page"]::before{content:"— ";}
+.siterail a:focus-visible{outline:2px solid var(--rail-accent);outline-offset:2px;}
+
+/* The rail is FIXED, so it is out of flow and cannot push anything: every page's
+   content is inset by its width from ONE rule here. The pages themselves know
+   nothing about the rail — which is what lets the same component drop onto four
+   hand-authored root pages and six generated ones with no per-page layout edit. */
+@media (min-width:1100px){
+  body{padding-left:var(--railw);}
+}
+
+/* ---------- mobile: the rail COLLAPSES, it does not vanish ----------
+   This is a first-class deliverable, not an edge case. The rail this replaced
+   had exactly one mobile rule — .rail{display:none} at 1099px, with NO fallback
+   — while the .deepnav strip it ALSO replaced was a flex-wrap bar that worked at
+   every width. Shipping the rail as-was would therefore have removed ALL
+   navigation from every deep page below 1100px. Below the same real breakpoint
+   the rail becomes a sticky top bar: the mark, then each zone as a horizontally
+   scrollable chip row (the pattern code.html.j2's TOC already used at its narrow
+   width). Verified at 900px and at 500px — a nav is reachable at both. */
+@media (max-width:1099px){
+  .siterail{position:sticky;top:0;left:auto;bottom:auto;width:auto;height:auto;
+    border-right:0;border-bottom:1px solid var(--rail-line);
+    background:color-mix(in srgb, var(--rail-bg) 88%, transparent);
+    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+    overflow:visible;}
+  .siterail__inner{flex-direction:column;align-items:stretch;gap:4px;
+    max-width:1180px;margin:0 auto;padding:9px clamp(12px,4vw,24px);}
+  .siterail__mark{flex-direction:row;gap:.35em;margin:0 0 2px;font-size:.95rem;}
+  .siterail__title{display:none;}
+  .siterail__zone{flex-direction:row;flex-wrap:nowrap;gap:4px;
+    overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px;}
+  .siterail__zone + .siterail__zone{margin-top:0;padding-top:0;border-top:0;}
+  .siterail a.rail-anchor,.siterail a.rail-page{
+    flex:0 0 auto;white-space:nowrap;font-size:11px;
+    padding:5px 10px;border-radius:8px;}
+  .siterail a.rail-anchor[aria-current="page"],.siterail a.rail-page[aria-current="page"]{
+    color:var(--rail-fg);
+    background:color-mix(in srgb, var(--rail-accent) 15%, transparent);}
+  .siterail a.rail-anchor[aria-current="page"]::before,
+  .siterail a.rail-page[aria-current="page"]::before{content:none;}
+}
+
+/* ================= THE NEXT BAND — ONE affordance, BOTH bands =================
+   The whole band is the button. Both bands were ALREADY whole-band anchors, so
+   the click target was never the defect — the defect was that nothing on screen
+   said so. Every rule that makes a band FEEL like a control lives here, once:
+
+     resting tint     a band is visibly a control before you touch it (it used to
+                      be flat paper, indistinguishable from a footer);
+     hover lift       6% -> 18% of the accent, mixed against the PAPER, not
+                      against `transparent`. That was the old bug: a 6% -> 12%
+                      transparent tint is a ~6% alpha change over whatever is
+                      behind it, which is why the hover "did nothing";
+     border           the top rule goes accent-coloured, so the band's whole
+                      outline answers the pointer, not just its middle;
+     cursor           pointer, everywhere in the band — including its padding;
+     arrow            steps forward 5px (its own class, so a band with no arrow
+                      simply has nothing to translate);
+     label            the destination line underlines — the classic link cue,
+                      kept from .arch-fade's old hover and given to .nextbar too;
+     keyboard         :focus-visible gets the SAME lift plus the focus ring, so
+                      the affordance is not mouse-only.
+
+   The motion is the only new thing here that a reader can be hurt by, so it is
+   switched off under prefers-reduced-motion at the bottom of this block — the
+   root pages have no reduced-motion block of their own to fall back on. */
+.nextband{
+  display:block;                 /* each band overrides with its own layout */
+  cursor:pointer;
+  text-decoration:none;
+  color:var(--rail-fg);
+  border-top:1px solid var(--rail-line);
+  background:color-mix(in srgb, var(--rail-accent) 6%, var(--rail-bg));
+  transition:background-color .16s ease, border-color .16s ease;
+}
+.nextband:hover,.nextband:focus-visible{
+  background:color-mix(in srgb, var(--rail-accent) 18%, var(--rail-bg));
+  border-top-color:var(--rail-accent);
+  text-decoration:none;
+}
+.nextband:focus-visible{outline:2px solid var(--rail-accent);outline-offset:-3px;}
+.nextband__arrow{display:inline-block;transition:transform .16s ease;}
+.nextband:hover .nextband__arrow,.nextband:focus-visible .nextband__arrow{
+  transform:translateX(5px);}
+.nextband:hover .nextband__label,.nextband:focus-visible .nextband__label{
+  text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px;}
+@media (prefers-reduced-motion: reduce){
+  .nextband,.nextband__arrow{transition:none;}
+  .nextband:hover .nextband__arrow,.nextband:focus-visible .nextband__arrow{
+    transform:none;}
+}
+
+/* ---------- band 1: the next-page banner (folded in from _deepnav.css) -------
+   A full-width page-level "next" control at the FOOT of a deep page (and of
+   architecture.html), DERIVED from the deep_nav spine: the entry after the
+   active page; the last wing page -> the site front page. LAYOUT ONLY — its
+   hover/focus/cursor come from .nextband above. */
+.nextbar{display:flex;align-items:center;justify-content:space-between;gap:16px;
+  max-width:1180px;margin:24px auto 0;padding:18px clamp(16px,4vw,40px);}
+.nextbar__text{display:flex;flex-direction:column;gap:3px;min-width:0;}
+.nextbar__eyebrow{font-family:var(--mono, monospace);font-size:11px;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--rail-accent);font-weight:700;}
+.nextbar__dest{font-size:clamp(19px,2.5vw,24px);font-weight:820;
+  letter-spacing:-.015em;color:var(--rail-fg);line-height:1.1;}
+.nextbar__arrow{font-size:26px;line-height:1;color:var(--rail-accent);font-weight:700;flex:none;}
+
+/* ---------- band 2: the front page's hand-off into architecture.html ---------
+   MOVED HERE from index.html's own inline style block (2026-07-12). It stayed
+   private for as long as it was a bespoke GRADIENT — the homepage's warm paper
+   dissolving into architecture.html's cool paper. theme.css gave both pages one
+   palette, so there are no longer two papers to blend: the gradient is gone, the
+   band is flat, and what remains is the same control .nextbar is. Keeping a
+   second private copy of "how a next band behaves" is precisely how the front
+   page ends up with a dead-looking hover while the gate reports green.
+
+   LAYOUT ONLY, like .nextbar. The colours read through the --rail-* aliases (not
+   --paper/--rule directly) so the band survives on either palette, exactly as the
+   rail does. */
+.arch-fade{display:grid;justify-items:center;gap:10px;
+  margin-top:72px;padding:64px 24px;text-align:center;}
+.arch-fade .cue{font-family:var(--mono, monospace);font-size:12px;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--rail-dim);}
+.arch-fade .headline{font-family:var(--serif, serif);font-size:1.5rem;font-weight:600;
+  color:var(--rail-fg);}
+.arch-fade .sub{font-size:.95rem;color:var(--rail-dim);max-width:46ch;}
+/* The band's own bottom padding already carries the gap to whatever follows, so
+   the footer's top margin would double it. Collapse it only in that adjacency —
+   a standalone .footer keeps its own. */
+.arch-fade + .footer{margin-top:0;}
+
+  section{margin-top:56px;}
+  .exhibit{background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:22px 24px;box-shadow:var(--shadow);}
+  .exhibit + .exhibit{margin-top:22px;}
+  .exhibit .kicker{font-family:var(--mono);font-size:11px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--core);font-weight:700;}
+  .exhibit .head{display:flex;align-items:baseline;justify-content:space-between;
+    gap:14px;flex-wrap:wrap;margin:6px 0 10px;}
+  .exhibit h2{font-size:20px;font-weight:780;margin:0;}
+  .exhibit h2 .tname{font-family:var(--mono);font-size:17px;color:var(--core);}
+  .exhibit p{margin:0 0 14px;color:var(--muted);font-size:14.5px;line-height:1.65;max-width:76ch;}
+  .exhibit p b{color:var(--text);}
+
+  /* status badges (gate a: the pending one must render, visibly) */
+  .status{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.06em;
+    text-transform:uppercase;padding:.3em .65em;border-radius:6px;white-space:nowrap;}
+  .status--shipped{color:var(--drive);background:color-mix(in srgb,var(--drive) 15%, transparent);}
+  .status--pending{color:var(--gate);background:color-mix(in srgb,var(--gate) 18%, transparent);}
+
+  /* stat strip */
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;}
+  .cell{border:1px solid var(--line);border-left:3px solid var(--mech);border-radius:10px;
+    padding:12px 14px;background:color-mix(in srgb,var(--card) 60%, transparent);}
+  .cell .n{font-family:var(--mono);font-size:19px;font-weight:800;color:var(--text);}
+  .cell .l{margin-top:4px;color:var(--muted);font-size:12.5px;line-height:1.5;}
+  </style>
+</head>
+<body class="lab">
+<aside class="siterail" aria-label="Site navigation">
+  <div class="siterail__inner">
+    <a class="siterail__mark" href="../index.html"><span>Brendan</span><span>Wischweh</span></a>    <nav class="siterail__zone siterail__zone--site" aria-label="The site">
+      <p class="siterail__title">The site</p>      <a class="rail-page" href="../index.html">Home</a>      <a class="rail-page" href="../architecture.html">Architecture</a>      <a class="rail-page" href="code.html">Code</a>      <a class="rail-page" href="verification.html">Formal&nbsp;Verification</a>      <a class="rail-page" href="lab.html" aria-current="page">The&nbsp;Lab</a>      <a class="rail-page" href="meta.html">Meta&nbsp;Tools</a>      <a class="rail-page" href="engine.html">Engine&nbsp;Room</a>      <a class="rail-page" href="systems.html">Systems&nbsp;Atlas</a>      <a class="rail-page" href="sims.html">Sims</a>      <a class="rail-page" href="gallery.html">Gallery</a>      <a class="rail-page" href="../videos.html">Videos</a>    </nav>
+  </div>
+</aside><script>
+(function () {
+  function start() {
+    var links = {};
+    var ids = [];
+    Array.prototype.forEach.call(
+      document.querySelectorAll('.siterail a.rail-anchor[href^="#"]'),
+      function (a) {
+        var id = a.getAttribute('href').slice(1);
+        if (!id) return;
+        links[id] = a;
+        ids.push(id);
+      }
+    );
+    if (!ids.length || !('IntersectionObserver' in window)) return;
+    var spy = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        ids.forEach(function (id) { links[id].removeAttribute('aria-current'); });
+        var link = links[e.target.id];
+        if (link) link.setAttribute('aria-current', 'page');
+      });
+    }, { rootMargin: '-35% 0px -55% 0px' });
+    ids.forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) spy.observe(el);
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', start);
+  } else {
+    start();
+  }
+})();
+</script>
+<main class="wrap">
+  <p class="eyebrow">The lab</p>
+  <h1>The collaboration experiments on itself</h1>
+  <p class="dek">Every other page shows machinery that keeps the <em>work</em>
+    honest. This page turns the instruments around: the collaboration is the
+    specimen &mdash; its habits measured under controlled conditions, its own
+    configuration put on trial, its tests audited for wishful thinking, even
+    its conversation medium rebuilt. Verdicts render as what they are &mdash;
+    including the ones still pending.</p>
+
+  <!-- ============ 1. /explore — the collaborator's modes, measured ============ -->
+  <section class="exhibit" data-status="shipped" aria-labelledby="explore-h">
+    <div class="kicker">Is prompting folklore measurable?</div>
+    <div class="head">
+      <h2 id="explore-h"><span class="tname">/explore</span> &mdash; the
+        collaborator&rsquo;s modes, under controlled conditions</h2>
+      <span class="status status--shipped">Shipped as a skill</span>
+    </div>
+    <p>Ask an assistant for ideas and it hedges &mdash; fluent, agreeable, and
+      quietly useless where honesty matters most. Instead of accepting that as
+      temperament, the collaboration ran <b>controlled experiments on
+      itself</b>: same task, repeated runs, one cue varied at a time, scored by
+      fixed measures. Two levers survived every ablation &mdash; explicit
+      <b>tolerance for weak ideas</b> and <b>altitude</b> &mdash; and a short
+      named cue reproduces the full effect across models. The winning cue now
+      ships as a skill that logs each invocation, so the lab result keeps
+      getting re-tested by ordinary use.</p>
+    <div class="strip">
+      <div class="cell"><div class="n"><span class="stat" data-source="tools/mode_experiments/results.jsonl — status==&#39;completed&#39; rows" data-verified="2026-07-13" data-provenance="verified" title="source: tools/mode_experiments/results.jsonl — status==&#39;completed&#39; rows · verified 2026-07-13">86</span></div>
+        <div class="l">completed headless runs in the experiment log.</div></div>
+      <div class="cell"><div class="n"><span class="stat" data-source="tools/mode_experiments/specs/e*.yaml excluding *smoke* (E1, E2, E4, E5, E6)" data-verified="2026-07-13" data-provenance="verified" title="source: tools/mode_experiments/specs/e*.yaml excluding *smoke* (E1, E2, E4, E5, E6) · verified 2026-07-13">5</span></div>
+        <div class="l">designed experiments &mdash; ablations, pilots, a
+          power run, a cross-model check.</div></div>
+      <div class="cell"><div class="n"><span class="stat stat--pinned" data-source="hand-pinned from tools/mode_experiments/specs/e5_hedging_maxcontrast_power.yaml (E5 header: Cohen&#39;s d on hedges/100w) + the /explore skill&#39;s validated-findings note; no machine-readable effect-size artifact located (probe 2026-07-13)" data-verified="2026-07-13" data-provenance="hand-pinned" title="source: hand-pinned from tools/mode_experiments/specs/e5_hedging_maxcontrast_power.yaml (E5 header: Cohen&#39;s d on hedges/100w) + the /explore skill&#39;s validated-findings note; no machine-readable effect-size artifact located (probe 2026-07-13) · verified 2026-07-13 (hand-pinned)">-5.28<span class="stat__pin" aria-hidden="true">†</span></span></div>
+        <div class="l">effect size (Cohen&rsquo;s d) of the tolerance lever on
+          hedging &mdash; large, and in the honest direction.</div></div>
+      <div class="cell"><div class="n"><span class="stat stat--pinned" data-source="hand-pinned from tools/mode_experiments/specs/e5_hedging_maxcontrast_power.yaml (E5 header: Cohen&#39;s d on hedges/100w) + the /explore skill&#39;s validated-findings note; no machine-readable effect-size artifact located (probe 2026-07-13)" data-verified="2026-07-13" data-provenance="hand-pinned" title="source: hand-pinned from tools/mode_experiments/specs/e5_hedging_maxcontrast_power.yaml (E5 header: Cohen&#39;s d on hedges/100w) + the /explore skill&#39;s validated-findings note; no machine-readable effect-size artifact located (probe 2026-07-13) · verified 2026-07-13 (hand-pinned)">-2.26<span class="stat__pin" aria-hidden="true">†</span></span></div>
+        <div class="l">effect size of the altitude lever &mdash; the second
+          keeper.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ 2. real_gate_check — tests that test nothing ============ -->
+  <section class="exhibit" data-status="shipped" aria-labelledby="gates-h">
+    <div class="kicker">Who audits the tests?</div>
+    <div class="head">
+      <h2 id="gates-h"><span class="tname">real_gate_check</span> &mdash;
+        finding the tests that test nothing</h2>
+      <span class="status status--shipped">Shipped, warn-tier</span>
+    </div>
+    <p>A quality gate&rsquo;s test suite can stay green forever while proving
+      nothing: every test feeds the gate a doctored fixture, and the gate&rsquo;s
+      <b>real default path never runs</b>. That failure is invisible precisely
+      because everything is passing. This detector reads each gate&rsquo;s tests
+      statically and asks one question per call-site &mdash; does any test ever
+      exercise the gate as it actually runs in production? A gate whose every
+      test injects overrides gets flagged. Deliberately precision-first: it
+      would rather miss a case than cry wolf.</p>
+    <div class="strip">
+      <div class="cell"><div class="n"><span class="stat" data-source="tools/real_gate_check/runs.jsonl — latest run (2026-07-07, target_set frq_promote_gates_v1)" data-verified="2026-07-13" data-provenance="verified" title="source: tools/real_gate_check/runs.jsonl — latest run (2026-07-07, target_set frq_promote_gates_v1) · verified 2026-07-13">7</span></div>
+        <div class="l">gates audited in the first target set.</div></div>
+      <div class="cell"><div class="n"><span class="stat" data-source="tools/real_gate_check/runs.jsonl — latest run (2026-07-07, target_set frq_promote_gates_v1) — counts.flagged" data-verified="2026-07-13" data-provenance="verified" title="source: tools/real_gate_check/runs.jsonl — latest run (2026-07-07, target_set frq_promote_gates_v1) — counts.flagged · verified 2026-07-13">2</span></div>
+        <div class="l">flagged &mdash; tested only ever through fixture
+          overrides.</div></div>
+      <div class="cell"><div class="n"><span class="stat" data-source="tools/real_gate_check/runs.jsonl — latest run (2026-07-07, target_set frq_promote_gates_v1) — counts.ok" data-verified="2026-07-13" data-provenance="verified" title="source: tools/real_gate_check/runs.jsonl — latest run (2026-07-07, target_set frq_promote_gates_v1) — counts.ok · verified 2026-07-13">3</span></div>
+        <div class="l">exercise their real default path.</div></div>
+      <div class="cell"><div class="n"><span class="stat" data-source="tools/real_gate_check/runs.jsonl — latest run (2026-07-07, target_set frq_promote_gates_v1) — counts.untested" data-verified="2026-07-13" data-provenance="verified" title="source: tools/real_gate_check/runs.jsonl — latest run (2026-07-07, target_set frq_promote_gates_v1) — counts.untested · verified 2026-07-13">2</span></div>
+        <div class="l">had no test call-sites at all &mdash; a different
+          problem, named separately.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ 4. /inline-chat — the document IS the conversation ============ -->
+  <section class="exhibit" data-status="shipped" aria-labelledby="inline-h">
+    <div class="kicker">What if the medium is the problem?</div>
+    <div class="head">
+      <h2 id="inline-h"><span class="tname">/inline-chat</span> &mdash; the
+        conversation that lives in the document</h2>
+      <span class="status status--shipped">Shipped as a skill</span>
+    </div>
+    <p>Long design threads die in chat: the reasoning scrolls away, and none of
+      it is searchable where the work lives. So the medium was rebuilt.
+      The assistant writes its analysis <b>into a versioned document</b> with
+      reply boxes; the teacher answers inside the document, in Word, on his own
+      time; the assistant diffs the returned copy against its pristine
+      snapshot, folds the answers in, and issues the next version. The
+      conversation has no transcript because <b>the document trail is the
+      conversation</b> &mdash; versioned, greppable, resumable weeks later.</p>
+    <div class="strip">
+      <div class="cell"><div class="n"><span class="stat" data-source="InlineChats/zz_registry.json — threads[] count (content plane)" data-verified="2026-07-13" data-provenance="verified" title="source: InlineChats/zz_registry.json — threads[] count (content plane) · verified 2026-07-13">5</span></div>
+        <div class="l">registered threads, each addressed by a human alias,
+          never a filename.</div></div>
+      <div class="cell"><div class="n"><span class="stat" data-source="tools/org_doc/snapshots/physics_org_design_v*.docx — versioned snapshot count" data-verified="2026-07-13" data-provenance="verified" title="source: tools/org_doc/snapshots/physics_org_design_v*.docx — versioned snapshot count · verified 2026-07-13">12</span></div>
+        <div class="l">versioned rounds on the flagship thread &mdash; a
+          whole design negotiated inside one document.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ 4. config_experiment — the config on trial (pending, LAST) ============ -->
+  <section class="exhibit" data-status="pending" aria-labelledby="config-h">
+    <div class="kicker">Does the standing configuration earn its keep?</div>
+    <div class="head">
+      <h2 id="config-h"><span class="tname">config_experiment</span> &mdash;
+        the collaboration&rsquo;s own rulebook, on trial</h2>
+      <span class="status status--pending">Verdict pending</span>
+    </div>
+    <p>Months of accumulated instructions, memory files, hooks and skills ride
+      along on every single prompt &mdash; and almost nobody ever asks whether
+      that standing configuration actually helps. This harness asks: the same
+      assistant booted three ways &mdash; the full configuration, a bare
+      vanilla one, and one stripped to a single load-bearing rule &mdash; each
+      in a fully <b>isolated profile</b>, run against the same tasks. The
+      profiles are staged and the launcher works; the comparison itself has
+      not run. That is the honest status, and this page is built to say so
+      rather than imply a conclusion.</p>
+    <div class="strip">
+      <div class="cell"><div class="n"><span class="stat" data-source="tools/config_experiment/profiles — profile dirs (a-vanilla, b-lightweight)" data-verified="2026-07-13" data-provenance="verified" title="source: tools/config_experiment/profiles — profile dirs (a-vanilla, b-lightweight) · verified 2026-07-13">2</span></div>
+        <div class="l">isolated configuration profiles staged on disk,
+          bootable on demand.</div></div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <span class="rule">The instruments point both ways.</span>
+    A collaboration confident enough to grade its own memory, put its own
+    rulebook on trial, and audit its own tests is one whose claims elsewhere
+    can be taken seriously. The pending verdict on this page is rendered by a
+    build gate, not by good intentions.
+    <br>Explore <a href="meta.html">&rarr; the machinery that stays correct</a> &middot;
+    <a href="engine.html">&rarr; how a wrong answer never ships</a> &middot;
+    <a href="../index.html#story">&rarr; one problem's life</a>.
+  </footer>
+</main>
+  <a class="nextbar nextband" href="meta.html">
+    <span class="nextbar__text">
+      <span class="nextbar__eyebrow">Next</span>
+      <span class="nextbar__dest nextband__label">Meta&nbsp;Tools</span>
+    </span>
+    <span class="nextbar__arrow nextband__arrow" aria-hidden="true">&rarr;</span>
+  </a>
+</body>
+</html>
