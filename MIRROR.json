@@ -1,8 +1,8 @@
 {
   "schema": 1,
   "source_repo": "physics",
-  "source_commit": "81be5428bf9cb94fbb3de9434f4e4086dcfa7606",
-  "sim_source_commit": "81be5428bf9cb94fbb3de9434f4e4086dcfa7606",
+  "source_commit": "3e8dac327eb1a3acc4bafab4a0b108bdafd0792b",
+  "sim_source_commit": "3e8dac327eb1a3acc4bafab4a0b108bdafd0792b",
   "determinism_excluded_keys": [
     "generated_at"
   ],
@@ -152,7 +152,7 @@
       "rule": "assets"
     },
     "src/data/showcase_data.json": {
-      "sha256": "632938b408b0a8844bb78397c6a177606800b84fcd731ed35034d678868e84ff",
+      "sha256": "6399da491d2f1d756a078fe6247267cc3b3753f7b7092e7c15a3198181182012",
       "rule": "data"
     },
     "src/deep/assets/engine/gate_rejection.png": {
@@ -292,35 +292,35 @@
       "rule": "pages"
     },
     "src/deep/engine.html": {
-      "sha256": "d9d24d7756eeeb2ce81a9786476f54711a1cfbdeb5227127cc04ca20a42fbfca",
+      "sha256": "eb9c66b80ffeb9a42e7ef7c9ffa6a92cab4d5cb5e6467da6cd35ec2af8cc9b4b",
       "rule": "pages"
     },
     "src/deep/gallery.html": {
-      "sha256": "6341d54909eef1a34864455be9b51d61535d3997c18e9acea413f74e49b9c92e",
+      "sha256": "b5b1dfb8024fffd2de85cc8195b727a2c69be4be57fd6bd79c984d3abcb83860",
       "rule": "pages"
     },
     "src/deep/lab.html": {
-      "sha256": "c97ca14aa2d81d7e77803593d4d35cce63b8f17930d593b7b8803730ea940b2a",
+      "sha256": "e5a8507eb6f886f8f1e3f7f5047c7ed39cb24483204824026096a4fb51c06218",
       "rule": "pages"
     },
     "src/deep/meta.html": {
-      "sha256": "b6df37e0d962422c81b204c492b6f72497bf5bfbe998e594967e2eaf444aa844",
+      "sha256": "92df2da00fa112964ec166b46274766ceafcfe203361c4d071a2dabc5fb51dd7",
       "rule": "pages"
     },
     "src/deep/sims.html": {
-      "sha256": "de319e7daf4e77d4f328c7d05009405865010a21cf76a5eac7057db218311d12",
+      "sha256": "04b7411d30e3733718d570c521e8afa77994089678d5c42ace3156951ffd883d",
       "rule": "pages"
     },
     "src/deep/systems.html": {
-      "sha256": "cafd6a0b2c967102bd17b0a199746af4375f54604f7fef0c1cc0496f20eef5f3",
+      "sha256": "fbb4ed20fe949f40d9c34f4aabbf8f4b3bf0312f474d5a1d226a178f55e6b000",
       "rule": "pages"
     },
     "src/deep/verification.html": {
-      "sha256": "62dd09f8780677c23d96be9ceddbefca1b8f7fcf90fc81979480586eaee48b24",
+      "sha256": "f97ef3353ae6befe1a8b41bef23b6813039ffb4378b945dce8c724335e73353f",
       "rule": "pages"
     },
     "src/index.html": {
-      "sha256": "e8ef98c1f44f9a67e55f5886df638882e6515b87111c649f7a6913a03c4f0738",
+      "sha256": "ebc7831dfd0f62deed7258fc1d5d07f3e982d8c6227870cf686e827a00c912a8",
       "rule": "pages"
     },
     "src/plain-vs-engine.html": {
@@ -656,12 +656,16 @@
       "rule": "sim"
     },
     "src/vendor/showcase_data.py": {
-      "sha256": "1b0024d79b968cf758934eddfb526e989257b8efdb5f39ff2bef70cafe214687",
+      "sha256": "2019faeba4894e75dd517e0dfb20d2b59d94262efbc4502321ff89475df67333",
       "rule": "schema"
     },
     "src/videos.html": {
       "sha256": "741d2dc805626c83302e3a946e918985ce4cbb5b0abb4b2a6b74e7f3dd1d665e",
       "rule": "pages"
+    },
+    "tools/check_freshness.py": {
+      "sha256": "fcb8eca4b65a5c9edba012bc17545652e54a87667a58d42075b3ebb2b4ea786f",
+      "rule": "verify-core"
     },
     "tools/check_stats.py": {
       "sha256": "ea7d9dd577eab021c19937469b79b5aacb7d10aff2e3eccb53cc361ed40bfb0a",

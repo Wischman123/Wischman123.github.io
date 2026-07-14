@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-13T00:00:00+00:00",
+  "generated_at": "2026-07-14T23:24:34.817307+00:00",
   "repo": {
     "commit_count": {
-      "value": 1705,
+      "value": 1748,
       "source": "git rev-list --count HEAD (physics repo)",
       "verified": true
     },
@@ -15,12 +15,12 @@
   },
   "catalog": {
     "nodes_total": {
-      "value": 1905,
+      "value": 1938,
       "source": "data/catalog_manifest.json (regenerated this run)",
       "verified": true
     },
     "edges_total": {
-      "value": 505,
+      "value": 522,
       "source": "data/catalog_manifest.json (regenerated this run)",
       "verified": true
     },
@@ -31,7 +31,7 @@
         "verified": true
       },
       "doc": {
-        "value": 617,
+        "value": 622,
         "source": "data/catalog_manifest.json (regenerated this run) — nodes[kind==doc]",
         "verified": true
       },
@@ -41,30 +41,30 @@
         "verified": true
       },
       "script": {
-        "value": 492,
+        "value": 511,
         "source": "data/catalog_manifest.json (regenerated this run) — nodes[kind==script]",
         "verified": true
       },
       "test": {
-        "value": 458,
+        "value": 467,
         "source": "data/catalog_manifest.json (regenerated this run) — nodes[kind==test]",
         "verified": true
       }
     },
     "manifest_generated": {
-      "value": "2026-07-14T01:13:58Z",
+      "value": "2026-07-14T23:24:38Z",
       "source": "data/catalog_manifest.json 'generated' stamp",
       "verified": true
     }
   },
   "import_graph": {
     "nodes_total": {
-      "value": 433,
+      "value": 453,
       "source": "tools/showcase/out/import_graph.json (import_graph_dump.py)",
       "verified": true
     },
     "edges_total": {
-      "value": 1144,
+      "value": 1182,
       "source": "tools/showcase/out/import_graph.json (import_graph_dump.py)",
       "verified": true
     }
@@ -161,32 +161,32 @@
   },
   "loc": {
     "raw_files": {
-      "value": 8121,
+      "value": 8420,
       "source": "tools/loc_history/history.json (latest entry)",
       "verified": true
     },
     "raw_lines": {
-      "value": 2166537,
+      "value": 2260381,
       "source": "tools/loc_history/history.json (latest entry)",
       "verified": true
     },
     "first_party_files": {
-      "value": 6134,
+      "value": 6417,
       "source": "tools/loc_history/history.json (latest entry)",
       "verified": true
     },
     "first_party_lines": {
-      "value": 1617947,
+      "value": 1711394,
       "source": "tools/loc_history/history.json (latest entry)",
       "verified": true
     },
     "series_points": {
-      "value": 39,
+      "value": 40,
       "source": "tools/loc_history/history.json (entries count)",
       "verified": true
     },
     "latest_timestamp": {
-      "value": "2026-07-13T09:13:43-05:00",
+      "value": "2026-07-14T04:57:03-05:00",
       "source": "tools/loc_history/history.json (latest entry timestamp)",
       "verified": true
     }
@@ -392,7 +392,7 @@
   },
   "recall": {
     "inventory_size": {
-      "value": 3205,
+      "value": 3311,
       "source": "tools/recall/inventory/inventory.json (asset_count)",
       "verified": true
     },
@@ -464,12 +464,16 @@
       "effect_l5": {
         "value": "-5.28",
         "source": "hand-pinned from tools/mode_experiments/specs/e5_hedging_maxcontrast_power.yaml (E5 header: Cohen's d on hedges/100w) + the /explore skill's validated-findings note; no machine-readable effect-size artifact located (probe 2026-07-13)",
-        "verified": false
+        "verified": false,
+        "pinned_at": "2026-07-13",
+        "rationale": "no machine source; re-derive by re-running mode_experiments stats over the E5 rows of results.jsonl on any model/effort change"
       },
       "effect_l3": {
         "value": "-2.26",
         "source": "hand-pinned from tools/mode_experiments/specs/e5_hedging_maxcontrast_power.yaml (E5 header: Cohen's d on hedges/100w) + the /explore skill's validated-findings note; no machine-readable effect-size artifact located (probe 2026-07-13)",
-        "verified": false
+        "verified": false,
+        "pinned_at": "2026-07-13",
+        "rationale": "no machine source; re-derive by re-running mode_experiments stats over the E5 rows of results.jsonl on any model/effort change"
       }
     },
     "config_experiment": {
@@ -518,17 +522,23 @@
     "functions": {
       "value": 831,
       "source": "hand-pinned from the live index display at wischman123.github.io on 2026-07-09; no machine-readable repo source located (probe 2026-07-09)",
-      "verified": false
+      "verified": false,
+      "pinned_at": "2026-07-09",
+      "rationale": "no machine source; re-derive from fv_triangulation_runner census"
     },
     "property_checked": {
       "value": 641,
       "source": "hand-pinned from the live index display at wischman123.github.io on 2026-07-09; no machine-readable repo source located (probe 2026-07-09)",
-      "verified": false
+      "verified": false,
+      "pinned_at": "2026-07-09",
+      "rationale": "no machine source; re-derive from fv_triangulation_runner census"
     },
     "laws": {
       "value": 581,
       "source": "hand-pinned from the live index display at wischman123.github.io on 2026-07-09; no machine-readable repo source located (probe 2026-07-09)",
-      "verified": false
+      "verified": false,
+      "pinned_at": "2026-07-09",
+      "rationale": "no machine source; re-derive from fv_triangulation_runner census"
     }
   },
   "consistency_todos": [

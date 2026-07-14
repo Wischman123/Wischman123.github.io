@@ -28,6 +28,19 @@ The provenance contract
   ``source`` names the live command / file the value came from;
   ``verified`` is ``True`` for a machine-computed value and ``False``
   for a hand-pinned one (whose ``source`` MUST say so).
+* **The hand-pinned allowlist** (``showcase_site_architecture_v1`` E1.1).
+  "Fail the build on an unverified stat" and "``fv_aggregate`` is the one
+  hand-typed number" cannot both stand without a registry, so a value may
+  be hand-pinned ONLY if (a) it carries the full pin shape
+  ``{value, source: …hand-pinned…, verified: false, pinned_at, rationale}``
+  (enforced per-:class:`Stat`) AND (b) its dotted path is a member of
+  :data:`HAND_PINNED_ALLOWLIST` (enforced on :class:`ShowcaseData`,
+  BOTH directions — an unverified stat off the list fails, and a stale
+  list entry whose stat became machine-verified fails, so the list can
+  neither leak nor rot). This gate runs in BOTH homes: at harvest time on
+  the box (``harvest.run_harvest`` validates before writing) and in CI as
+  ``build.py`` stage 0, against the copy of this module vendored into the
+  build repo.
 * :class:`FvAggregate` — the hand-pinned FV census (functions /
   property-checked / laws). No machine-readable repo source was located
   (probe 2026-07-09), so each field's ``source`` carries the verbatim
@@ -52,10 +65,17 @@ Stdlib + ``pydantic`` only.
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
-from typing import Any, Callable, Union
+from typing import Any, Callable, Iterator, Union
 
-from pydantic import BaseModel, ConfigDict, ValidationError, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    ValidationError,
+    field_validator,
+    model_validator,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -76,6 +96,13 @@ class ShowcaseSchemaError(ValueError):
 #: measured quantity, never a flag.
 StatValue = Union[int, float, str]
 
+#: The literal marker every hand-pinned ``source`` must carry.
+HAND_PINNED_MARKER = "hand-pinned"
+
+#: ``pinned_at`` is an ISO date, nothing looser — "when does this pin go
+#: stale" must be machine-answerable from the JSON alone.
+_PINNED_AT_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
 
 class Stat(BaseModel):
     """One provenanced statistic: ``{value, source, verified}``.
@@ -83,7 +110,12 @@ class Stat(BaseModel):
     ``source`` names the live repo command or file the value was pulled
     from (e.g. ``git rev-list --count HEAD (physics repo)``). ``verified``
     is ``True`` for a machine-computed value; a hand-pinned value sets
-    ``verified=False`` AND says ``hand-pinned`` in its ``source``.
+    ``verified=False`` AND says ``hand-pinned`` in its ``source`` AND
+    carries the E1.1 pin shape: ``pinned_at`` (ISO date the pin was
+    opened) + ``rationale`` (why no machine source exists / what would
+    re-derive it). A machine-verified stat must NOT carry either — a pin
+    field on a computed value would make it look hand-audited when
+    nothing audited it.
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -91,6 +123,8 @@ class Stat(BaseModel):
     value: StatValue
     source: str
     verified: bool
+    pinned_at: Union[str, None] = None
+    rationale: Union[str, None] = None
 
     @field_validator("source")
     @classmethod
@@ -98,6 +132,39 @@ class Stat(BaseModel):
         if not value.strip():
             raise ValueError("Stat.source must be a non-empty string")
         return value
+
+    @model_validator(mode="after")
+    def _pin_shape_matches_verified(self) -> "Stat":
+        """THE per-stat half of the hand-pinned gate (pure, decision-point).
+
+        verified=True  -> no pin fields allowed.
+        verified=False -> marker in source, ISO ``pinned_at``, non-empty
+                          ``rationale`` — all three, or the payload fails.
+        """
+        if self.verified:
+            if self.pinned_at is not None or self.rationale is not None:
+                raise ValueError(
+                    "a verified stat must not carry pinned_at/rationale "
+                    "(pin fields are the hand-pinned shape, and this value "
+                    "claims to be machine-computed)"
+                )
+            return self
+        if HAND_PINNED_MARKER not in self.source:
+            raise ValueError(
+                f"an unverified stat's source must say {HAND_PINNED_MARKER!r} "
+                f"(got: {self.source[:80]!r})"
+            )
+        if not (self.pinned_at and _PINNED_AT_RE.match(self.pinned_at)):
+            raise ValueError(
+                "an unverified (hand-pinned) stat must carry pinned_at as an "
+                f"ISO date YYYY-MM-DD (got {self.pinned_at!r})"
+            )
+        if not (self.rationale and self.rationale.strip()):
+            raise ValueError(
+                "an unverified (hand-pinned) stat must carry a non-empty "
+                "rationale naming why no machine source exists"
+            )
+        return self
 
 
 # ---------------------------------------------------------------------------
@@ -376,6 +443,49 @@ class RetroStats(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# The hand-pinned ALLOWLIST + the document-level gate (E1.1)
+# ---------------------------------------------------------------------------
+
+#: THE explicit registry of stats that are allowed to ship hand-pinned
+#: (``verified=False``). Dotted paths into :class:`ShowcaseData`. Editing this
+#: set is a deliberate schema change — it lands with a vendored-schema re-sync
+#: in the SAME commit as the JSON that uses it (E1.1 Done-when 0). The gate is
+#: exact in BOTH directions: an unverified stat off this list fails validation,
+#: and a listed path whose stat became machine-verified (or vanished) fails
+#: too, so a re-derived value forces its own de-listing instead of rotting.
+HAND_PINNED_ALLOWLIST: frozenset[str] = frozenset({
+    "fv_aggregate.functions",
+    "fv_aggregate.property_checked",
+    "fv_aggregate.laws",
+    "lab.explore.effect_l5",
+    "lab.explore.effect_l3",
+})
+
+
+def iter_stats(model: BaseModel, prefix: str = "") -> Iterator[tuple[str, "Stat"]]:
+    """Yield ``(dotted_path, Stat)`` for EVERY stat triple in a validated
+    model tree — models, dicts and lists included. The one walker the
+    allowlist gate reads; public so a test (or a future gauge) can census
+    the pins without re-implementing the traversal."""
+    for name, value in model:
+        path = f"{prefix}.{name}" if prefix else name
+        yield from _iter_value(path, value)
+
+
+def _iter_value(path: str, value: Any) -> Iterator[tuple[str, "Stat"]]:
+    if isinstance(value, Stat):
+        yield path, value
+    elif isinstance(value, BaseModel):
+        yield from iter_stats(value, path)
+    elif isinstance(value, dict):
+        for key, item in value.items():
+            yield from _iter_value(f"{path}.{key}", item)
+    elif isinstance(value, (list, tuple)):
+        for i, item in enumerate(value):
+            yield from _iter_value(f"{path}[{i}]", item)
+
+
+# ---------------------------------------------------------------------------
 # Top-level document
 # ---------------------------------------------------------------------------
 
@@ -417,6 +527,29 @@ class ShowcaseData(BaseModel):
         if not value.strip():
             raise ValueError("generated_at must be a non-empty string")
         return value
+
+    @model_validator(mode="after")
+    def _unverified_stats_are_allowlisted(self) -> "ShowcaseData":
+        """THE document half of the hand-pinned gate (E1.1): the set of
+        unverified stat paths must EQUAL :data:`HAND_PINNED_ALLOWLIST`."""
+        unverified = {
+            path for path, stat in iter_stats(self) if not stat.verified
+        }
+        off_list = sorted(unverified - HAND_PINNED_ALLOWLIST)
+        stale = sorted(HAND_PINNED_ALLOWLIST - unverified)
+        if off_list:
+            raise ValueError(
+                f"unverified stat(s) NOT on HAND_PINNED_ALLOWLIST: {off_list} "
+                f"— a value may ship hand-pinned only through the explicit "
+                f"allowlist in data/_schemas/showcase_data.py"
+            )
+        if stale:
+            raise ValueError(
+                f"HAND_PINNED_ALLOWLIST entries with no unverified stat: "
+                f"{stale} — the stat was re-derived (or renamed); remove the "
+                f"stale entry in the same change"
+            )
+        return self
 
 
 # ---------------------------------------------------------------------------
