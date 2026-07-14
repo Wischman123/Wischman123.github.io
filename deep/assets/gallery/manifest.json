@@ -52,6 +52,14 @@
       "pii_note": "generated physics worked-example page (Dawn's Last Burn, a year-end review problem, teacher answer-key edition); scientist bio (Konstantin Tsiolkovsky) only, no student data"
     },
     {
+      "file": "dawn_p5.png",
+      "source": "../publicity/anthropic/application/site/assets/dawns_last_burn_p5.png",
+      "crop_origin": "verbatim copy of ../publicity/anthropic/application/site/assets/dawns_last_burn_p5.png",
+      "generation_command": "python tools/showcase/render_gallery.py --curate",
+      "pii_checked": "2026-07-13",
+      "pii_note": "generated physics worked-example page (Dawn's Last Burn, a year-end review problem, teacher answer-key edition); scientist bio (Konstantin Tsiolkovsky) only, no student data"
+    },
+    {
       "file": "regen_review_before.png",
       "source": "../publicity/anthropic/application/site/assets/d1_before_regeneration.png",
       "crop_origin": "before half of the PIL wipe pair (both scaled to h=1200px, then padded to a common 927x1200 canvas so the wipe overlay aligns) of ../publicity/anthropic/application/site/assets/d1_before_regeneration.png + ../publicity/anthropic/application/site/assets/d1_after_regeneration.png",
