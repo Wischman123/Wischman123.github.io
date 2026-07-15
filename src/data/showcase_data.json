@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-14T23:46:16.717909+00:00",
+  "generated_at": "2026-07-15T00:15:01.644421+00:00",
   "repo": {
     "commit_count": {
-      "value": 1756,
+      "value": 1758,
       "source": "git rev-list --count HEAD (physics repo)",
       "verified": true
     },
@@ -52,7 +52,7 @@
       }
     },
     "manifest_generated": {
-      "value": "2026-07-14T23:46:20Z",
+      "value": "2026-07-15T00:15:05Z",
       "source": "data/catalog_manifest.json 'generated' stamp",
       "verified": true
     }

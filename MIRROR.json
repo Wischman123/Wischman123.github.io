@@ -1,8 +1,8 @@
 {
   "schema": 1,
   "source_repo": "physics",
-  "source_commit": "87560ed6acabbfbf504744505065d2669c89ae59",
-  "sim_source_commit": "87560ed6acabbfbf504744505065d2669c89ae59",
+  "source_commit": "ded6385d739ee74c57a6b3a62070688138b140d7",
+  "sim_source_commit": "ded6385d739ee74c57a6b3a62070688138b140d7",
   "determinism_excluded_keys": [
     "generated_at"
   ],
@@ -152,7 +152,7 @@
       "rule": "assets"
     },
     "src/data/showcase_data.json": {
-      "sha256": "2a179a9cec37aac047890574f401f4d132d1a1c93f7ab30f590d786c60aca9ff",
+      "sha256": "6bec3470a70da58ceb58bf6125fe771b2932e28a6e39101516cc62a5ea6a82dd",
       "rule": "data"
     },
     "src/deep/assets/engine/gate_rejection.png": {
@@ -292,35 +292,35 @@
       "rule": "pages"
     },
     "src/deep/engine.html": {
-      "sha256": "eb9c66b80ffeb9a42e7ef7c9ffa6a92cab4d5cb5e6467da6cd35ec2af8cc9b4b",
+      "sha256": "3be96c9412e127404a86eda5d543d2b458062f74c1aaa7d70a9bbe94e14b6454",
       "rule": "pages"
     },
     "src/deep/gallery.html": {
-      "sha256": "b5b1dfb8024fffd2de85cc8195b727a2c69be4be57fd6bd79c984d3abcb83860",
+      "sha256": "40be90d85552c426c9383eeb7699a32641c270947a525cb2dee182cd825231a7",
       "rule": "pages"
     },
     "src/deep/lab.html": {
-      "sha256": "e5a8507eb6f886f8f1e3f7f5047c7ed39cb24483204824026096a4fb51c06218",
+      "sha256": "2b90635d2a3919b5bb22f4f604db692cc5599bad095576a3225281e317679147",
       "rule": "pages"
     },
     "src/deep/meta.html": {
-      "sha256": "92df2da00fa112964ec166b46274766ceafcfe203361c4d071a2dabc5fb51dd7",
+      "sha256": "d8dd3d14ff198a373f182f0ec71d74f5d78d3cb2629f3bd971e67fffddfacd68",
       "rule": "pages"
     },
     "src/deep/sims.html": {
-      "sha256": "04b7411d30e3733718d570c521e8afa77994089678d5c42ace3156951ffd883d",
+      "sha256": "23ec3cc0d11437135fd811bd7e211a2d67e438b9f5d39e9ee8eee1288845bde7",
       "rule": "pages"
     },
     "src/deep/systems.html": {
-      "sha256": "fbb4ed20fe949f40d9c34f4aabbf8f4b3bf0312f474d5a1d226a178f55e6b000",
+      "sha256": "6ca68b14ffe3ea429766a01280a557f6efcb7b974ef978236c3e5a0ac6e106a1",
       "rule": "pages"
     },
     "src/deep/verification.html": {
-      "sha256": "f97ef3353ae6befe1a8b41bef23b6813039ffb4378b945dce8c724335e73353f",
+      "sha256": "d3edc33135f581f307fb9e829ab430cabec3e3e9e945e5b75c73e3d8df030348",
       "rule": "pages"
     },
     "src/index.html": {
-      "sha256": "38248ab743c82f793451c0c74b99ba2d7e6073ed71937143a55b1504e2962caf",
+      "sha256": "6b5d7d81be5168acd158bf46643f9c10fd6f74b1f1cf5263358f2629c7ffd46a",
       "rule": "pages"
     },
     "src/plain-vs-engine.html": {
