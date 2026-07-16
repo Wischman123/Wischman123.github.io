@@ -253,6 +253,64 @@ class SimStats(BaseModel):
     coverage_modelable: Stat
 
 
+class LocSeriesPoint(BaseModel):
+    """ONE measured point of the first-party line-count series (E1.2).
+
+    NOT a :class:`Stat` triple, deliberately. Every point shares ONE
+    provenance — ``tools/loc_history/history.json``, machine-written by the
+    line-count tracker — so a per-point ``{source, verified}`` would repeat
+    the same two strings 41 times (and grow by two more every day the E1.1
+    cron ticks) to say what ``loc.series_points``' source already says once.
+    The pair is the payload: a date to plot at, a count to plot.
+
+    ``date`` is the entry's ISO **date** (``YYYY-MM-DD``), sliced from its
+    timestamp. It is NOT unique: the tracker is run by hand as well as by
+    cron, and 7 of the 25 measured days carry more than one entry (measured
+    2026-07-16: 41 entries / 25 days; 2026-05-28 alone has 6). Two points
+    sharing an x is honest — the tracker really did measure twice that day —
+    and de-duplicating here would silently drop measured data AND break
+    ``len(series) == len(entries)``, which is E1.2's own Done-when. The chart
+    plots what was measured.
+
+    ``value`` is that entry's ``first_party_total.lines`` — the same quantity
+    ``loc.first_party_lines`` reports for the LATEST entry, so the series'
+    last point and the headline stat are the same number by construction.
+
+    WHAT IS DELIBERATELY NOT COPIED HERE. A history entry also carries
+    ``projects`` (23-27 keys) and ``languages``. ``projects`` names every
+    private working directory on the box — measured 2026-07-16, they include
+    ``Bible``, ``bible-study``, ``Union``, ``taxes``, ``conspir``,
+    ``transcriptions``, ``corped``. This JSON is committed to a PUBLIC repo
+    and served as a fetchable URL, forever. The series carries a date and an
+    integer, and nothing else, because the narrow shape is the safety
+    property — not because the rest was not handy.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+    date: str
+    value: int
+
+    @field_validator("date")
+    @classmethod
+    def _date_is_iso(cls, value: str) -> str:
+        """``date`` is an ISO date, nothing looser — the chart's x-axis
+        parses it, and a loose string would fail at RENDER time (or, worse,
+        plot at the wrong x) rather than here at the boundary."""
+        if not _PINNED_AT_RE.match(value):
+            raise ValueError(
+                f"LocSeriesPoint.date must be an ISO date YYYY-MM-DD "
+                f"(got {value!r})"
+            )
+        return value
+
+    @field_validator("value", mode="before")
+    @classmethod
+    def _reject_bool(cls, value: Any) -> Any:
+        if isinstance(value, bool):
+            raise ValueError("LocSeriesPoint.value must be int, got bool")
+        return value
+
+
 class LocStats(BaseModel):
     model_config = ConfigDict(extra="forbid")
     raw_files: Stat
@@ -261,6 +319,44 @@ class LocStats(BaseModel):
     first_party_lines: Stat
     series_points: Stat
     latest_timestamp: Stat
+
+    #: EVERY point the tracker has measured, oldest first (E1.2). Until E1.2
+    #: the harvest read ``entries[-1]`` and ``len(entries)`` and threw the rest
+    #: away, so the growth the site claims was never plottable from the
+    #: committed JSON — the build reads ONLY this file (D1's hermeticity), and
+    #: `extra="forbid"` meant a smuggled series was REJECTED, not merely absent.
+    series: list[LocSeriesPoint]
+
+    @model_validator(mode="after")
+    def _series_agrees_with_its_own_summary(self) -> "LocStats":
+        """The series and the two scalars it generalizes must AGREE.
+
+        Both scalars are computed from the same ``entries`` list the series is
+        built from, so a disagreement means the harvester read the file twice
+        and got two answers (a mid-harvest cron tick), or someone hand-edited
+        one of the three. Either way the payload is incoherent and the build
+        must stop at the boundary — the alternative is a chart whose last
+        point contradicts the headline number three inches away from it.
+        """
+        n = self.series_points.value
+        if isinstance(n, int) and n != len(self.series):
+            raise ValueError(
+                f"loc.series carries {len(self.series)} point(s) but "
+                f"loc.series_points says {n} — the series and its own count "
+                f"disagree; both derive from history.json's entries list, so "
+                f"one of them was not built from this harvest"
+            )
+        if self.series:
+            last = self.series[-1].value
+            headline = self.first_party_lines.value
+            if isinstance(headline, int) and last != headline:
+                raise ValueError(
+                    f"loc.series' last point is {last:,} but "
+                    f"loc.first_party_lines is {headline:,} — the series' "
+                    f"newest point IS the headline stat (both are the latest "
+                    f"entry's first_party_total.lines); they cannot differ"
+                )
+        return self
 
 
 class GateConsistency(BaseModel):
