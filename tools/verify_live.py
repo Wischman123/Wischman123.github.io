@@ -34,10 +34,35 @@ DERIVE, NEVER HARDCODE
 WHAT IT ASSERTS, PER PAGE
 =========================
   every page      HTTP 200 (or present on disk); every referenced asset resolves;
-                  no marker comment is malformed or nested.
+                  no marker comment is malformed or nested; the page is `noindex`
+                  (E2.1's DECIDED site-wide state) and its analytics coverage
+                  matches the build flag (below).
   rail-bearing    the rail is present and its href set EQUALS the SITE_NAV-derived
                   set; exactly one aria-current="page" and it is THIS page; every
                   rail anchor points at an id that exists.
+
+THE ANALYTICS ASSERTION IS FLAG-SCOPED; THE `noindex` ONE IS NOT (E2.1)
+=======================================================================
+This module reads the SAME seam `build.py` injects from —
+`site_analytics.SITE_CODE_ENV` — so the gate cannot disagree with the build about
+which mode a tree was built in:
+
+  flag ON   (CI, and every --base-url run against the deployed site)
+            -> EVERY path in pages.yaml carries the tag, pointing at the
+               configured endpoint.
+  flag OFF  (local build.py / build_and_publish.py)
+            -> NO page carries it. The inverse is asserted, not skipped, which
+               turns E2.1's Done-when 2 ("a local build omits the tag") from a
+               one-off grep into a standing check.
+
+Unscoped, this assertion would red `build.py` stage 6 — the BLOCKING pre-deploy
+gate — on every local run, because local builds deliberately omit the tag. That
+is the plan's own "goes red on every run and gets disabled within a week" failure
+pointed at its flagship gate.
+
+`noindex` is NOT flag-gated: it ships in every build, so it is asserted in both
+modes, per page (never all-or-none — that form passes a build which dropped it
+everywhere).
 
 It does NOT assert the ABSENCE of SITERAIL/STORY marker pairs (A1 retains them by
 design; B1 removes them under the comparator's rule). It does NOT do the Tier-1
@@ -59,6 +84,7 @@ SHOWCASE_DIR = Path(__file__).resolve().parent
 if str(SHOWCASE_DIR) not in sys.path:
     sys.path.insert(0, str(SHOWCASE_DIR))
 
+import site_analytics  # noqa: E402  (the analytics seam — the SAME one build.py reads)
 import site_checks  # noqa: E402
 from site_checks import LiveSite, LocalTree  # noqa: E402
 
@@ -110,7 +136,9 @@ def pages_from_yaml(path: Path) -> list[str]:
     return out
 
 
-def verify(source, pages: list[str]) -> tuple[list[str], dict[str, int]]:
+def verify(
+    source, pages: list[str], *, analytics_endpoint: str | None = None
+) -> tuple[list[str], dict[str, int]]:
     """Crawl every page; return (violations, per-class counts).
 
     `assets` is COUNTED and REPORTED on purpose. An asset check that resolved an
@@ -118,9 +146,15 @@ def verify(source, pages: list[str]) -> tuple[list[str], dict[str, int]]:
     absence-passes-as-green bug this codebase has already been bitten by. The
     count is the evidence that the crawl did work; a green with `assets 0` is not
     a green, and the caller can see that without reading this file.
+
+    `noindex` and `tagged` are counted for the same reason: they are the EVIDENCE
+    that E2.1's two site-wide claims were actually measured on this run, printed
+    where a reader of the log can check them against `len(pages)` without reading
+    this file.
     """
     violations: list[str] = []
-    seen = {"rail_bearing": 0, "vendored": 0, "unreachable": 0, "assets": 0}
+    seen = {"rail_bearing": 0, "vendored": 0, "unreachable": 0, "assets": 0,
+            "noindex": 0, "tagged": 0}
 
     for rel in pages:
         html = source.read(rel)
@@ -136,7 +170,13 @@ def verify(source, pages: list[str]) -> tuple[list[str], dict[str, int]]:
         else:
             seen["vendored"] += 1
         seen["assets"] += len(site_checks.referenced_assets(html))
-        violations.extend(site_checks.check_page(html, rel, source))
+        seen["noindex"] += int(site_checks.is_noindex(html))
+        seen["tagged"] += int(bool(site_analytics.analytics_endpoints(html)))
+        violations.extend(
+            site_checks.check_page(
+                html, rel, source, analytics_endpoint=analytics_endpoint
+            )
+        )
     return violations, seen
 
 
@@ -170,13 +210,31 @@ def main(argv: list[str] | None = None) -> int:
     else:
         source = LiveSite(args.base_url, tries=args.tries)
 
+    # The analytics MODE, from the ONE seam build.py injects from. A malformed
+    # site code aborts here rather than quietly downgrading to "assert no tag" —
+    # which would pass a tagged tree while claiming to have checked coverage.
+    try:
+        code = site_analytics.site_code()
+    except site_analytics.AnalyticsConfigError as exc:
+        print(f"ABORT: {exc}", file=sys.stderr)
+        return 2
+    endpoint = site_analytics.endpoint(code) if code else None
+
     print("verify_live — liveness + structure")
     print(f"  source : {source.describe()}")
     print(f"  pages  : {len(pages)} (from {args.pages.name})")
     print(f"  rail   : {len(site_checks.deep_nav.SITE_NAV)} SITE_NAV slugs (derived)")
+    print(f"  robots : noindex asserted on every page (UNCONDITIONAL — the "
+          f"DECIDED site-wide state)")
+    if endpoint:
+        print(f"  analytics: ON  ({site_analytics.SITE_CODE_ENV} set) -> every "
+              f"page must carry {endpoint}")
+    else:
+        print(f"  analytics: OFF ({site_analytics.SITE_CODE_ENV} unset) -> NO page "
+              f"may carry a tag")
     print("=" * 74)
 
-    violations, seen = verify(source, pages)
+    violations, seen = verify(source, pages, analytics_endpoint=endpoint)
 
     for rel in pages:
         bad = [v for v in violations if v.startswith(f"{rel}:")]
@@ -192,6 +250,9 @@ def main(argv: list[str] | None = None) -> int:
     print(f"  rail-bearing {seen['rail_bearing']} / vendored {seen['vendored']} / "
           f"unreachable {seen['unreachable']}")
     print(f"  referenced assets resolved: {seen['assets']}")
+    print(f"  noindex: {seen['noindex']}/{len(pages)} · "
+          f"analytics-tagged: {seen['tagged']}/{len(pages)} "
+          f"(expected {len(pages) if endpoint else 0})")
 
     if violations:
         print(f"\nFAIL: {len(violations)} violation(s).")
@@ -200,8 +261,20 @@ def main(argv: list[str] | None = None) -> int:
         print("\nFAIL: zero referenced assets were checked. Every page resolved, but "
               "the asset crawl asserted NOTHING — that is not a pass.")
         return 1
+    # The same anti-vacuous floor the asset count gets, for E2.1's site-wide claim.
+    # `check_noindex` runs per page, so this can only trip if the page set itself
+    # went empty — but `pages_from_yaml` already refuses that, and a claim this
+    # cheap to state is worth stating: a PASS line that says "every page is
+    # noindex" over zero measured pages is the absence-passes-as-green bug.
+    if seen["noindex"] != len(pages) - seen["unreachable"]:
+        print(f"\nFAIL: counted {seen['noindex']} noindex page(s) but reached "
+              f"{len(pages) - seen['unreachable']} — the per-page assertion and "
+              f"the census disagree, so one of them is lying.", file=sys.stderr)
+        return 1
     print(f"\nPASS: {len(pages)} pages, {seen['assets']} referenced assets resolve, "
-          f"every rail is whole.")
+          f"every rail is whole, {seen['noindex']} noindex, "
+          f"{seen['tagged']} analytics-tagged "
+          f"({'ON — ' + endpoint if endpoint else 'OFF — no tag, as required'}).")
     return 0
 
 

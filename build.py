@@ -44,6 +44,17 @@ THE STAGES
                a MIRROR.json row still hashes to it** — ITERATING the manifest,
                never enumerating members inline. A mismatch is a hand-edit and it
                fails the build. Nothing has deployed: the gate is stage 6.
+  4b INJECT    the analytics tag into the ARTIFACT COPIES of every pages.yaml row
+               (E2.1). **FLAG-GATED**: it runs only when the ONE seam
+               (`site_analytics.SITE_CODE_ENV`) carries a site code. Unset — every
+               local build — injects nothing, and stage 6 asserts that INVERSE, so
+               "a local build omits the tag" is a standing check rather than a
+               one-off grep. The authored sources are never touched: `sim/*` and
+               `plain-vs-engine.html` are protected by the Charter's anti-target,
+               and the mirror is hash-defended, so the tag can only live in the
+               artifact copy. `noindex` is NOT injected — it is already in the
+               authored sources of all 13 pages, which is what lets stage 6 ASSERT
+               it instead of asserting the build's own handiwork.
   5  NOJEKYLL  write .nojekyll at the artifact root (else underscore-prefixed paths
                are silently dropped).
   6  THE GATE  **PRE-DEPLOY, BLOCKING, BASELINE-FREE.** verify_live.py --root against
@@ -93,6 +104,7 @@ sys.path.insert(0, str(TOOLS))
 sys.path.insert(0, str(SRC / "vendor"))
 
 import mirror_manifest  # noqa: E402  (mirrored from physics; hash-defended)
+import site_analytics  # noqa: E402  (ditto — the ONE analytics seam, shared with the gate)
 
 
 #: Stage 6's anti-vacuous-green floor. The published site carried 27 `data-stat`
@@ -109,7 +121,7 @@ class BuildError(RuntimeError):
     """A stage failed. Named input + remediation, always."""
 
 
-def _hdr(n: int, title: str) -> None:
+def _hdr(n: int | str, title: str) -> None:
     print(f"\n=== {n}. {title} ===")
 
 
@@ -292,6 +304,72 @@ def stage_vendor_and_assert() -> None:
     print(f"  sim/: {n} file(s) -> _site/sim/")
 
 
+# ---------------------------------------------------------------------------
+# Stage 4b — INJECT the analytics tag into the ARTIFACT COPIES (E2.1)
+# ---------------------------------------------------------------------------
+
+
+def stage_inject_analytics(pages: list[str]) -> int:
+    """Put the analytics tag on every published page — in `_site/` only.
+
+    WHY THIS IS A BUILD STAGE AND NOT A TEMPLATE LINE
+    =================================================
+    E2.1's plan text says "one vendor <script> in base.html.j2, it covers every
+    page that extends it". That is FALSE HERE, and for the same reason the plan's
+    "ONE repo" prose is stale (D1.1): **this repo does not render**. It carries
+    the already-rendered HTML as a committed mirror, and CI is hermetic. A
+    render-time flag would therefore bake the tag into the COMMITTED mirror —
+    after which a local build could not omit it (Done-when 2 dies) and CI could
+    not add it (CI never renders). So the tag goes into the artifact copy, here.
+
+    Once it is a build stage, the two pages that do not extend `base.html.j2`
+    (`sim/index.html`, `plain-vs-engine.html`) stop being a special case: they are
+    two more rows of `pages.yaml`, and their authored sources — which the
+    Charter's anti-target protects — are never touched.
+
+    ITERATES `pages.yaml`, never a glob of `_site/**.html`: the page SET has one
+    referent in this plan, and a glob would tag whatever happened to be on disk.
+    """
+    _hdr("4b", "INJECT — the analytics tag into the ARTIFACT COPIES (flag-gated)")
+    try:
+        code = site_analytics.site_code()
+    except site_analytics.AnalyticsConfigError as exc:
+        raise BuildError(str(exc)) from exc
+
+    if code is None:
+        print(f"  analytics OFF — {site_analytics.SITE_CODE_ENV} is unset, so NO "
+              f"tag is injected.")
+        print(f"  This is the normal LOCAL build: no self-inflicted traffic, and "
+              f"THE GATE asserts the inverse (no page carries a tag).")
+        return 0
+
+    n = 0
+    for rel in pages:
+        p = SITE / rel
+        if not p.is_file():
+            raise BuildError(
+                f"pages.yaml names {rel}, but it is not in _site/ at injection "
+                f"time — stages 1-4 should have placed it. Refusing to publish a "
+                f"page set the gate will then claim is fully covered."
+            )
+        html = p.read_text(encoding="utf-8")
+        try:
+            p.write_text(site_analytics.inject(html, code, rel), encoding="utf-8")
+        except site_analytics.InjectionError as exc:
+            raise BuildError(str(exc)) from exc
+        n += 1
+
+    print(f"  analytics ON  -> {site_analytics.endpoint(code)}")
+    print(f"  {site_analytics.VENDOR} tag injected into {n} artifact copy/copies "
+          f"(every pages.yaml row; sources untouched)")
+    if n != len(pages):
+        raise BuildError(
+            f"injected {n} page(s) but pages.yaml lists {len(pages)} — partial "
+            f"coverage must not deploy."
+        )
+    return n
+
+
 def stage_nojekyll() -> None:
     _hdr(5, "NOJEKYLL")
     (SITE / ".nojekyll").write_text("", encoding="utf-8")
@@ -331,10 +409,20 @@ def stage_gate() -> None:
 
 
 def _assemble_all() -> None:
-    """Stages 0-5 — everything that WRITES _site/, none of the gate."""
+    """Stages 0-5 — everything that WRITES _site/, none of the gate.
+
+    THE ONE ASSEMBLY PATH. `main()` and `stage_determinism()` both call it, so a
+    stage cannot exist in one path and be forgotten in the other — which is
+    precisely what E2.1's injection would have been vulnerable to: a tag applied
+    on the `--check` path but not the `--determinism` path would make the
+    determinism run compare a tagged tree against an untagged one and report the
+    BUILD as non-deterministic, sending the reader hunting for a nonexistent
+    timestamp.
+    """
     stage_validate()
-    stage_assemble()
+    pages = stage_assemble()
     stage_vendor_and_assert()
+    stage_inject_analytics(pages)
     stage_nojekyll()
 
 
@@ -441,10 +529,7 @@ def main(argv: list[str] | None = None) -> int:
             total = sum(1 for p in SITE.rglob("*") if p.is_file())
             print(f"\nDETERMINISM OK — _site/: {total} files, reproducible.")
             return 0
-        stage_validate()
-        stage_assemble()
-        stage_vendor_and_assert()
-        stage_nojekyll()
+        _assemble_all()   # stages 0-5, the ONE assembly path (injection included)
         stage_gate()
     except mirror_manifest.ManifestError as exc:
         print(f"\nABORT: {exc}", file=sys.stderr)

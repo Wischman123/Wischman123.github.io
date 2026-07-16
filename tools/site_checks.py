@@ -63,6 +63,7 @@ import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass, field
+from html.parser import HTMLParser
 from pathlib import Path
 
 SHOWCASE_DIR = Path(__file__).resolve().parent
@@ -70,6 +71,7 @@ if str(SHOWCASE_DIR) not in sys.path:
     sys.path.insert(0, str(SHOWCASE_DIR))
 
 import deep_nav  # noqa: E402
+import site_analytics  # noqa: E402  (the analytics seam: ONE config, ONE predicate)
 
 # --------------------------------------------------------------------------
 # The two sources. Same three methods; the assertions never learn which is which.
@@ -401,10 +403,158 @@ def check_assets(html: str, path: str, source) -> list[str]:
     return violations
 
 
-def check_page(html: str, path: str, source) -> list[str]:
-    """Every assertion that applies to `path`, class-partitioned."""
+# --------------------------------------------------------------------------
+# E2.1 — the site-wide `noindex` state, and analytics coverage.
+#
+# TWO ASSERTIONS, DELIBERATELY NOT SYMMETRIC (E2.1's Implementation notes):
+#   * `noindex`  is UNCONDITIONAL. It ships in every build, so it is asserted in
+#     both modes. It is POLICY, not telemetry.
+#   * analytics  is FLAG-SCOPED. Local builds deliberately omit the tag, and
+#     `build.py` stage 6 runs `verify_live --root` on EVERY local build — so an
+#     unconditional "every page carries the tag" would make the site's flagship
+#     BLOCKING gate red on every local run. That is the plan's own named failure
+#     ("goes red on every run and gets disabled within a week"), aimed at the gate.
+#     So flag OFF asserts the INVERSE — no page carries it — which promotes
+#     Done-when 2 from a one-off grep into a standing check.
+# --------------------------------------------------------------------------
+
+
+class _RobotsFinder(HTMLParser):
+    """Collects the `content` of every `<meta name="robots">` START TAG.
+
+    Semantic, not a substring scan (E1.2's carried-forward correction): a page
+    that merely mentions `noindex` in prose — deep/meta.html DISCUSSES the site's
+    own policy — must not read as compliant, and an HTML comment carrying an
+    old `<meta name="robots">` must not either. Only a real start tag counts.
+    """
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.directives: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag.lower() != "meta":
+            return
+        a = {k.lower(): (v or "") for k, v in attrs}
+        if a.get("name", "").strip().lower() == "robots":
+            self.directives.append(a.get("content", ""))
+
+    # A void element written as `<meta ... />` reaches handle_startendtag, whose
+    # default implementation already routes to handle_starttag — but only if we do
+    # not override it. Spelled out because `sim/index.html` uses the XHTML style
+    # (`<meta charset="UTF-8" />`) and a silent miss there would be a page that
+    # LOOKS covered to a reader and is not covered by the gate.
+    def handle_startendtag(
+        self, tag: str, attrs: list[tuple[str, str | None]]
+    ) -> None:
+        self.handle_starttag(tag, attrs)
+
+
+def robots_directives(html: str) -> list[str]:
+    """The directive string of every robots meta the DOCUMENT actually declares."""
+    p = _RobotsFinder()
+    p.feed(html)
+    p.close()
+    return p.directives
+
+
+def is_noindex(html: str) -> bool:
+    """True iff the page declares `noindex` to crawlers.
+
+    Tolerant of the ways the directive is legitimately written — `noindex`,
+    `noindex, nofollow`, `NOINDEX,NOFOLLOW` — by splitting on commas and matching
+    a whole token, so `noindexing` (a word in prose inside a content attribute)
+    is not a false pass.
+    """
+    for content in robots_directives(html):
+        if "noindex" in {tok.strip().lower() for tok in content.split(",")}:
+            return True
+    return False
+
+
+def check_noindex(html: str, path: str) -> list[str]:
+    """The DECIDED site-wide state, on EVERY page — never an all-or-none form.
+
+    Brendan's decision (2026-07-13, PRE-ANSWERED item 7): state 1, **UNLISTED** —
+    `noindex` on every `pages.yaml` page. The site is public (GitHub Pages serves
+    it to anyone with the URL); `noindex` is the only lever that keeps it out of
+    search results, and analytics is then the only way to know it was read.
+
+    Asserted per-page rather than "all or none" on purpose: an all-or-none form
+    passes a build that silently dropped `noindex` EVERYWHERE, which is the exact
+    line-2 regression class A1 guards — and the class that already bit this site
+    once (all seven deep pages shipped indexable until 2026-07-13, because
+    qa_gate.py only globbed `public/*.html` and never saw `deep/`).
+    """
+    if is_noindex(html):
+        return []
+    found = robots_directives(html)
+    detail = (
+        f"it declares robots={found!r}" if found else "it declares no robots meta"
+    )
+    return [
+        f"{path}: NOT noindex — {detail}. The DECIDED site-wide state is UNLISTED: "
+        f"every pages.yaml page carries <meta name=\"robots\" content=\"noindex, "
+        f"nofollow\"> (E2, 2026-07-13). A published page without it is reachable "
+        f"from search."
+    ]
+
+
+def check_analytics(
+    html: str, path: str, expect_endpoint: str | None
+) -> list[str]:
+    """Analytics coverage, FLAG-SCOPED and column-free.
+
+    `expect_endpoint` is the CONFIGURED endpoint (flag ON) or `None` (flag OFF) —
+    the same seam `build.py` injects from, so the gate and the build cannot
+    disagree about which mode this tree was built in.
+
+      * ON  -> this page must carry the tag, pointing at THAT endpoint. A tag
+               aimed somewhere else is not coverage; it is a page feeding a
+               stranger's dashboard.
+      * OFF -> this page must carry NO tag (Done-when 2, as a standing check).
+    """
+    found = site_analytics.analytics_endpoints(html)
+    if expect_endpoint is None:
+        if not found:
+            return []
+        return [
+            f"{path}: carries an analytics tag ({found!r}) in a build made with "
+            f"analytics OFF. Local builds must emit NO tag — that is what keeps "
+            f"Brendan's own browsing out of his dashboard (E2.1 Done-when 2). The "
+            f"tag belongs to the _site/ artifact copy, injected by build.py stage "
+            f"4b only when {site_analytics.SITE_CODE_ENV} is set."
+        ]
+    if expect_endpoint in found:
+        return []
+    if not found:
+        return [
+            f"{path}: carries NO analytics tag, but the build ran with analytics "
+            f"ON ({site_analytics.SITE_CODE_ENV} set). Every pages.yaml page must "
+            f"carry it — including the pages that do not extend base.html.j2 "
+            f"(sim/*, plain-vs-engine.html), which receive it from build.py stage "
+            f"4b. An uncovered page is a reader this site cannot see."
+        ]
+    return [
+        f"{path}: analytics tag points at {found!r}, expected "
+        f"{expect_endpoint!r} — the page is reporting to the wrong site."
+    ]
+
+
+def check_page(
+    html: str, path: str, source, *, analytics_endpoint: str | None = None
+) -> list[str]:
+    """Every assertion that applies to `path`, class-partitioned.
+
+    `analytics_endpoint` is the crawler's answer to "which mode was this tree
+    built in" — see `check_analytics`. It defaults to None (assert NO tag), the
+    conservative state: a caller that forgot to thread the flag fails a tagged
+    tree loudly instead of passing an untagged one silently.
+    """
     violations = check_comments(html, path)          # every page
     violations += check_assets(html, path, source)   # every page
+    violations += check_noindex(html, path)          # every page, UNCONDITIONAL
+    violations += check_analytics(html, path, analytics_endpoint)   # flag-scoped
     if is_rail_bearing(path):
         violations += check_rail(html, path, source)  # rail-bearing only
     return violations

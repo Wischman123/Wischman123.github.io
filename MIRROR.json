@@ -1,8 +1,8 @@
 {
   "schema": 1,
   "source_repo": "physics",
-  "source_commit": "1e0ce70d29bf9da0278ff4650443c2f823470386",
-  "sim_source_commit": "1e0ce70d29bf9da0278ff4650443c2f823470386",
+  "source_commit": "235e279e335581fada0ee738d309f2fe71cdc0aa",
+  "sim_source_commit": "235e279e335581fada0ee738d309f2fe71cdc0aa",
   "determinism_excluded_keys": [
     "generated_at"
   ],
@@ -683,8 +683,12 @@
       "sha256": "20fe21cb1e089b05b71f0fbe6731b669d080ec10ce391e88a4d8833ca1ae5bc5",
       "rule": "pages-manifest"
     },
+    "tools/site_analytics.py": {
+      "sha256": "909279baef14b479cb2ad78f0b58dbb491cf60a3f144f62db57e9903b86d4b62",
+      "rule": "verify-core"
+    },
     "tools/site_checks.py": {
-      "sha256": "660505f788c6bb76841fb03b7d01d8785011f7e6dd74953bc144daff485903c9",
+      "sha256": "ca842efbcdfab258a674c5f738901d20ddb108cbfc63e6d46ccef27fdd3fb9b5",
       "rule": "verify-core"
     },
     "tools/stat_format.py": {
@@ -692,7 +696,7 @@
       "rule": "verify-core"
     },
     "tools/verify_live.py": {
-      "sha256": "994261c581ba63aa80944cefccb9e225188ba76418cba283fd3d787df0a5f839",
+      "sha256": "b903ef260c063220c274ab5aa491b5be0aaa21e8189650e7928a0f03a0e31586",
       "rule": "verify-core"
     }
   }

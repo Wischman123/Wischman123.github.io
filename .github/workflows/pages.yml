@@ -38,6 +38,25 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # THE ANALYTICS SEAM (E2.1). One env var, read by build.py stage 4b (which
+    # INJECTS the tag) and by verify_live.py (which ASSERTS the coverage) — so the
+    # build and its gate can never disagree about which mode this tree is.
+    #
+    # JOB-LEVEL, NOT STEP-LEVEL, AND THAT IS LOAD-BEARING: the determinism step
+    # below RE-ASSEMBLES _site/ after the gate, and that re-assembled tree is what
+    # `upload-pages-artifact` ships. Scope this to the `--check` step only and CI
+    # would gate a TAGGED tree, then upload an UNTAGGED one — a green gate proving
+    # coverage the deployed site does not have.
+    #
+    # UNSET => empty => analytics OFF => no tag, and the gate asserts that inverse.
+    # That is the CURRENT state and it is deliberate: the GoatCounter site does not
+    # exist yet, and a tag carrying a placeholder code is worse than no tag (it
+    # collects nothing while the gate reports full coverage). Creating the site is
+    # Brendan's to do; when it exists, setting the repo variable
+    # `SHOWCASE_ANALYTICS_SITE` to the bare site code turns analytics on with NO
+    # code change and NO re-publish of the mirror.
+    env:
+      SHOWCASE_ANALYTICS_SITE: ${{ vars.SHOWCASE_ANALYTICS_SITE }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -117,6 +136,12 @@ jobs:
     needs: deploy
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    # The SAME seam as the build job, and for a sharper reason: this crawls the
+    # DEPLOYED pages. With analytics on, the live pages carry the tag — so a smoke
+    # run that could not see the flag would assert the flag-OFF inverse ("no page
+    # carries a tag") against a correctly-tagged site and go red on every deploy.
+    env:
+      SHOWCASE_ANALYTICS_SITE: ${{ vars.SHOWCASE_ANALYTICS_SITE }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
