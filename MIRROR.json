@@ -152,7 +152,7 @@
       "rule": "assets"
     },
     "src/data/showcase_data.json": {
-      "sha256": "6bec3470a70da58ceb58bf6125fe771b2932e28a6e39101516cc62a5ea6a82dd",
+      "sha256": "6ed0b112a1f3e2b3b5087168ae6c34a7454d9777e2aab888c4a0634e1238fe72",
       "rule": "data"
     },
     "src/deep/assets/engine/gate_rejection.png": {
