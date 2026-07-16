@@ -1,8 +1,8 @@
 {
   "schema": 1,
   "source_repo": "physics",
-  "source_commit": "5dbf3721598505fa07880d1913c5408b614d6018",
-  "sim_source_commit": "5dbf3721598505fa07880d1913c5408b614d6018",
+  "source_commit": "30a2733d2760e8c3506f7efc1278478a32186986",
+  "sim_source_commit": "30a2733d2760e8c3506f7efc1278478a32186986",
   "determinism_excluded_keys": [
     "generated_at"
   ],
@@ -152,7 +152,7 @@
       "rule": "assets"
     },
     "src/data/showcase_data.json": {
-      "sha256": "6ed0b112a1f3e2b3b5087168ae6c34a7454d9777e2aab888c4a0634e1238fe72",
+      "sha256": "e6d6fe9e7e09b32c6f364be2f596d9086631cf49933019caf060045e540193d3",
       "rule": "data"
     },
     "src/deep/assets/engine/gate_rejection.png": {
@@ -320,7 +320,7 @@
       "rule": "pages"
     },
     "src/index.html": {
-      "sha256": "4ca2194aeefb0c4caea3889a90e09118213b23adc80652fb3908f852fdd8e1c1",
+      "sha256": "cb6ddb22401e393639af3f673d5e1dd82e8c97a458f76f383031f78ccc1bc0ec",
       "rule": "pages"
     },
     "src/plain-vs-engine.html": {
@@ -656,7 +656,7 @@
       "rule": "sim"
     },
     "src/vendor/showcase_data.py": {
-      "sha256": "4d83e3ca1e5f61dc047ed9a68743c877425dd3651dedf296c929da265a58dc8e",
+      "sha256": "a9aa57dcdce25292d03ef5097d80aa9e68b165eb199ac5ddc9294451e8b625b0",
       "rule": "schema"
     },
     "src/videos.html": {

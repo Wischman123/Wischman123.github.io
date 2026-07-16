@@ -327,6 +327,17 @@ class LocStats(BaseModel):
     #: `extra="forbid"` meant a smuggled series was REJECTED, not merely absent.
     series: list[LocSeriesPoint]
 
+    #: The COMMITTED git-history arc — first-party lines committed to the four
+    #: project repos (physics, tools, research, dotfiles) recomputed from git
+    #: history back to the mid-March first commit. Harvested from the tracked
+    #: source ``tools/showcase/data/committed_series.json`` (seeded from the
+    #: offline ``loc_full_arc.json``). ``loc_chart.build_chart`` draws this as
+    #: the SOLID line beneath the dashed working-tree ``series``: the two are
+    #: the merged Fig. 2 look, drawn LIVE. Same ``{date, value}`` point model as
+    #: ``series`` (reused, not forked). Oldest-first is enforced at the harvest
+    #: boundary (`harvest.committed_series`) and again in `build_chart`.
+    committed_series: list[LocSeriesPoint]
+
     @model_validator(mode="after")
     def _series_agrees_with_its_own_summary(self) -> "LocStats":
         """The series and the two scalars it generalizes must AGREE.
@@ -356,6 +367,28 @@ class LocStats(BaseModel):
                     f"newest point IS the headline stat (both are the latest "
                     f"entry's first_party_total.lines); they cannot differ"
                 )
+        return self
+
+    @model_validator(mode="after")
+    def _committed_series_is_drawable(self) -> "LocStats":
+        """The committed (solid) line must have points and run oldest-first.
+
+        The two-series homepage figure has NO single-series fallback: an empty
+        or backwards committed series is a chart that cannot draw its own
+        headline claim. Reject it at the boundary rather than at render time.
+        """
+        pts = self.committed_series
+        if not pts:
+            raise ValueError(
+                "loc.committed_series is empty — the committed (solid) growth "
+                "line has no points; the two-series figure cannot be drawn"
+            )
+        dates = [p.date for p in pts]
+        if dates != sorted(dates):
+            raise ValueError(
+                "loc.committed_series is not oldest-first — the committed line "
+                "must have non-decreasing dates so it draws left-to-right"
+            )
         return self
 
 
