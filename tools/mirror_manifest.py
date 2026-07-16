@@ -63,6 +63,23 @@ def sha256_file(path: Path) -> str:
     return h.hexdigest()
 
 
+def canonical_json_from_bytes(raw: bytes) -> bytes:
+    """A JSON document's bytes with :data:`DETERMINISM_EXCLUDED_KEYS` stripped,
+    serialized with sorted keys — THE comparison form, for callers holding BYTES.
+
+    THE rule lives here, in ONE function; :func:`canonical_json_bytes` is the
+    path-taking front door onto it. E2.2's three-build matrix compares in-memory
+    artifact SNAPSHOTS (the tree is ~10 MB — holding it beats copying it three
+    times), so it has bytes, not paths. Re-typing the strip rule over there is
+    exactly the two-authors drift this module's docstring forbids: the exclusion is
+    named ONCE (D1's choice) and every determinism consumer asks this module.
+    """
+    data = json.loads(raw.decode("utf-8"))
+    if isinstance(data, dict):
+        data = {k: v for k, v in data.items() if k not in DETERMINISM_EXCLUDED_KEYS}
+    return json.dumps(data, sort_keys=True, separators=(",", ":")).encode("utf-8")
+
+
 def canonical_json_bytes(path: Path) -> bytes:
     """``path``'s JSON with :data:`DETERMINISM_EXCLUDED_KEYS` stripped, serialized
     with sorted keys — THE comparison form for every determinism check.
@@ -71,10 +88,7 @@ def canonical_json_bytes(path: Path) -> bytes:
     would go red on every run, and D2 says a check that goes red on every run gets
     disabled within a week.
     """
-    data = json.loads(Path(path).read_text(encoding="utf-8"))
-    if isinstance(data, dict):
-        data = {k: v for k, v in data.items() if k not in DETERMINISM_EXCLUDED_KEYS}
-    return json.dumps(data, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return canonical_json_from_bytes(Path(path).read_bytes())
 
 
 def load_manifest(repo: Path) -> dict:

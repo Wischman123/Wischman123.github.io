@@ -76,11 +76,28 @@ build log must NOT read as coverage. The same conceptual bug — substring-match
 source text instead of testing a semantic property — bit E1.2 twice, so the
 decision point here is a pure predicate with negative cases on both sides
 (``tests/test_site_analytics.py``).
+
+WHAT E2.2 ADDED, AND THE TWO RULES IT DID NOT GET TO CHOOSE
+==========================================================
+E2.2 hangs the engagement funnel (four signals) on this same tag, and two
+constraints fixed the design before it started:
+
+  * **The guard is ours and it is load-bearing.** count.js does not honor DNT/GPC,
+    so an event that fired for an opted-out reader would defeat the one mechanism
+    honoring the signal. The funnel therefore lives INSIDE the guarded closure,
+    below its `return` — unreachable rather than re-checked (see THE FUNNEL).
+  * **D2 item 1's delta rule.** The analytics flag may change the artifact ONLY by
+    adding the tag. E2.2 owns proving it, and the proof is constructive rather
+    than descriptive: :func:`flag_delta_violations` asserts the flag-ON tree is
+    EXACTLY the flag-OFF tree with :func:`inject` applied to the `pages.yaml` rows
+    — no regex over the delta, no "looks like a script node".
 """
 from __future__ import annotations
 
+import json
 import os
 import re
+from collections.abc import Callable, Mapping, Sequence
 from html.parser import HTMLParser
 
 #: THE SEAM. The GoatCounter site code (the ``<code>`` in
@@ -100,6 +117,102 @@ ENDPOINT_TMPL = "https://{code}.goatcounter.com/count"
 
 #: The attribute count.js reads its endpoint from (verified against count.js).
 ENDPOINT_ATTR = "data-goatcounter"
+
+# ---------------------------------------------------------------------------
+# THE FUNNEL (E2.2) — four signals, named ONCE, fired INSIDE the DNT guard
+# ---------------------------------------------------------------------------
+#
+# WHY THE FUNNEL LIVES INSIDE THE TAG AND NOT IN A SECOND <script>
+# ================================================================
+# Two independent reasons, and either alone would decide it:
+#
+#   1. THE GUARD. E2.2's binding constraint is that the four events respect the
+#      DNT/GPC guard. A second script would have to RE-CHECK the signal, and a
+#      re-checked guard is one someone can forget to re-check. Here the funnel
+#      wiring is physically BELOW the early `return` in the same closure: an
+#      opted-out reader never registers a listener, never touches sessionStorage
+#      and never queues an event, because that code is unreachable. The guard is
+#      SHARED, not repeated — which is why the negative control (DNT on -> zero
+#      requests) covers the events too, not just the pageview.
+#   2. D2's DELTA RULE. D2 item 1 says the flag's only effect may be the analytics
+#      `<script>` nodes, "exactly one per HTML file that RECEIVES the tag". One
+#      script node per page keeps that literally true; a second node would make the
+#      delta two-per-page and force the rule to be re-negotiated.
+#
+# WHY EACH EVENT IS FIRED ONCE PER SESSION
+# ========================================
+# A funnel step is a SESSION fact ("did this reader get past the homepage?"), not
+# a pageview fact. Fired per-pageview, `deep-wing` would be exactly the sum of the
+# `deep/*` pageviews the vendor already counts — a duplicate that adds ZERO
+# information and doubles the beacons, i.e. the vanity metric the plan's own
+# framing rejects. Fired once per session it is a number the pageview table does
+# NOT contain. Dedup is CLIENT-side (sessionStorage) on purpose: GoatCounter's
+# server-side session/visit logic is not readable from count.js, and a check whose
+# correctness rests on unverifiable vendor behavior is not a check.
+#
+# sessionStorage, not a cookie: per-tab, dropped when the tab closes, never sent
+# to any server, and it holds a list of step NAMES — no identifier, nothing that
+# could become one. E2.1's `document.cookie`-is-empty check stays green by
+# construction. It is only ever touched PAST the guard.
+
+#: The funnel's namespace. Every event path starts here, so ONE dashboard filter
+#: (`funnel/`) returns the whole funnel — which is what makes the query (Done-when
+#: 2) a lookup instead of an API integration.
+FUNNEL_PREFIX = "funnel/"
+
+#: The four signals. Paths, not titles: GoatCounter aggregates by path, so these
+#: are what the dashboard counts.
+STEP_DEEP_WING = FUNNEL_PREFIX + "deep-wing"    # (1) got past the homepage
+STEP_SIM_PLAY = FUNNEL_PREFIX + "sim-play"      # (2) pressed play on a sim
+STEP_DEPTH_CODE = FUNNEL_PREFIX + "depth-code"  # (3) reached the hardest page
+CHANNEL_PREFIX = FUNNEL_PREFIX + "channel/"     # (4) which channel delivered them
+
+#: The deep wing, and the hardest page in it. Published, root-relative — the same
+#: shape as a `pages.yaml` row, because that is what they are compared against.
+#: The trailing slash is load-bearing: without it, a future `deepdive.html` would
+#: silently count as the deep wing.
+DEEP_PREFIX = "deep/"
+CODE_PAGE = "deep/code.html"
+
+#: The sim play control. MEASURED, not assumed: `src/assets/sims/embed.js` builds
+#: `<button class="ex__run js-embed-run">` for every `.ex__stage` exhibit and only
+#: then injects the sim `<iframe>` — so on THIS site every embed has a parent-side
+#: control, and E2.2's `postMessage` shim (for embeds without one) is not needed.
+#: That matters beyond convenience: count.js's own `filter()` REFUSES to count from
+#: inside an iframe (`!allow_frame && location !== parent.location -> 'frame'`), so
+#: an event fired from within the sim frame would be silently dropped. The parent's
+#: click is the only place this signal CAN be collected.
+#:
+#: Bound by DELEGATION from the tag (not by editing embed.js): the control is
+#: created after load, the tag is the analytics seam's only author, and embed.js is
+#: a hash-defended mirror whose home is physics. `js-` marks it a JS hook.
+PLAY_CONTROL_SELECTOR = ".js-embed-run"
+
+#: The campaign parameter. A link from the APPLICATION (a PDF/e-mail) usually
+#: arrives with NO referrer — indistinguishable from a direct visit — so the
+#: channel cannot be recovered from `document.referrer` alone. `?from=application`
+#: on the link Brendan actually sends is what separates them.
+CAMPAIGN_PARAM = "from"
+
+#: Values honored from `?from=` — an ALLOWLIST, deliberately. The value lands in an
+#: event path on a public URL: unbounded, `?from=<junk>` would let any passer-by
+#: mint arbitrary rows in the dashboard. Anything unrecognized degrades to "other".
+CAMPAIGN_CHANNELS = ("application", "linkedin")
+
+#: Every channel label that can be emitted — the bounded set the funnel query reads.
+#: `direct`/`internal`/`other` are referrer-derived and cannot be spoofed via the
+#: campaign param.
+CHANNELS = ("application", "linkedin", "direct", "internal", "other")
+
+#: The sessionStorage key holding the list of steps already fired this session.
+FUNNEL_STORAGE_KEY = "showcase-funnel"
+
+#: The dedup sentinel for the channel event. It is NOT the emitted path: the path
+#: carries the channel (`funnel/channel/linkedin`), but "first touch wins" has to
+#: dedup on the CATEGORY. Keyed on the path, a reader who arrives from LinkedIn and
+#: then opens a second tab would emit `channel/linkedin` AND `channel/internal` for
+#: one session, and the channel counts would exceed the sessions they describe.
+CHANNEL_SENTINEL = "channel"
 
 #: A GoatCounter site code is a DNS label: it becomes `<code>.goatcounter.com`.
 #: Lowercase alnum + inner hyphens, 1-63 chars. Strict on purpose — this value
@@ -159,12 +272,45 @@ def endpoint(code: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# The funnel's BUILD-TIME decision point — pure, and tested from both sides
+# ---------------------------------------------------------------------------
+
+
+def pageview_steps(path: str) -> list[str]:
+    """The funnel steps THIS page's pageview fires, for a `pages.yaml` row.
+
+    Decided in PYTHON at build time, from the published path the injector already
+    knows — not in JS from ``location.pathname``. The build KNOWS the row is
+    ``deep/code.html``; the browser would have to infer it, and every inference
+    (trailing slash, implicit ``index.html``, a project-page base path) is a way to
+    be quietly wrong about a number Brendan is going to read as fact. Per
+    "Calculate, Never Guess": compute it where it is known.
+
+    This is a per-PAGE constant, never a per-BUILD one — the distinction D2's
+    determinism rule actually rests on. Two builds of the same page agree; that the
+    tag differs BETWEEN pages is not nondeterminism.
+
+    Returned in funnel order (entering the wing, then reaching its hardest page) so
+    the emitted markup reads like the funnel it describes.
+    """
+    steps: list[str] = []
+    if path.startswith(DEEP_PREFIX):
+        steps.append(STEP_DEEP_WING)
+    if path == CODE_PAGE:
+        steps.append(STEP_DEPTH_CODE)
+    return steps
+
+
+# ---------------------------------------------------------------------------
 # The markup — ONE producer
 # ---------------------------------------------------------------------------
 
 
-def tag_html(code: str) -> str:
-    """The analytics tag for ``code``: a DNT-guarded loader for count.js.
+def tag_html(code: str, path: str) -> str:
+    """The analytics tag for ``code`` on the page published at ``path``.
+
+    A DNT-guarded loader for count.js, PLUS E2.2's funnel — one script node, one
+    guard, four signals.
 
     Shape, and why it is not the vendor's copy-paste snippet:
 
@@ -177,10 +323,29 @@ def tag_html(code: str) -> str:
         count.js does not check it itself (verified — see the module docstring).
         The vendor's own snippet uses a static ``async src=``, which fetches
         count.js before any of our code can decline;
-      * it is STATIC — no nonce, no timestamp, no per-build value — so the build
-        stays byte-deterministic with the flag on (D2's rule; E2.2 owns extending
-        the matrix to three builds).
+      * **everything funnel-related sits BELOW the guard's `return`**, so an
+        opted-out reader registers no listener and stores nothing. See the funnel
+        block above for why that is structural rather than re-checked.
+
+    ``path`` is REQUIRED, not optional-with-a-default. A default would mean a
+    caller that forgot to pass it silently publishes a page whose funnel steps are
+    empty — the deep wing would read as never visited, and the gate (which asserts
+    the ENDPOINT, not the steps) would stay green while the number Brendan reads
+    quietly went to zero. Absence must be a TypeError, not a wrong number.
+
+    DETERMINISM: every value here is a function of (``code``, ``path``) — no nonce,
+    no timestamp, no per-build value. So two builds of the same page produce the
+    same bytes (D2's rule), and D2's "add a fourth build only if the snippet embeds
+    a per-build value" caveat stays un-triggered. E2.2 owns proving that: the
+    three-build matrix is `build.py --determinism`.
+
+    The queue is not ceremony: count.js is appended `async`, so `goatcounter.count`
+    does not exist yet when this runs. Events queue and flush on the script's load
+    event — otherwise the pageview steps would race the vendor and be lost on a
+    cold cache, which is precisely when a first-time reader arrives.
     """
+    steps = json.dumps(pageview_steps(path), separators=(",", ":"))
+    campaigns = json.dumps(list(CAMPAIGN_CHANNELS), separators=(",", ":"))
     return (
         f'<!-- analytics: {VENDOR} — no cookies, no PII. Not loaded at all when '
         f'Do Not Track / Global Privacy Control is set. Injected at build time by '
@@ -190,10 +355,59 @@ def tag_html(code: str) -> str:
         f'  var n = window.navigator || {{}};\n'
         f'  if (n.doNotTrack === "1" || n.msDoNotTrack === "1" ||\n'
         f'      window.doNotTrack === "1" || n.globalPrivacyControl === true) {{ return; }}\n'
+        f'  // ---- everything below here is unreachable for an opted-out reader ----\n'
+        f'  var STEPS = {steps};\n'
+        f'  var CAMPAIGNS = {campaigns};\n'
+        f'  var q = [], mem = {{}};\n'
+        f'  var first = function (k) {{\n'
+        f'    // once per SESSION: a funnel step is a session fact, not a pageview.\n'
+        f'    try {{\n'
+        f'      var v = JSON.parse(sessionStorage.getItem("{FUNNEL_STORAGE_KEY}") || "[]");\n'
+        f'      if (v.indexOf(k) > -1) {{ return false; }}\n'
+        f'      v.push(k);\n'
+        f'      sessionStorage.setItem("{FUNNEL_STORAGE_KEY}", JSON.stringify(v));\n'
+        f'      return true;\n'
+        f'    }} catch (e) {{ if (mem[k]) {{ return false; }} mem[k] = 1; return true; }}\n'
+        f'  }};\n'
+        f'  var flush = function () {{\n'
+        f'    if (!window.goatcounter || !window.goatcounter.count) {{ return; }}\n'
+        f'    while (q.length) {{ window.goatcounter.count(q.shift()); }}\n'
+        f'  }};\n'
+        f'  var send = function (p, k) {{\n'
+        f'    if (!first(k || p)) {{ return; }}\n'
+        f'    q.push({{path: p, event: true}});\n'
+        f'    flush();\n'
+        f'  }};\n'
+        f'  var channel = function () {{\n'
+        f'    var m = /[?&]{CAMPAIGN_PARAM}=([^&]*)/.exec(location.search || "");\n'
+        f'    if (m) {{\n'
+        f'      var v;\n'
+        f'      try {{ v = decodeURIComponent(m[1]).toLowerCase(); }} catch (e) {{ return "other"; }}\n'
+        f'      return CAMPAIGNS.indexOf(v) > -1 ? v : "other";\n'
+        f'    }}\n'
+        f'    var r = document.referrer || "";\n'
+        f'    if (!r) {{ return "direct"; }}\n'
+        f'    var h;\n'
+        f'    try {{ h = new URL(r).hostname.toLowerCase(); }} catch (e) {{ return "other"; }}\n'
+        f'    if (h === location.hostname.toLowerCase()) {{ return "internal"; }}\n'
+        f'    if (h === "linkedin.com" || /\\.linkedin\\.com$/.test(h) || h === "lnkd.in") '
+        f'{{ return "linkedin"; }}\n'
+        f'    return "other";\n'
+        f'  }};\n'
         f'  var s = document.createElement("script");\n'
         f'  s.async = true;\n'
         f'  s.src = "{COUNT_JS}";\n'
+        f'  s.addEventListener("load", flush, false);\n'
         f'  document.head.appendChild(s);\n'
+        f'  // capture-phase + closest(): the click lands on the icon INSIDE the\n'
+        f'  // button, and delegation catches a control built after load.\n'
+        f'  document.addEventListener("click", function (ev) {{\n'
+        f'    var t = ev.target;\n'
+        f'    if (t && t.closest && t.closest("{PLAY_CONTROL_SELECTOR}")) '
+        f'{{ send("{STEP_SIM_PLAY}"); }}\n'
+        f'  }}, true);\n'
+        f'  for (var i = 0; i < STEPS.length; i++) {{ send(STEPS[i]); }}\n'
+        f'  send("{CHANNEL_PREFIX}" + channel(), "{CHANNEL_SENTINEL}");\n'
         f'}})();\n'
         f'</script>\n'
     )
@@ -274,8 +488,14 @@ class InjectionError(RuntimeError):
     """The tag could not be placed. NEVER downgraded to "skip this page"."""
 
 
-def inject(html: str, code: str, path: str = "<page>") -> str:
+def inject(html: str, code: str, path: str) -> str:
     """Return ``html`` with the analytics tag added to its head, exactly once.
+
+    ``path`` is the published, root-relative `pages.yaml` row. It is REQUIRED and
+    no longer defaults to a placeholder: since E2.2 it selects the page's funnel
+    steps (:func:`pageview_steps`), so a placeholder would not merely spoil an
+    error message — it would publish a deep page whose funnel never fires, and
+    read out as "nobody visited the wing".
 
     Aborts rather than guessing — a page that silently does not receive the tag
     would be caught by the coverage assertion later, but it would be caught as a
@@ -316,9 +536,96 @@ def inject(html: str, code: str, path: str = "<page>") -> str:
             f"guess which head is the document's."
         )
 
-    tag = tag_html(code)
+    tag = tag_html(code, path)
     if anchor == _HEAD_CLOSE:
         return html.replace(anchor, tag + anchor, 1)
     # Headless fragment: after the title, not before it — the title must stay the
     # first thing a reader/crawler sees, and line 1 is the provenance banner.
     return html.replace(anchor, anchor + "\n" + tag.rstrip("\n"), 1)
+
+
+# ---------------------------------------------------------------------------
+# D2 item 1's THIRD build — the flag's delta, as a pure decision point (E2.2)
+# ---------------------------------------------------------------------------
+
+
+def flag_delta_violations(
+    off: Mapping[str, bytes],
+    on: Mapping[str, bytes],
+    pages: Sequence[str],
+    code: str,
+    unchanged: Callable[[str, bytes, bytes], bool],
+) -> list[str]:
+    """Is the flag-ON tree EXACTLY the flag-OFF tree plus the analytics tag?
+
+    D2 item 1's rule, executable: *"the only deltas are analytics ``<script>``
+    nodes — exactly one per HTML file that RECEIVES the tag — and nothing else."*
+    ``[]`` means the rule holds.
+
+    PROVEN CONSTRUCTIVELY, NOT DESCRIPTIVELY. The tempting shape is to diff the two
+    trees and check each delta "looks like" a script node — which is the
+    substring-matching bug E1.2 hit twice, one layer up. Instead this RE-DERIVES the
+    expected ON bytes with the real :func:`inject` and demands equality. So it
+    proves, in one comparison and with no parsing of the delta:
+
+      * every page RECEIVED the tag (a missed page fails: bytes differ);
+      * it received exactly ONE, in the right place, pointing at the right endpoint
+        (inject's own contract);
+      * NOTHING ELSE on that page moved (any other edit fails the equality);
+      * no other file in the artifact moved at all.
+
+    WHICH FILES MAY CHANGE IS `pages.yaml`, NOT A GLOB — the same single referent
+    stage 4b injects over, so the check cannot drift from the injector. D2's prose
+    anticipated the delta also covering `_site/sim/**` sub-pages, because it assumed
+    a `base.html.j2` + sim-vendoring injection; E2.1 measured that impossible (the
+    render is private, CI hermetic) and injects `pages.yaml` rows only — and E2.2
+    measured that every sim embed has a parent-side play control, so no shim lands
+    in a sim artifact copy either. Under the SHIPPED design "one per `pages.yaml`
+    page" is exactly true, and this iterates the rows rather than pinning 13.
+
+    ``unchanged`` is INJECTED rather than imported: the non-page comparison has to
+    honor D1's ONE named exclusion (``generated_at``, via
+    ``mirror_manifest.canonical_json_bytes``), and this module is deliberately
+    stdlib-only and dependency-free. The caller owns that rule and passes it in.
+    """
+    violations: list[str] = []
+    page_set = set(pages)
+    both = set(off) & set(on)
+
+    for rel in sorted(set(off) - set(on)):
+        violations.append(
+            f"{rel}: present with the flag OFF but MISSING with it ON — the "
+            f"analytics flag must ADD a tag, never remove a file."
+        )
+    for rel in sorted(set(on) - set(off)):
+        violations.append(
+            f"{rel}: the analytics flag CREATED this file. The flag gates the tag "
+            f"and nothing else."
+        )
+    for rel in sorted(page_set - both):
+        violations.append(
+            f"{rel}: pages.yaml names it, but it is not in both builds — a page "
+            f"the injector cannot have covered."
+        )
+
+    for rel in sorted(both):
+        if rel in page_set:
+            try:
+                want = inject(off[rel].decode("utf-8"), code, rel).encode("utf-8")
+            except (InjectionError, UnicodeDecodeError) as exc:
+                violations.append(f"{rel}: cannot re-derive the expected bytes: {exc}")
+                continue
+            if on[rel] != want:
+                violations.append(
+                    f"{rel}: the flag-ON bytes are NOT exactly the flag-OFF bytes "
+                    f"+ the analytics tag. Either the page did not receive the tag, "
+                    f"or the flag changed something ELSE on it — both are the "
+                    f"failure D2 item 1's third build exists to catch."
+                )
+        elif not unchanged(rel, off[rel], on[rel]):
+            violations.append(
+                f"{rel}: changed under the analytics flag, but it is NOT a "
+                f"pages.yaml row — so nothing should have injected into it. The "
+                f"flag's blast radius is the page set, or the rule is wrong."
+            )
+    return violations

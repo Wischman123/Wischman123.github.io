@@ -3,7 +3,7 @@ r"""build.py — the site build. HERMETIC: it runs in CI, with NO access to phys
 
     python build.py --check                 # stages 0-6: assemble _site/ + THE GATE
     python build.py --smoke --base-url URL  # stage 7: post-deploy alarm
-    python build.py --determinism           # stage 8: build twice, byte-identical
+    python build.py --determinism           # stage 8: the three-build matrix
 
 WHAT THIS PROGRAM IS — AND WHAT IT DELIBERATELY IS NOT
 ======================================================
@@ -88,11 +88,12 @@ physics.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
+import os
 import shutil
 import subprocess
 import sys
-import tempfile
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent
@@ -426,68 +427,207 @@ def _assemble_all() -> None:
     stage_nojekyll()
 
 
-def stage_determinism() -> None:
-    """D2 era-2 check: build twice; the two _site/ trees must be BYTE-identical,
-    honoring the ONE named exclusion (`mirror_manifest.DETERMINISM_EXCLUDED_KEYS`
-    — `generated_at`, compared via `canonical_json_bytes`, the same rule D1
-    named once and every determinism consumer honors).
+#: The site code the matrix's flag-ON build uses. FIXED and obviously synthetic,
+#: never the real one, and never whatever the ambient env happens to hold:
+#:
+#:   * the check must run the SAME way on Brendan's box (flag unset) and in CI
+#:     (flag set), or the thing CI proves is not the thing he can reproduce. Before
+#:     E2.2 the flag-ON path had NO local coverage at all — `--determinism` locally
+#:     only ever built the OFF mode;
+#:   * the property under test ("the flag's only effect is the tag") does not depend
+#:     on WHICH code is configured. The real code's validity is already asserted at
+#:     the boundary (`site_code`) and its endpoint by THE GATE, on every page.
+DETERMINISM_PROBE_CODE = "determinism-probe"
 
-    TODAY THIS IS TWO BUILDS, BECAUSE THERE IS ONE MODE. When E2 lands the
-    analytics flag this check becomes THREE builds — twice in the default mode
-    (this comparison, unchanged), then once with the flag flipped, asserting the
-    only deltas are the analytics <script> nodes (one per HTML file that
-    receives the tag: every pages.yaml page PLUS the injected copies under
-    _site/sim/** and the vendored plain-vs-engine.html — and nothing else).
-    Extending and re-running it is a named item in E2.2's Done-when — owned
-    there, not merely anticipated here. (A FOURTH build is warranted only if
-    the analytics snippet ever embeds a per-build value such as a nonce; today
-    it must not.) Determinism is a property of the BUILD, not of the flag —
-    proving it twice per flag value buys nothing.
+
+@contextlib.contextmanager
+def _analytics_flag(code: str | None):
+    """Run a build with the analytics flag forced ON (`code`) or OFF (`None`).
+
+    The matrix must be HERMETIC with respect to the ambient flag: in CI the env var
+    is set at job level, so a check that merely inherited it would test one mode
+    twice and silently stop proving anything about the other. Saved and restored in
+    a `finally` — the whole point is that this stage leaves no trace in the
+    environment of the build that follows it.
     """
-    _hdr(8, "DETERMINISM — the same source must build the same bytes, twice")
-    _assemble_all()
-    with tempfile.TemporaryDirectory(prefix="showcase_det_") as td:
-        first = Path(td) / "first"
-        shutil.copytree(SITE, first)
-        _assemble_all()
+    env = site_analytics.SITE_CODE_ENV
+    prev = os.environ.get(env)
+    if code is None:
+        os.environ.pop(env, None)
+    else:
+        os.environ[env] = code
+    try:
+        yield
+    finally:
+        if prev is None:
+            os.environ.pop(env, None)
+        else:
+            os.environ[env] = prev
 
-        a = {p.relative_to(first).as_posix(): p
-             for p in sorted(first.rglob("*")) if p.is_file()}
-        b = {p.relative_to(SITE).as_posix(): p
-             for p in sorted(SITE.rglob("*")) if p.is_file()}
-        diffs: list[str] = []
-        excluded = 0
-        for rel in sorted(set(a) | set(b)):
-            pa, pb = a.get(rel), b.get(rel)
-            if pa is None or pb is None:
-                diffs.append(f"{rel}: present in only one of the two builds")
-                continue
-            if pa.read_bytes() == pb.read_bytes():
-                continue
-            if rel.endswith(".json") and (
-                mirror_manifest.canonical_json_bytes(pa)
-                == mirror_manifest.canonical_json_bytes(pb)
-            ):
-                excluded += 1  # differs ONLY in the named excluded key(s)
-                continue
-            diffs.append(f"{rel}: bytes differ between two builds of the "
-                         f"SAME source")
-        if diffs:
-            for d in diffs:
-                print(f"  {d}", file=sys.stderr)
-            raise BuildError(
-                f"THE BUILD IS NOT DETERMINISTIC — {len(diffs)} file(s) "
-                f"differ across two runs. The zero-diff guardrail is only "
-                f"viable on a byte-deterministic build: no timestamps (dates "
-                f"come from the committed JSON), sorted iteration, "
-                f"locale-independent formatting. Find the nondeterminism; do "
-                f"not widen the exclusion list."
-            )
-        print(f"\n  DETERMINISTIC — {len(a)} files byte-identical across two "
-              f"builds"
-              + (f" ({excluded} JSON file(s) forgiven ONLY on "
-                 f"{mirror_manifest.DETERMINISM_EXCLUDED_KEYS})" if excluded
-                 else ""))
+
+def _snapshot() -> dict[str, bytes]:
+    """The assembled tree as {published path: bytes}. ~10 MB — cheaper to hold than
+    to copy, and it gives the pure predicate a filesystem-free input."""
+    return {p.relative_to(SITE).as_posix(): p.read_bytes()
+            for p in sorted(SITE.rglob("*")) if p.is_file()}
+
+
+def _same(rel: str, a: bytes, b: bytes) -> bool:
+    """Byte equality, honoring D1's ONE named exclusion.
+
+    The SAME rule for both comparisons in the matrix (build-vs-build, and the
+    flag's non-page files) — `generated_at`, stripped by the module that owns the
+    rule. Never re-typed here: two implementations of one contract is the drift
+    disease MIRROR.json exists to prevent.
+    """
+    if a == b:
+        return True
+    if rel.endswith(".json"):
+        return (mirror_manifest.canonical_json_from_bytes(a)
+                == mirror_manifest.canonical_json_from_bytes(b))
+    return False
+
+
+def _assert_left_tree_matches_ambient_flag(pages: list[str]) -> None:
+    """The tree this stage LEAVES BEHIND is the one CI uploads. Prove its mode.
+
+    pages.yml scopes SHOWCASE_ANALYTICS_SITE at JOB level *because* this stage
+    re-assembles _site/ after the gate and `upload-pages-artifact` ships whatever
+    is on disk when the job ends. That invariant lived only in a workflow COMMENT —
+    survivable while both builds used the ambient flag, load-bearing now that E2.2
+    gives the matrix a SECOND mode it could leave behind. A probe-tagged tree
+    reaching the artifact would deploy `determinism-probe.goatcounter.com` to a
+    live, public, job-application site.
+
+    So the comment becomes an executable check: per page, the leftover artifact
+    carries exactly the tag the AMBIENT config calls for — the tag when on, none
+    when off. Verify presence, not just absence.
+    """
+    try:
+        code = site_analytics.site_code()
+    except site_analytics.AnalyticsConfigError as exc:
+        raise BuildError(str(exc)) from exc
+    want = [site_analytics.endpoint(code)] if code else []
+    bad: list[str] = []
+    for rel in pages:
+        found = site_analytics.analytics_endpoints(
+            (SITE / rel).read_text(encoding="utf-8"))
+        if found != want:
+            bad.append(f"    {rel}: carries {found or 'no tag'}, expected "
+                       f"{want or 'no tag'}")
+    if bad:
+        raise BuildError(
+            "THE LEFTOVER ARTIFACT IS IN THE WRONG MODE — this is the tree CI "
+            "uploads and deploys:\n" + "\n".join(bad) + "\n"
+            f"The determinism matrix forces the flag both ways and must restore "
+            f"the ambient mode ({site_analytics.SITE_CODE_ENV}="
+            f"{code or '<unset>'}) before returning."
+        )
+    print(f"  leftover artifact: all {len(pages)} page(s) in the AMBIENT mode "
+          f"({'tagged -> ' + want[0] if want else 'no tag'}) — safe to upload")
+
+
+def stage_determinism() -> None:
+    """D2 item 1's era-2 check — THREE builds, because E2 landed the analytics flag.
+
+    D2 item 1 defines the rule and E2.2 owns extending it. Exactly as written there:
+
+      * **twice in the DEFAULT mode** — the two _site/ trees must be BYTE-identical,
+        honoring the ONE named exclusion (`generated_at`, via mirror_manifest —
+        the same rule D1 named once and every determinism consumer honors);
+      * **once with the flag FLIPPED** — and the only deltas may be the analytics
+        `<script>` nodes, exactly one per HTML file that RECEIVES the tag, and
+        nothing else.
+
+    Determinism is a property of the BUILD, not of the flag, so the ON mode is built
+    ONCE: proving repeatability a second time under the other flag value buys
+    nothing. D2's "add a FOURTH build only if the snippet embeds a per-build value"
+    caveat stays un-triggered — `tag_html` is a function of (code, path) alone, and
+    `test_the_tag_varies_by_PAGE_but_never_by_BUILD` pins it.
+
+    WHICH FILES RECEIVE THE TAG — the shipped answer, not the plan's forecast. D2's
+    prose expected `pages.yaml` pages PLUS injected copies under `_site/sim/**`,
+    because it assumed a `base.html.j2` + sim-vendoring injection. E2.1 measured
+    that impossible (the render is private, CI hermetic) and stage 4b injects
+    `pages.yaml` rows ONLY — `sim/index.html` and `plain-vs-engine.html` among them,
+    as rows rather than special cases. E2.2 then measured that every sim embed has a
+    parent-side play control (`.js-embed-run`), so no `postMessage` shim lands in a
+    sim artifact copy either. So the delta is exactly the 13 rows, and the rule is
+    iterated from `pages.yaml` — never a pinned count, never a glob.
+
+    The comparison is CONSTRUCTIVE: `site_analytics.flag_delta_violations`
+    re-derives the expected ON bytes with the real injector and demands equality,
+    rather than diffing and pattern-matching the delta (the substring bug E1.2 hit
+    twice). Its negative cases live in tests/test_site_analytics.py — a check only
+    ever seen green is a check nobody has proven can go red.
+
+    THE FOURTH ASSEMBLY IS NOT A FOURTH MATRIX BUILD. It restores the ambient mode,
+    because the tree this stage leaves behind is what CI uploads. See
+    `_assert_left_tree_matches_ambient_flag`.
+    """
+    _hdr(8, "DETERMINISM — three builds: same source -> same bytes; the flag adds "
+            "ONLY the tag")
+    pages = pages_from_yaml()
+
+    # -- builds 1 + 2: twice in the DEFAULT mode ----------------------------
+    with _analytics_flag(None):
+        _assemble_all()
+        first = _snapshot()
+        _assemble_all()
+        second = _snapshot()
+
+    diffs: list[str] = []
+    excluded = 0
+    for rel in sorted(set(first) | set(second)):
+        a, b = first.get(rel), second.get(rel)
+        if a is None or b is None:
+            diffs.append(f"{rel}: present in only one of the two builds")
+            continue
+        if a == b:
+            continue
+        if _same(rel, a, b):
+            excluded += 1  # differs ONLY in the named excluded key(s)
+            continue
+        diffs.append(f"{rel}: bytes differ between two builds of the SAME source")
+    if diffs:
+        for d in diffs:
+            print(f"  {d}", file=sys.stderr)
+        raise BuildError(
+            f"THE BUILD IS NOT DETERMINISTIC — {len(diffs)} file(s) differ across "
+            f"two runs. The zero-diff guardrail is only viable on a "
+            f"byte-deterministic build: no timestamps (dates come from the "
+            f"committed JSON), sorted iteration, locale-independent formatting. "
+            f"Find the nondeterminism; do not widen the exclusion list."
+        )
+    print(f"\n  [builds 1+2] DETERMINISTIC — {len(first)} files byte-identical "
+          f"across two builds in the DEFAULT mode"
+          + (f" ({excluded} JSON file(s) forgiven ONLY on "
+             f"{mirror_manifest.DETERMINISM_EXCLUDED_KEYS})" if excluded else ""))
+
+    # -- build 3: once with the flag FLIPPED --------------------------------
+    with _analytics_flag(DETERMINISM_PROBE_CODE):
+        _assemble_all()
+        flagged = _snapshot()
+
+    violations = site_analytics.flag_delta_violations(
+        first, flagged, pages, DETERMINISM_PROBE_CODE, _same)
+    if violations:
+        for v in violations:
+            print(f"  {v}", file=sys.stderr)
+        raise BuildError(
+            f"THE ANALYTICS FLAG CHANGES MORE THAN THE TAG — {len(violations)} "
+            f"finding(s). D2 item 1: with the flag flipped, the only deltas may be "
+            f"the analytics <script> nodes, exactly one per pages.yaml page, and "
+            f"nothing else. Either a page missed the tag, or turning analytics on "
+            f"moved something it has no business moving."
+        )
+    print(f"  [build 3] THE FLAG ADDS ONLY THE TAG — {len(pages)} pages each gained "
+          f"exactly one analytics <script>; the other {len(first) - len(pages)} "
+          f"file(s) are untouched")
+
+    # -- restore the ambient mode (NOT a matrix build) ----------------------
+    _assemble_all()
+    _assert_left_tree_matches_ambient_flag(pages)
 
 
 def stage_smoke(base_url: str) -> int:
@@ -515,8 +655,10 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--smoke", action="store_true",
                     help="stage 7 only: crawl the LIVE site (post-deploy alarm)")
     ap.add_argument("--determinism", action="store_true",
-                    help="era-2 check: assemble _site/ TWICE and assert the "
-                         "trees are byte-identical (generated_at excluded)")
+                    help="era-2 check (D2 item 1): assemble _site/ TWICE in the "
+                         "default mode and assert the trees are byte-identical "
+                         "(generated_at excluded), then ONCE with the analytics "
+                         "flag flipped and assert it added only the tag")
     ap.add_argument("--base-url", default="https://wischman123.github.io",
                     help="stage 7's target")
     args = ap.parse_args(argv)
