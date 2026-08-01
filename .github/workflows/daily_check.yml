@@ -49,6 +49,14 @@ permissions:
 jobs:
   live:
     runs-on: ubuntu-latest
+    # Read the SAME repo variable pages.yml reads (job level, lines 59/144) so
+    # the crawl builds its EXPECTED model in the analytics mode the live site was
+    # actually deployed in. Without it, build.py --smoke sees the var unset ->
+    # analytics OFF -> it asserts the flag-OFF inverse and reds every day against
+    # the flag-ON deployed site (the ~07-17 daily red). Single source of truth:
+    # the variable both workflows read; no new artifact. (ci_failure_emails_fix_v1 B1.)
+    env:
+      SHOWCASE_ANALYTICS_SITE: ${{ vars.SHOWCASE_ANALYTICS_SITE }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
