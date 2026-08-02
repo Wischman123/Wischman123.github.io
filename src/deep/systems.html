@@ -384,6 +384,50 @@
   /* ---------- the moat, gated ---------- */
   .moat{margin-top:56px;}
   .moat .cap{color:var(--muted);max-width:70ch;margin:0 0 8px;font-size:15px;}
+
+  /* ---------- T2-d: the self-drawing layer map ---------- */
+  .sysmap{margin-top:56px;}
+  .sysmap h2{font-size:13px;font-family:var(--mono);letter-spacing:.16em;
+    text-transform:uppercase;color:var(--muted);margin:0 0 12px;font-weight:600;}
+  .sysmap .cap{color:var(--muted);max-width:72ch;margin:0 0 4px;font-size:15px;}
+  .sysmap-heads{display:flex;flex-wrap:wrap;gap:12px 30px;margin:20px 2px 4px;}
+  .sysmap-head{display:flex;flex-direction:column;gap:3px;}
+  .sysmap-head .sysmap-val{font-family:var(--mono);font-weight:700;font-size:19px;color:var(--text);}
+  .sysmap-head .sysmap-lab{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--muted);}
+  /* the generator's inline SVG (classes it emits: sysmap-*) */
+  svg.sysmap-svg{display:block;width:100%;min-width:620px;height:auto;}
+  .sysmap-svg text{fill:var(--text);}
+  .sysmap-band{stroke-width:1.4;}
+  .sysmap-band-4{fill:color-mix(in srgb,var(--core) 8%,var(--card));stroke:var(--core);stroke-opacity:.42;}
+  .sysmap-band-3{fill:color-mix(in srgb,var(--subject) 8%,var(--card));stroke:var(--subject);stroke-opacity:.42;}
+  .sysmap-band-2{fill:color-mix(in srgb,var(--driven) 8%,var(--card));stroke:var(--driven);stroke-opacity:.42;}
+  .sysmap-band-1{fill:color-mix(in srgb,var(--mech) 8%,var(--card));stroke:var(--mech);stroke-opacity:.42;}
+  .sysmap-layer-name{font-family:var(--sans);font-weight:730;font-size:15px;}
+  .sysmap-layer-tag{font-family:var(--mono);font-size:11px;fill:var(--muted);letter-spacing:.03em;}
+  .sysmap-empty{font-family:var(--mono);font-size:11px;fill:var(--muted);font-style:italic;}
+  .sysmap-nodebox{fill:var(--card);stroke:var(--edge);stroke-width:1.5;transition:filter .2s ease,stroke .2s ease;}
+  .sysmap-node{cursor:pointer;}
+  .sysmap-node:hover .sysmap-nodebox,.sysmap-node:focus .sysmap-nodebox{filter:brightness(1.08);stroke:var(--core);}
+  .sysmap-node:focus{outline:none;}
+  .sysmap-node:focus-visible .sysmap-nodebox{stroke:var(--core);stroke-width:2.4;}
+  .sysmap-node-pkg{font-family:var(--mono);font-weight:600;font-size:12px;}
+  .sysmap-node-count{font-family:var(--mono);font-size:10.5px;fill:var(--muted);}
+  .sysmap-dep{stroke:var(--edge);stroke-width:1.6;opacity:.65;}
+  .sysmap-arrowhead{fill:var(--edge);}
+  /* legend + click→detail panel */
+  .sysmap-legend{margin:24px 2px 0;padding:0;list-style:none;display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px 26px;}
+  .sysmap-legend li{padding-left:14px;border-left:3px solid var(--line);line-height:1.5;}
+  .sysmap-legend .lname{font-weight:700;font-size:14px;}
+  .sysmap-legend .ldesc{color:var(--muted);font-size:13px;}
+  .sysmap-hint{color:var(--muted);font-size:12.5px;margin:12px 2px 0;font-style:italic;}
+  .sysmap-detail{margin:16px 2px 0;padding:14px 16px;border:1px solid var(--line);
+    border-radius:10px;background:var(--card);font-size:13.5px;color:var(--muted);}
+  .sysmap-detail[hidden]{display:none;}
+  .sysmap-detail .d-pkg{font-family:var(--mono);font-weight:700;color:var(--text);}
+  .sysmap-detail ul{margin:9px 0 0;padding-left:18px;columns:2;column-gap:30px;}
+  .sysmap-detail li{font-family:var(--mono);font-size:12px;break-inside:avoid;}
   </style>
 </head>
 <body class="atlas">
@@ -432,12 +476,12 @@
   <h1>The whole machine, on one map</h1>
   <p class="dek">One map, four bands: the curriculum loop a problem travels, the subject-free engine it runs on, the meta-cognitive fabric that keeps the work honest, and the Claude Code substrate under all of it. Positions and captions are curated for reading; the connections are held to evidence.</p>
   <p class="lede">Every solid arrow below is a bundle of real imports — the
-    <span class="stat" data-source="tools/showcase/out/import_graph.json (import_graph_dump.py)" data-verified="2026-07-16" data-provenance="verified" title="source: tools/showcase/out/import_graph.json (import_graph_dump.py) · verified 2026-07-16">1,182</span>-import, <span class="stat" data-source="tools/showcase/out/import_graph.json (import_graph_dump.py)" data-verified="2026-07-16" data-provenance="verified" title="source: tools/showcase/out/import_graph.json (import_graph_dump.py) · verified 2026-07-16">453</span>-module graph
-    recomputed into <span class="stat" data-source="atlas_layout.json kind=&#39;import&#39; edges (each re-proven by gate m)" data-verified="2026-07-16" data-provenance="verified" title="source: atlas_layout.json kind=&#39;import&#39; edges (each re-proven by gate m) · verified 2026-07-16">4</span> proven region-to-region edges,
+    <span class="stat" data-source="tools/showcase/out/import_graph.json (import_graph_dump.py)" data-verified="2026-08-02" data-provenance="verified" title="source: tools/showcase/out/import_graph.json (import_graph_dump.py) · verified 2026-08-02">2,592</span>-import, <span class="stat" data-source="tools/showcase/out/import_graph.json (import_graph_dump.py)" data-verified="2026-08-02" data-provenance="verified" title="source: tools/showcase/out/import_graph.json (import_graph_dump.py) · verified 2026-08-02">911</span>-module graph
+    recomputed into <span class="stat" data-source="atlas_layout.json kind=&#39;import&#39; edges (each re-proven by gate m)" data-verified="2026-08-02" data-provenance="verified" title="source: atlas_layout.json kind=&#39;import&#39; edges (each re-proven by gate m) · verified 2026-08-02">4</span> proven region-to-region edges,
     each stroke weighted by its count. Every dotted arrow is one of
-    <span class="stat" data-source="atlas_layout.json kind=&#39;flow&#39; edges (artifact-evidenced, unwitnessable by imports)" data-verified="2026-07-16" data-provenance="verified" title="source: atlas_layout.json kind=&#39;flow&#39; edges (artifact-evidenced, unwitnessable by imports) · verified 2026-07-16">10</span> pipeline flows whose evidence is the artifacts on
+    <span class="stat" data-source="atlas_layout.json kind=&#39;flow&#39; edges (artifact-evidenced, unwitnessable by imports)" data-verified="2026-08-02" data-provenance="verified" title="source: atlas_layout.json kind=&#39;flow&#39; edges (artifact-evidenced, unwitnessable by imports) · verified 2026-08-02">10</span> pipeline flows whose evidence is the artifacts on
     the page its box links to. The dashed ring is the moat:
-    <span class="stat" data-source="import_graph.json: recomputed island-to-fabric module pairs, both directions, every pair (verify_deep_dive.py gate m ISOLATION check)" data-verified="2026-07-16" data-provenance="verified" title="source: import_graph.json: recomputed island-to-fabric module pairs, both directions, every pair (verify_deep_dive.py gate m ISOLATION check) · verified 2026-07-16">0 imports</span> cross it, in either direction, re-proven on every
+    <span class="stat" data-source="import_graph.json: recomputed island-to-fabric module pairs, both directions, every pair (verify_deep_dive.py gate m ISOLATION check)" data-verified="2026-08-02" data-provenance="verified" title="source: import_graph.json: recomputed island-to-fabric module pairs, both directions, every pair (verify_deep_dive.py gate m ISOLATION check) · verified 2026-08-02">0 imports</span> cross it, in either direction, re-proven on every
     build. SOLID arrows are imports: each is recomputed from the two node groups against the ONE canonical witness source (import_graph.json), and a hand-declared edge with no underlying module-pair import fails gate (m). DOTTED arrows are pipeline flows whose evidence is the artifacts on the page each box links to — the gate refuses a dotted edge wherever import evidence exists. The moat around the engine is itself gated: zero imports may cross it, in either direction.</p>
 
   <div class="board">
@@ -586,19 +630,19 @@ stroke-dasharray="2.5 5" stroke-linecap="round"                marker-end="url(#
           <text class="a-edgelabel" x="710.0" y="262.7"
                 text-anchor="start">audits the loop’s work</text>
 <text class="a-edgelabel stat" data-source="import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py)"
-                data-verified="2026-07-16" data-provenance="verified"
+                data-verified="2026-08-02" data-provenance="verified"
                 x="794.0" y="392.0"
                 text-anchor="middle">8 imports</text>
 <text class="a-edgelabel stat" data-source="import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py)"
-                data-verified="2026-07-16" data-provenance="verified"
+                data-verified="2026-08-02" data-provenance="verified"
                 x="877.5" y="418.6"
                 text-anchor="middle">10 imports</text>
 <text class="a-edgelabel stat" data-source="import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py)"
-                data-verified="2026-07-16" data-provenance="verified"
+                data-verified="2026-08-02" data-provenance="verified"
                 x="902.3" y="398.6"
                 text-anchor="middle">7 imports</text>
 <text class="a-edgelabel stat" data-source="import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py)"
-                data-verified="2026-07-16" data-provenance="verified"
+                data-verified="2026-08-02" data-provenance="verified"
                 x="794.0" y="486.0"
                 text-anchor="middle">5 imports</text>
         </g>
@@ -787,25 +831,25 @@ stroke-dasharray="2.5 5" stroke-linecap="round"                marker-end="url(#
           <td class="flow-from" style="color:var(--mech)">Governance &amp; memory</td>
           <td class="flow-to">Plan QA</td>
           <td class="rel">runs the plan doctor; measures decision-card precision</td>
-          <td><span class="stat" data-source="import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py)" data-verified="2026-07-16" data-provenance="verified" title="source: import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py) · verified 2026-07-16">8 imports</span></td>
+          <td><span class="stat" data-source="import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py)" data-verified="2026-08-02" data-provenance="verified" title="source: import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py) · verified 2026-08-02">8 imports</span></td>
         </tr>
         <tr>
           <td class="flow-from" style="color:var(--mech)">Governance &amp; memory</td>
           <td class="flow-to">Learning loop</td>
           <td class="rel">feeds rework + failure-mode signals into retro</td>
-          <td><span class="stat" data-source="import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py)" data-verified="2026-07-16" data-provenance="verified" title="source: import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py) · verified 2026-07-16">10 imports</span></td>
+          <td><span class="stat" data-source="import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py)" data-verified="2026-08-02" data-provenance="verified" title="source: import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py) · verified 2026-08-02">10 imports</span></td>
         </tr>
         <tr>
           <td class="flow-from" style="color:var(--drive)">Adjudication</td>
           <td class="flow-to">Learning loop</td>
           <td class="rel">spot-checks grounding; aggregates the mode harness into retro</td>
-          <td><span class="stat" data-source="import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py)" data-verified="2026-07-16" data-provenance="verified" title="source: import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py) · verified 2026-07-16">7 imports</span></td>
+          <td><span class="stat" data-source="import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py)" data-verified="2026-08-02" data-provenance="verified" title="source: import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py) · verified 2026-08-02">7 imports</span></td>
         </tr>
         <tr>
           <td class="flow-from" style="color:var(--drive)">Adjudication</td>
           <td class="flow-to">Tuning experiments</td>
           <td class="rel">tunes the hybrid cost estimator</td>
-          <td><span class="stat" data-source="import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py)" data-verified="2026-07-16" data-provenance="verified" title="source: import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py) · verified 2026-07-16">5 imports</span></td>
+          <td><span class="stat" data-source="import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py)" data-verified="2026-08-02" data-provenance="verified" title="source: import_graph.json: recomputed module-pair imports between the two node groups (import_graph_dump.py) · verified 2026-08-02">5 imports</span></td>
         </tr>
       </tbody>
     </table>
@@ -814,8 +858,8 @@ stroke-dasharray="2.5 5" stroke-linecap="round"                marker-end="url(#
   <section class="moat" aria-labelledby="moat-h">
     <h2 id="moat-h">The moat, gated</h2>
     <p class="cap">The assessment engine and the product plane —
-      <span class="stat" data-source="atlas_layout.json kind=&#39;island&#39; nodes" data-verified="2026-07-16" data-provenance="verified" title="source: atlas_layout.json kind=&#39;island&#39; nodes · verified 2026-07-16">2</span> island planes in this map — exchange
-      <span class="stat" data-source="import_graph.json: recomputed island-to-fabric module pairs, both directions, every pair (verify_deep_dive.py gate m ISOLATION check)" data-verified="2026-07-16" data-provenance="verified" title="source: import_graph.json: recomputed island-to-fabric module pairs, both directions, every pair (verify_deep_dive.py gate m ISOLATION check) · verified 2026-07-16">0 imports</span> with the <span class="stat" data-source="atlas_layout.json (curated layout)" data-verified="2026-07-16" data-provenance="verified" title="source: atlas_layout.json (curated layout) · verified 2026-07-16">5</span> fabric
+      <span class="stat" data-source="atlas_layout.json kind=&#39;island&#39; nodes" data-verified="2026-08-02" data-provenance="verified" title="source: atlas_layout.json kind=&#39;island&#39; nodes · verified 2026-08-02">2</span> island planes in this map — exchange
+      <span class="stat" data-source="import_graph.json: recomputed island-to-fabric module pairs, both directions, every pair (verify_deep_dive.py gate m ISOLATION check)" data-verified="2026-08-02" data-provenance="verified" title="source: import_graph.json: recomputed island-to-fabric module pairs, both directions, every pair (verify_deep_dive.py gate m ISOLATION check) · verified 2026-08-02">0 imports</span> with the <span class="stat" data-source="atlas_layout.json (curated layout)" data-verified="2026-08-02" data-provenance="verified" title="source: atlas_layout.json (curated layout) · verified 2026-08-02">5</span> fabric
       regions, in either direction. That absence is the ports-and-adapters
       invariant: dependencies point only inward, so the subject-free core never
       reaches up into the machinery that builds, checks, and tunes the
@@ -823,6 +867,32 @@ stroke-dasharray="2.5 5" stroke-linecap="round"                marker-end="url(#
       a drawn moat with a failing gate behind it, not a caption.</p>
     <p class="cap">The hexagon has its own page:
       <a href="../architecture.html">the engine, drawn as a hexagon</a>.</p>
+  </section>
+
+  <section class="sysmap" aria-labelledby="sysmap-h">
+    <h2 id="sysmap-h">The map draws itself</h2>
+    <p class="cap">The map above is arranged by hand. This one is not: it is generated from the engine's own layer-purity runbook and re-checked against it on every build, so the picture can never quietly disagree with the code. Each band is a layer that may depend only on the one beneath it &mdash; pure infrastructure at the base, the single physics-aware layer near the top &mdash; and the downward arrows are that rule, drawn.</p>
+
+    <div class="sysmap-heads">
+      <div class="sysmap-head"><span class="sysmap-val"><span class="stat" data-source="physics/docs/runbooks/lib_layer_map.md — machine-derived at build, agreement-asserted against the runbook&#39;s own Summary counts" data-verified="2026-08-02" data-provenance="verified" title="source: physics/docs/runbooks/lib_layer_map.md — machine-derived at build, agreement-asserted against the runbook&#39;s own Summary counts · verified 2026-08-02">107</span></span><span class="sysmap-lab">library modules</span></div>
+      <div class="sysmap-head"><span class="sysmap-val"><span class="stat" data-source="physics/docs/runbooks/lib_layer_map.md — machine-derived at build, agreement-asserted against the runbook&#39;s own Summary counts" data-verified="2026-08-02" data-provenance="verified" title="source: physics/docs/runbooks/lib_layer_map.md — machine-derived at build, agreement-asserted against the runbook&#39;s own Summary counts · verified 2026-08-02">4</span></span><span class="sysmap-lab">purity layers</span></div>
+      <div class="sysmap-head"><span class="sysmap-val"><span class="stat" data-source="physics/docs/runbooks/lib_layer_map.md — machine-derived at build, agreement-asserted against the runbook&#39;s own Summary counts" data-verified="2026-08-02" data-provenance="verified" title="source: physics/docs/runbooks/lib_layer_map.md — machine-derived at build, agreement-asserted against the runbook&#39;s own Summary counts · verified 2026-08-02">10</span></span><span class="sysmap-lab">packages</span></div>
+      <div class="sysmap-head"><span class="sysmap-val"><span class="stat" data-source="physics/docs/runbooks/lib_layer_map.md: the runbook&#39;s `## circular_imports:` section (no import cycle among the classified modules)" data-verified="2026-08-02" data-provenance="verified" title="source: physics/docs/runbooks/lib_layer_map.md: the runbook&#39;s `## circular_imports:` section (no import cycle among the classified modules) · verified 2026-08-02">0 cycles</span></span><span class="sysmap-lab">across the layer boundary</span></div>
+    </div>
+
+    <div class="board"><div class="board__scroll">
+      <svg viewBox="0 0 900 590" xmlns="http://www.w3.org/2000/svg" class="sysmap-svg" role="img" aria-label="Four-layer system map of the physics engine library"><rect x="4" y="16" width="892" height="120" rx="10" class="sysmap-band sysmap-band-4" role="img" aria-label="Layer 4: Orchestrator"/><text x="20" y="46" class="sysmap-layer-name">Orchestrator</text><text x="20" y="68" class="sysmap-layer-tag">top-level build drivers</text><text x="162" y="80" class="sysmap-empty">(orchestrators live at build.py, outside lib/ — no lib/ module classifies here)</text><line x1="450" y1="136" x2="450" y2="162" class="sysmap-dep" marker-end="url(#sysmap-arrow)"/><rect x="4" y="162" width="892" height="120" rx="10" class="sysmap-band sysmap-band-3" role="img" aria-label="Layer 3: Subject adapter"/><text x="20" y="192" class="sysmap-layer-name">Subject adapter</text><text x="20" y="214" class="sysmap-layer-tag">physics-aware shapes</text><g class="sysmap-node" data-node-id="L3:(top-level)" tabindex="0" role="button" aria-label="(top-level), 2 modules"><rect x="162.0" y="188" width="228.7" height="76" rx="7" class="sysmap-nodebox"/><text x="276.3" y="222.0" class="sysmap-node-pkg" text-anchor="middle">(top-level)</text><text x="276.3" y="242.0" class="sysmap-node-count stat" text-anchor="middle" data-source="physics/docs/runbooks/lib_layer_map.md: aggregated module count per (layer, package) node, machine-derived from the layer-purity runbook" data-verified="2026-08-02" data-provenance="verified">2 mod</text></g><g class="sysmap-node" data-node-id="L3:_legacy" tabindex="0" role="button" aria-label="_legacy, 1 modules"><rect x="402.7" y="188" width="228.7" height="76" rx="7" class="sysmap-nodebox"/><text x="517.0" y="222.0" class="sysmap-node-pkg" text-anchor="middle">_legacy</text><text x="517.0" y="242.0" class="sysmap-node-count stat" text-anchor="middle" data-source="physics/docs/runbooks/lib_layer_map.md: aggregated module count per (layer, package) node, machine-derived from the layer-purity runbook" data-verified="2026-08-02" data-provenance="verified">1 mod</text></g><g class="sysmap-node" data-node-id="L3:physics_subject" tabindex="0" role="button" aria-label="physics_subject, 6 modules"><rect x="643.3" y="188" width="228.7" height="76" rx="7" class="sysmap-nodebox"/><text x="757.7" y="222.0" class="sysmap-node-pkg" text-anchor="middle">physics_subject</text><text x="757.7" y="242.0" class="sysmap-node-count stat" text-anchor="middle" data-source="physics/docs/runbooks/lib_layer_map.md: aggregated module count per (layer, package) node, machine-derived from the layer-purity runbook" data-verified="2026-08-02" data-provenance="verified">6 mod</text></g><line x1="450" y1="282" x2="450" y2="308" class="sysmap-dep" marker-end="url(#sysmap-arrow)"/><rect x="4" y="308" width="892" height="120" rx="10" class="sysmap-band sysmap-band-2" role="img" aria-label="Layer 2: Project-type"/><text x="20" y="338" class="sysmap-layer-name">Project-type</text><text x="20" y="360" class="sysmap-layer-tag">assessment-aware, subject-free</text><g class="sysmap-node" data-node-id="L2:(top-level)" tabindex="0" role="button" aria-label="(top-level), 1 modules"><rect x="162.0" y="334" width="710.0" height="76" rx="7" class="sysmap-nodebox"/><text x="517.0" y="368.0" class="sysmap-node-pkg" text-anchor="middle">(top-level)</text><text x="517.0" y="388.0" class="sysmap-node-count stat" text-anchor="middle" data-source="physics/docs/runbooks/lib_layer_map.md: aggregated module count per (layer, package) node, machine-derived from the layer-purity runbook" data-verified="2026-08-02" data-provenance="verified">1 mod</text></g><line x1="450" y1="428" x2="450" y2="454" class="sysmap-dep" marker-end="url(#sysmap-arrow)"/><rect x="4" y="454" width="892" height="120" rx="10" class="sysmap-band sysmap-band-1" role="img" aria-label="Layer 1: Mechanism"/><text x="20" y="484" class="sysmap-layer-name">Mechanism</text><text x="20" y="506" class="sysmap-layer-tag">pure infrastructure</text><g class="sysmap-node" data-node-id="L1:(top-level)" tabindex="0" role="button" aria-label="(top-level), 56 modules"><rect x="162.0" y="480" width="108.3" height="76" rx="7" class="sysmap-nodebox"/><text x="216.2" y="514.0" class="sysmap-node-pkg" text-anchor="middle">(top-level)</text><text x="216.2" y="534.0" class="sysmap-node-count stat" text-anchor="middle" data-source="physics/docs/runbooks/lib_layer_map.md: aggregated module count per (layer, package) node, machine-derived from the layer-purity runbook" data-verified="2026-08-02" data-provenance="verified">56 mod</text></g><g class="sysmap-node" data-node-id="L1:_infra" tabindex="0" role="button" aria-label="_infra, 24 modules"><rect x="282.3" y="480" width="108.3" height="76" rx="7" class="sysmap-nodebox"/><text x="336.5" y="514.0" class="sysmap-node-pkg" text-anchor="middle">_infra</text><text x="336.5" y="534.0" class="sysmap-node-count stat" text-anchor="middle" data-source="physics/docs/runbooks/lib_layer_map.md: aggregated module count per (layer, package) node, machine-derived from the layer-purity runbook" data-verified="2026-08-02" data-provenance="verified">24 mod</text></g><g class="sysmap-node" data-node-id="L1:_legacy" tabindex="0" role="button" aria-label="_legacy, 4 modules"><rect x="402.7" y="480" width="108.3" height="76" rx="7" class="sysmap-nodebox"/><text x="456.8" y="514.0" class="sysmap-node-pkg" text-anchor="middle">_legacy</text><text x="456.8" y="534.0" class="sysmap-node-count stat" text-anchor="middle" data-source="physics/docs/runbooks/lib_layer_map.md: aggregated module count per (layer, package) node, machine-derived from the layer-purity runbook" data-verified="2026-08-02" data-provenance="verified">4 mod</text></g><g class="sysmap-node" data-node-id="L1:migration_patterns" tabindex="0" role="button" aria-label="migration_patterns, 3 modules"><rect x="523.0" y="480" width="108.3" height="76" rx="7" class="sysmap-nodebox"/><text x="577.2" y="514.0" class="sysmap-node-pkg" text-anchor="middle">migration_patterns</text><text x="577.2" y="534.0" class="sysmap-node-count stat" text-anchor="middle" data-source="physics/docs/runbooks/lib_layer_map.md: aggregated module count per (layer, package) node, machine-derived from the layer-purity runbook" data-verified="2026-08-02" data-provenance="verified">3 mod</text></g><g class="sysmap-node" data-node-id="L1:physics_subject" tabindex="0" role="button" aria-label="physics_subject, 2 modules"><rect x="643.3" y="480" width="108.3" height="76" rx="7" class="sysmap-nodebox"/><text x="697.5" y="514.0" class="sysmap-node-pkg" text-anchor="middle">physics_subject</text><text x="697.5" y="534.0" class="sysmap-node-count stat" text-anchor="middle" data-source="physics/docs/runbooks/lib_layer_map.md: aggregated module count per (layer, package) node, machine-derived from the layer-purity runbook" data-verified="2026-08-02" data-provenance="verified">2 mod</text></g><g class="sysmap-node" data-node-id="L1:stages" tabindex="0" role="button" aria-label="stages, 8 modules"><rect x="763.7" y="480" width="108.3" height="76" rx="7" class="sysmap-nodebox"/><text x="817.8" y="514.0" class="sysmap-node-pkg" text-anchor="middle">stages</text><text x="817.8" y="534.0" class="sysmap-node-count stat" text-anchor="middle" data-source="physics/docs/runbooks/lib_layer_map.md: aggregated module count per (layer, package) node, machine-derived from the layer-purity runbook" data-verified="2026-08-02" data-provenance="verified">8 mod</text></g><defs><marker id="sysmap-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="sysmap-arrowhead"/></marker></defs></svg>
+    </div></div>
+
+    <p class="sysmap-hint">Click any package to list the modules inside it. The layer each package sits in, and the count on every box, come straight from the runbook &mdash; nothing here is placed by hand.</p>
+    <div id="sysmap-detail" class="sysmap-detail" hidden aria-live="polite"></div>
+
+    <ul class="sysmap-legend" aria-label="What each layer is">
+      <li><span class="lname" style="color:var(--core)">Orchestrator</span><span class="ldesc"> — top-level build drivers. The build/pipeline entry points that wire the lower layers together. These live at the project&#39;s build.py — OUTSIDE lib/ — so no lib/ module classifies here.</span></li>
+      <li><span class="lname" style="color:var(--subject)">Subject adapter</span><span class="ldesc"> — physics-aware shapes. Where physics enters: free-body diagrams, energy (LOL) charts, kinematics scenes, solution templates. The only layer that knows the subject.</span></li>
+      <li><span class="lname" style="color:var(--driven)">Project-type</span><span class="ldesc"> — assessment-aware, subject-free. Quiz / item / report shapes. Aware it is building assessments, but carries no physics (or any subject) knowledge.</span></li>
+      <li><span class="lname" style="color:var(--mech)">Mechanism</span><span class="ldesc"> — pure infrastructure. Stdlib-only utilities. Knows nothing about assessments or any subject. Paths, carriers, scanners, validation primitives.</span></li>
+    </ul>
   </section>
 
   <footer class="foot">
@@ -867,6 +937,36 @@ stroke-dasharray="2.5 5" stroke-linecap="round"                marker-end="url(#
     nd.addEventListener('mouseleave', clearNode);
     nd.addEventListener('focus', function(){ focusNode(id); });
     nd.addEventListener('blur', clearNode);
+  });
+})();
+</script><script type="application/json" id="sysmap-nodes">[{"id":"L1:(top-level)","layer":1,"package":"(top-level)","count":56,"modules":["lib/__init__.py","lib/_builders_init.py","lib/_validators_init.py","lib/answer_form.py","lib/answer_sheet_manifest.py","lib/assumptions.py","lib/bubble_grader.py","lib/build.py","lib/charges.py","lib/class_mastery.py","lib/concept_misconception_map.py","lib/concept_registry.py","lib/content_validation.py","lib/cum_v_population_validation.py","lib/data_validation.py","lib/diagram_migrator.py","lib/diagrams_layout.py","lib/drawingml_child.py","lib/em_field_map.py","lib/em_field_map_validation.py","lib/exam_config.py","lib/figures.py","lib/formatting.py","lib/fv_build_plugin.py","lib/fv_physics_plugin.py","lib/graphs.py","lib/helper_discovery.py","lib/helper_usage_validation.py","lib/id_utils.py","lib/lol_filled.py","lib/mastery.py","lib/migration_registry.py","lib/migration_trailers.py","lib/name_ocr.py","lib/omml_markup.py","lib/overlap.py","lib/page_budget.py","lib/plan_frontmatter.py","lib/preflight_registry.py","lib/registry_consistency_validation.py","lib/report_subsets.py","lib/roster_validation.py","lib/similarity.py","lib/single_form_validation.py","lib/smoke_fixtures.py","lib/source_analysis.py","lib/student_imports.py","lib/surface_validation.py","lib/test_artifact_verification.py","lib/test_id_registry.py","lib/textbook_corpus.py","lib/uncertainty_box_validation.py","lib/validation.py","lib/versioning.py","lib/vision_fallback.py","lib/voice.py"]},{"id":"L1:_infra","layer":1,"package":"_infra","count":24,"modules":["lib/_infra/__init__.py","lib/_infra/build_lock.py","lib/_infra/bypass.py","lib/_infra/bypass_tokens.py","lib/_infra/carrier_writer.py","lib/_infra/carriers.py","lib/_infra/catalog_staleness.py","lib/_infra/current_pointer.py","lib/_infra/doc_include.py","lib/_infra/machine_config.py","lib/_infra/path_validation.py","lib/_infra/paths.py","lib/_infra/pedagogy.py","lib/_infra/pii_marker.py","lib/_infra/pii_scanner.py","lib/_infra/schema_introspect.py","lib/_infra/shim_introspection.py","lib/_infra/stage_cache.py","lib/_infra/test_pointer_maps.py","lib/_infra/text_policy.py","lib/_infra/text_scanner.py","lib/_infra/validation_base.py","lib/_infra/voice.py","lib/_infra/voice_scope.py"]},{"id":"L1:_legacy","layer":1,"package":"_legacy","count":4,"modules":["lib/_legacy/annotations_original.py","lib/_legacy/blocks_original.py","lib/_legacy/data_validation_original.py","lib/_legacy/validation_original.py"]},{"id":"L1:migration_patterns","layer":1,"package":"migration_patterns","count":3,"modules":["lib/migration_patterns/__init__.py","lib/migration_patterns/circular_position_label.py","lib/migration_patterns/raw_textbox_to_annotation.py"]},{"id":"L1:physics_subject","layer":1,"package":"physics_subject","count":2,"modules":["lib/physics_subject/__init__.py","lib/physics_subject/diagrams/__init__.py"]},{"id":"L1:stages","layer":1,"package":"stages","count":8,"modules":["lib/stages/__init__.py","lib/stages/fixture_report.py","lib/stages/report.py","lib/stages/scan.py","lib/stages/score.py","lib/stages/stub_report.py","lib/stages/stub_scan.py","lib/stages/stub_score.py"]},{"id":"L2:(top-level)","layer":2,"package":"(top-level)","count":1,"modules":["lib/mc_subject.py"]},{"id":"L3:(top-level)","layer":3,"package":"(top-level)","count":2,"modules":["lib/de_choice_value_validation.py","lib/layout.py"]},{"id":"L3:_legacy","layer":3,"package":"_legacy","count":1,"modules":["lib/_legacy/layout_original.py"]},{"id":"L3:physics_subject","layer":3,"package":"physics_subject","count":6,"modules":["lib/physics_subject/answers.py","lib/physics_subject/diagrams/lol_layout.py","lib/physics_subject/energy.py","lib/physics_subject/fbd.py","lib/physics_subject/lol.py","lib/physics_subject/solution_templates.py"]}]</script>
+<script>
+(function(){
+  var el = document.getElementById('sysmap-nodes');
+  var svg = document.querySelector('svg.sysmap-svg');
+  var panel = document.getElementById('sysmap-detail');
+  if(!el || !svg || !panel){ return; }
+  var byId = {};
+  try {
+    JSON.parse(el.textContent).forEach(function(n){ byId[n.id] = n; });
+  } catch(e){ return; }
+  function esc(s){ return String(s).replace(/[&<>]/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]; }); }
+  function show(id){
+    var n = byId[id];
+    if(!n){ return; }
+    var items = n.modules.map(function(m){ return '<li>'+esc(m)+'</li>'; }).join('');
+    panel.innerHTML = '<span class="d-pkg">'+esc(n.package)+'</span> — '+
+      n.count+' module'+(n.count===1?'':'s')+' in this package'+
+      '<ul>'+items+'</ul>';
+    panel.hidden = false;
+  }
+  Array.prototype.slice.call(svg.querySelectorAll('.sysmap-node')).forEach(function(g){
+    var id = g.getAttribute('data-node-id');
+    g.addEventListener('click', function(){ show(id); });
+    g.addEventListener('keydown', function(ev){
+      if(ev.key === 'Enter' || ev.key === ' '){ ev.preventDefault(); show(id); }
+    });
   });
 })();
 </script>

@@ -366,6 +366,27 @@
   .tier--git-hook .card{border-left-color:var(--mech);}
   .tier--static-lint .card{border-left-color:var(--driven);}
 
+  /* ---------- defense-in-depth ladder (SW3): the same gates, by WHEN they fire */
+  ol.ladder{list-style:none;margin:0;padding:0;display:grid;gap:12px;}
+  .rung{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--core);
+    border-radius:12px;padding:16px 18px;box-shadow:var(--shadow);}
+  .rung__head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;}
+  .rung__stage{font-weight:760;font-size:17px;}
+  .rung__when{font-family:var(--mono);font-size:11px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--muted);}
+  .rung__count{font-family:var(--mono);font-size:15px;font-weight:820;color:var(--core);
+    margin-left:auto;}
+  .rung__noun{font-family:var(--mono);font-size:12px;color:var(--muted);font-weight:600;margin-left:5px;}
+  .rung__mech{color:var(--muted);font-size:14px;line-height:1.6;margin:8px 0 0;max-width:72ch;}
+  .rung__chips{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:7px;}
+  .rung__chips .chip{font-family:var(--mono);font-size:11.5px;color:var(--text);
+    background:color-mix(in srgb,var(--core) 8%,transparent);border:1px solid var(--line);
+    border-radius:999px;padding:4px 10px;}
+  .rung--build{border-left-color:var(--drive);}
+  .rung--commit{border-left-color:var(--mech);}
+  .rung--push{border-left-color:var(--subject);}
+  .rung--ci{border-left-color:var(--driven);}
+
   /* ---------- the pointer at the answer-verification exhibit (N1) ----------
      The weld/FV CSS that used to sit here went WITH the exhibit, to
      verification.html.j2. Leaving it behind would be dead rules on every build. */
@@ -430,7 +451,7 @@
   <section aria-labelledby="gauntlet-h">
     <h2 id="gauntlet-h">The gauntlet</h2>
     <div class="headline">
-      <span class="big"><span class="approx">~</span><span class="stat" data-source="tools/showcase/gate_registry.yaml (HAND-CURATED census); count == len(gates) after the drift-check (check_gate_registry_consistency)" data-verified="2026-07-16" data-provenance="verified" title="source: tools/showcase/gate_registry.yaml (HAND-CURATED census); count == len(gates) after the drift-check (check_gate_registry_consistency) · verified 2026-07-16">43</span></span>
+      <span class="big"><span class="approx">~</span><span class="stat" data-source="tools/showcase/gate_registry.yaml (HAND-CURATED census); count == len(gates) after the drift-check (check_gate_registry_consistency)" data-verified="2026-08-02" data-provenance="verified" title="source: tools/showcase/gate_registry.yaml (HAND-CURATED census); count == len(gates) after the drift-check (check_gate_registry_consistency) · verified 2026-08-02">44</span></span>
       <span class="cap">distinct, build-blocking gates stand between a draft and a
         shippable page — counted live from the registry, never by hand.</span>
     </div>
@@ -449,7 +470,7 @@
     <div class="tier tier--data-validation">
       <div class="tier__head">
         <span class="tier__name">Data validators</span>
-        <span class="tier__count"><span class="stat" data-source="tools/showcase/gate_registry.yaml (HAND-CURATED census) — tier==data-validation" data-verified="2026-07-16" data-provenance="verified" title="source: tools/showcase/gate_registry.yaml (HAND-CURATED census) — tier==data-validation · verified 2026-07-16">25</span> gates</span>
+        <span class="tier__count"><span class="stat" data-source="tools/showcase/gate_registry.yaml (HAND-CURATED census) — tier==data-validation" data-verified="2026-08-02" data-provenance="verified" title="source: tools/showcase/gate_registry.yaml (HAND-CURATED census) — tier==data-validation · verified 2026-08-02">26</span> gates</span>
       </div>
       <div class="cards">
         <div class="card">
@@ -552,12 +573,16 @@
           <div class="name">validation facade</div>
           <div class="blocks">(facade) the aggregate validator surface the build imports</div>
         </div>
+        <div class="card">
+          <div class="name">copy-externalization leak detector</div>
+          <div class="blocks">an externalized page whose copy no longer round-trips byte-identically from its _data/&lt;page&gt;.yml</div>
+        </div>
       </div>
     </div>
     <div class="tier tier--git-hook">
       <div class="tier__head">
         <span class="tier__name">Git-hook gates</span>
-        <span class="tier__count"><span class="stat" data-source="tools/showcase/gate_registry.yaml (HAND-CURATED census) — tier==git-hook" data-verified="2026-07-16" data-provenance="verified" title="source: tools/showcase/gate_registry.yaml (HAND-CURATED census) — tier==git-hook · verified 2026-07-16">12</span> gates</span>
+        <span class="tier__count"><span class="stat" data-source="tools/showcase/gate_registry.yaml (HAND-CURATED census) — tier==git-hook" data-verified="2026-08-02" data-provenance="verified" title="source: tools/showcase/gate_registry.yaml (HAND-CURATED census) — tier==git-hook · verified 2026-08-02">12</span> gates</span>
       </div>
       <div class="cards">
         <div class="card">
@@ -613,7 +638,7 @@
     <div class="tier tier--static-lint">
       <div class="tier__head">
         <span class="tier__name">Static lints</span>
-        <span class="tier__count"><span class="stat" data-source="tools/showcase/gate_registry.yaml (HAND-CURATED census) — tier==static-lint" data-verified="2026-07-16" data-provenance="verified" title="source: tools/showcase/gate_registry.yaml (HAND-CURATED census) — tier==static-lint · verified 2026-07-16">6</span> gates</span>
+        <span class="tier__count"><span class="stat" data-source="tools/showcase/gate_registry.yaml (HAND-CURATED census) — tier==static-lint" data-verified="2026-08-02" data-provenance="verified" title="source: tools/showcase/gate_registry.yaml (HAND-CURATED census) — tier==static-lint · verified 2026-08-02">6</span> gates</span>
       </div>
       <div class="cards">
         <div class="card">
@@ -644,7 +669,79 @@
     </div>
   </section>
 
-  <!-- ============ 2. the pointer at the answer-verification exhibit ============
+  <!-- ============ 2. defense in depth: the gate ladder ============
+       The SAME gate_registry.yaml gates, re-grouped by WHEN they fire (build ->
+       commit -> push) plus the CI layer. build_ladder cross-asserts the registry
+       rungs sum to the gauntlet headline above, so the two counts cannot diverge. -->
+  <section aria-labelledby="ladder-h">
+    <h2 id="ladder-h">Layered on purpose</h2>
+    <p class="section-dek">The same gates, seen a second way &mdash; by WHEN they
+      fire. A wrong answer does not face one wall; it has to clear every stage of
+      the lifecycle in turn: caught by a validator as the page is built, refused by
+      a commit hook if it slips that, stopped at the push, then re-checked by CI on
+      a clean machine where a skipped local hook cannot help it. Miss one layer and
+      the next still holds.</p>
+    <ol class="ladder">
+      <li class="rung rung--build" data-ladder-stage="build">
+        <div class="rung__head">
+          <span class="rung__stage">Build</span>
+          <span class="rung__when">before commit</span>
+          <span class="rung__count"><span class="stat" data-source="tools/showcase/gate_registry.yaml (HAND-CURATED census) — tier in (data-validation, static-lint)" data-verified="2026-08-02" data-provenance="verified" title="source: tools/showcase/gate_registry.yaml (HAND-CURATED census) — tier in (data-validation, static-lint) · verified 2026-08-02">32</span><span class="rung__noun">gates</span></span>
+        </div>
+        <p class="rung__mech">Python data-validators and static lints run over the problem and solution data as the pages are built — a wrong number is caught before it is ever committed.</p>
+      </li>
+      <li class="rung rung--commit" data-ladder-stage="commit">
+        <div class="rung__head">
+          <span class="rung__stage">Commit</span>
+          <span class="rung__when">on git commit</span>
+          <span class="rung__count"><span class="stat" data-source="tools/showcase/gate_registry.yaml (HAND-CURATED census) — git-hook, commit-msg + pre-commit" data-verified="2026-08-02" data-provenance="verified" title="source: tools/showcase/gate_registry.yaml (HAND-CURATED census) — git-hook, commit-msg + pre-commit · verified 2026-08-02">11</span><span class="rung__noun">gates</span></span>
+        </div>
+        <p class="rung__mech">git commit-msg and pre-commit hooks refuse the commit itself, so a notation or process violation never enters history.</p>
+        <ul class="rung__chips">
+          <li class="chip">L1 purity check</li>
+          <li class="chip">bridge-prefix guard</li>
+          <li class="chip">compat-mode guard</li>
+          <li class="chip">engine-universality guard</li>
+          <li class="chip">helper-reversion guard</li>
+          <li class="chip">move-readiness check</li>
+          <li class="chip">pii-secret guard</li>
+          <li class="chip">plan close-out validator</li>
+          <li class="chip">plan-prune-invariants guard</li>
+          <li class="chip">product anthropic gate</li>
+          <li class="chip">workflow-render guard</li>
+        </ul>
+      </li>
+      <li class="rung rung--push" data-ladder-stage="push">
+        <div class="rung__head">
+          <span class="rung__stage">Push</span>
+          <span class="rung__when">on git push</span>
+          <span class="rung__count"><span class="stat" data-source="tools/showcase/gate_registry.yaml (HAND-CURATED census) — git-hook, pre-push" data-verified="2026-08-02" data-provenance="verified" title="source: tools/showcase/gate_registry.yaml (HAND-CURATED census) — git-hook, pre-push · verified 2026-08-02">1</span><span class="rung__noun">gates</span></span>
+        </div>
+        <p class="rung__mech">a git pre-push hook stands as the last local gate before anything reaches the remote.</p>
+        <ul class="rung__chips">
+          <li class="chip">smoke registered tests</li>
+        </ul>
+      </li>
+      <li class="rung rung--ci" data-ladder-stage="ci">
+        <div class="rung__head">
+          <span class="rung__stage">CI</span>
+          <span class="rung__when">after push</span>
+          <span class="rung__count"><span class="stat" data-source="physics/.github/workflows/*.yml triggering on push (enumerated at build)" data-verified="2026-08-02" data-provenance="verified" title="source: physics/.github/workflows/*.yml triggering on push (enumerated at build) · verified 2026-08-02">6</span><span class="rung__noun">workflows</span></span>
+        </div>
+        <p class="rung__mech">GitHub Actions workflows re-run the checks on a clean machine after every push — where a local shortcut or a skipped hook cannot reach.</p>
+        <ul class="rung__chips">
+          <li class="chip">Anti-Kohn lint</li>
+          <li class="chip">Engine universality</li>
+          <li class="chip">Lib-audit checks</li>
+          <li class="chip">Phase replaced_by validator</li>
+          <li class="chip">Plan prune-invariants</li>
+          <li class="chip">Plan validator</li>
+        </ul>
+      </li>
+    </ol>
+  </section>
+
+  <!-- ============ 3. the pointer at the answer-verification exhibit ============
        The weld gates + the FV triangulation table LIVED here until review item 10
        gave them their own page. The pointer's sentence, its data-fv-pointer marker
        and its href are fv_exhibit's constants — the same strings this page's

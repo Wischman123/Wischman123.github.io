@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-16T10:02:37.294829+00:00",
+  "generated_at": "2026-08-02T00:15:01.473781+00:00",
   "repo": {
     "commit_count": {
-      "value": 1762,
+      "value": 2229,
       "source": "git rev-list --count HEAD (physics repo)",
       "verified": true
     },
@@ -15,23 +15,23 @@
   },
   "catalog": {
     "nodes_total": {
-      "value": 1940,
+      "value": 2629,
       "source": "data/catalog_manifest.json (regenerated this run)",
       "verified": true
     },
     "edges_total": {
-      "value": 522,
+      "value": 786,
       "source": "data/catalog_manifest.json (regenerated this run)",
       "verified": true
     },
     "nodes_by_kind": {
       "data": {
-        "value": 262,
+        "value": 308,
         "source": "data/catalog_manifest.json (regenerated this run) — nodes[kind==data]",
         "verified": true
       },
       "doc": {
-        "value": 623,
+        "value": 814,
         "source": "data/catalog_manifest.json (regenerated this run) — nodes[kind==doc]",
         "verified": true
       },
@@ -41,37 +41,37 @@
         "verified": true
       },
       "script": {
-        "value": 511,
+        "value": 828,
         "source": "data/catalog_manifest.json (regenerated this run) — nodes[kind==script]",
         "verified": true
       },
       "test": {
-        "value": 468,
+        "value": 603,
         "source": "data/catalog_manifest.json (regenerated this run) — nodes[kind==test]",
         "verified": true
       }
     },
     "manifest_generated": {
-      "value": "2026-07-16T10:02:41Z",
+      "value": "2026-08-02T00:15:06Z",
       "source": "data/catalog_manifest.json 'generated' stamp",
       "verified": true
     }
   },
   "import_graph": {
     "nodes_total": {
-      "value": 453,
+      "value": 911,
       "source": "tools/showcase/out/import_graph.json (import_graph_dump.py)",
       "verified": true
     },
     "edges_total": {
-      "value": 1182,
+      "value": 2592,
       "source": "tools/showcase/out/import_graph.json (import_graph_dump.py)",
       "verified": true
     }
   },
   "inventory": {
     "rows_total": {
-      "value": 413,
+      "value": 301,
       "source": "data/_inventory.json (rows)",
       "verified": true
     }
@@ -104,6 +104,16 @@
         "value": 16,
         "source": "data/problems/mc/energy.json (record count)",
         "verified": true
+      },
+      "upload_newton_s_second_law": {
+        "value": 1,
+        "source": "data/problems/mc/upload_newton_s_second_law.json (record count)",
+        "verified": true
+      },
+      "upload_projectile_motion": {
+        "value": 1,
+        "source": "data/problems/mc/upload_projectile_motion.json (record count)",
+        "verified": true
       }
     },
     "frq_total": {
@@ -112,7 +122,7 @@
       "verified": true
     },
     "mc_total": {
-      "value": 72,
+      "value": 74,
       "source": "sum of data/problems/mc/*.json record counts",
       "verified": true
     }
@@ -161,32 +171,32 @@
   },
   "loc": {
     "raw_files": {
-      "value": 8812,
+      "value": 10344,
       "source": "tools/loc_history/history.json (latest entry)",
       "verified": true
     },
     "raw_lines": {
-      "value": 2400372,
+      "value": 2877914,
       "source": "tools/loc_history/history.json (latest entry)",
       "verified": true
     },
     "first_party_files": {
-      "value": 6625,
+      "value": 8059,
       "source": "tools/loc_history/history.json (latest entry)",
       "verified": true
     },
     "first_party_lines": {
-      "value": 1783677,
+      "value": 2248217,
       "source": "tools/loc_history/history.json (latest entry)",
       "verified": true
     },
     "series_points": {
-      "value": 41,
+      "value": 61,
       "source": "tools/loc_history/history.json (entries count)",
       "verified": true
     },
     "latest_timestamp": {
-      "value": "2026-07-16T04:54:27-05:00",
+      "value": "2026-07-31T13:11:54-05:00",
       "source": "tools/loc_history/history.json (latest entry timestamp)",
       "verified": true
     },
@@ -354,6 +364,86 @@
       {
         "date": "2026-07-16",
         "value": 1783677
+      },
+      {
+        "date": "2026-07-16",
+        "value": 1796340
+      },
+      {
+        "date": "2026-07-17",
+        "value": 1819793
+      },
+      {
+        "date": "2026-07-17",
+        "value": 1828454
+      },
+      {
+        "date": "2026-07-18",
+        "value": 1840501
+      },
+      {
+        "date": "2026-07-18",
+        "value": 1853812
+      },
+      {
+        "date": "2026-07-18",
+        "value": 1861395
+      },
+      {
+        "date": "2026-07-19",
+        "value": 1895231
+      },
+      {
+        "date": "2026-07-19",
+        "value": 1930260
+      },
+      {
+        "date": "2026-07-19",
+        "value": 1930260
+      },
+      {
+        "date": "2026-07-19",
+        "value": 1946345
+      },
+      {
+        "date": "2026-07-20",
+        "value": 1960144
+      },
+      {
+        "date": "2026-07-20",
+        "value": 1995891
+      },
+      {
+        "date": "2026-07-22",
+        "value": 2012217
+      },
+      {
+        "date": "2026-07-23",
+        "value": 2031293
+      },
+      {
+        "date": "2026-07-23",
+        "value": 2037034
+      },
+      {
+        "date": "2026-07-23",
+        "value": 2038001
+      },
+      {
+        "date": "2026-07-23",
+        "value": 2038627
+      },
+      {
+        "date": "2026-07-24",
+        "value": 2059680
+      },
+      {
+        "date": "2026-07-28",
+        "value": 2183711
+      },
+      {
+        "date": "2026-07-31",
+        "value": 2248217
       }
     ],
     "committed_series": [
@@ -433,13 +523,13 @@
   },
   "gates": {
     "total": {
-      "value": 43,
+      "value": 44,
       "source": "tools/showcase/gate_registry.yaml (HAND-CURATED census)",
       "verified": true
     },
     "by_tier": {
       "data-validation": {
-        "value": 25,
+        "value": 26,
         "source": "tools/showcase/gate_registry.yaml (HAND-CURATED census) — tier==data-validation",
         "verified": true
       },
@@ -456,23 +546,39 @@
     },
     "consistency": {
       "errors": [],
-      "warnings": []
+      "warnings": [
+        "uncensused hooks.d entry: .githooks/hooks.d/post-commit/50-card-lane-efficacy-program-v1.sh",
+        "uncensused hooks.d entry: .githooks/hooks.d/post-commit/50-frq-model-comparison-opus5-arm-v1.sh",
+        "uncensused hooks.d entry: .githooks/hooks.d/post-commit/50-year-roadmap-2026-27-v1.sh",
+        "uncensused hooks.d entry: .githooks/hooks.d/pre-commit/35-data-audit-sweep.py",
+        "uncensused hooks.d entry: .githooks/hooks.d/pre-commit/45-foreign-index-backstop.py",
+        "uncensused hooks.d entry: .githooks/hooks.d/pre-commit/60-course-profiles-verify.py",
+        "uncensused hooks.d entry: .githooks/hooks.d/pre-commit/70-misconception-sole-writer.py",
+        "uncensused hooks.d entry: .githooks/hooks.d/pre-commit/80-org-records-verify.py",
+        "uncensused hooks.d entry: .githooks/hooks.d/pre-commit/90-student-retention-gate.py",
+        "uncensused problem validator: problems/scripts/validate_org_records.py"
+      ]
     }
   },
   "invariants": {
     "total": {
-      "value": 10,
+      "value": 20,
       "source": "tools/metacognition/cli.py list --kind invariant",
       "verified": true
     },
     "by_tier": {
+      "tier1": {
+        "value": 2,
+        "source": "tools/metacognition/cli.py list --kind invariant — response_tier==1",
+        "verified": true
+      },
       "tier2": {
-        "value": 1,
+        "value": 2,
         "source": "tools/metacognition/cli.py list --kind invariant — response_tier==2",
         "verified": true
       },
       "tier3": {
-        "value": 7,
+        "value": 14,
         "source": "tools/metacognition/cli.py list --kind invariant — response_tier==3",
         "verified": true
       },
@@ -485,7 +591,7 @@
   },
   "hooks": {
     "total": {
-      "value": 39,
+      "value": 41,
       "source": "~/.claude/settings.json (hooks by event)",
       "verified": true
     },
@@ -496,12 +602,12 @@
         "verified": true
       },
       "PostToolUse": {
-        "value": 9,
+        "value": 10,
         "source": "~/.claude/settings.json (hooks by event) — event PostToolUse",
         "verified": true
       },
       "PreToolUse": {
-        "value": 15,
+        "value": 16,
         "source": "~/.claude/settings.json (hooks by event) — event PreToolUse",
         "verified": true
       },
@@ -525,34 +631,29 @@
   "retro": {
     "trends_total": {
       "value": 8,
-      "source": "tools/retro/_local_findings/effectiveness_v19.json (occurrence-rate trends)",
+      "source": "tools/retro/_local_findings/effectiveness_v25.json (occurrence-rate trends)",
       "verified": true
     },
     "by_direction": {
       "baseline": {
         "value": 1,
-        "source": "tools/retro/_local_findings/effectiveness_v19.json (occurrence-rate trends) — direction==baseline",
-        "verified": true
-      },
-      "flat": {
-        "value": 1,
-        "source": "tools/retro/_local_findings/effectiveness_v19.json (occurrence-rate trends) — direction==flat",
+        "source": "tools/retro/_local_findings/effectiveness_v25.json (occurrence-rate trends) — direction==baseline",
         "verified": true
       },
       "improved": {
-        "value": 4,
-        "source": "tools/retro/_local_findings/effectiveness_v19.json (occurrence-rate trends) — direction==improved",
-        "verified": true
-      },
-      "regressed": {
-        "value": 2,
-        "source": "tools/retro/_local_findings/effectiveness_v19.json (occurrence-rate trends) — direction==regressed",
+        "value": 7,
+        "source": "tools/retro/_local_findings/effectiveness_v25.json (occurrence-rate trends) — direction==improved",
         "verified": true
       }
     },
     "source_report": {
-      "value": "effectiveness_v19.json",
-      "source": "tools/retro/_local_findings/effectiveness_v19.json (occurrence-rate trends)",
+      "value": "effectiveness_v25.json",
+      "source": "tools/retro/_local_findings/effectiveness_v25.json (occurrence-rate trends)",
+      "verified": true
+    },
+    "trailing_windows": {
+      "value": 6,
+      "source": "trailing effectiveness windows scanned for prior regressions (v24, v23, v22, v21, v20, v19)",
       "verified": true
     },
     "interventions": [
@@ -561,78 +662,94 @@
         "name": "over-long-session warn-hook (session_size_guard.py)",
         "direction": "improved",
         "rate_change": null,
-        "rate_note": "no longer ranks among the tracked findings this window"
+        "rate_note": "no longer ranks among the tracked findings this window",
+        "regressed_window": null
       },
       {
         "intervention_id": "C2",
         "name": "dead-end-read detector fix + 'Read Narrowly' CLAUDE.md rule",
-        "direction": "flat",
+        "direction": "improved",
         "rate_change": {
-          "value": "-2%",
-          "source": "tools/retro/_local_findings/effectiveness_v19.json (occurrence-rate trends) — C2 occurrence rate per 1k sessions vs the pre-ship baseline",
+          "value": "-33%",
+          "source": "tools/retro/_local_findings/effectiveness_v25.json (occurrence-rate trends) — C2 occurrence rate per 1k sessions vs the pre-ship baseline",
           "verified": true
         },
-        "rate_note": "occurrence rate vs the pre-ship baseline"
+        "rate_note": "occurrence rate vs the pre-ship baseline",
+        "regressed_window": "v23"
       },
       {
         "intervention_id": "C3",
         "name": "forbidden-Bash block-hook (forbidden_bash_guard.py)",
         "direction": "improved",
         "rate_change": {
-          "value": "-83%",
-          "source": "tools/retro/_local_findings/effectiveness_v19.json (occurrence-rate trends) — C3 occurrence rate per 1k sessions vs the pre-ship baseline",
+          "value": "-85%",
+          "source": "tools/retro/_local_findings/effectiveness_v25.json (occurrence-rate trends) — C3 occurrence rate per 1k sessions vs the pre-ship baseline",
           "verified": true
         },
-        "rate_note": "occurrence rate vs the pre-ship baseline"
+        "rate_note": "occurrence rate vs the pre-ship baseline",
+        "regressed_window": null
       },
       {
         "intervention_id": "C4",
         "name": "edit-loop guard (edit_loop_guard.py)",
-        "direction": "regressed",
+        "direction": "improved",
         "rate_change": {
-          "value": "+174%",
-          "source": "tools/retro/_local_findings/effectiveness_v19.json (occurrence-rate trends) — C4 occurrence rate per 1k sessions vs the pre-ship baseline",
+          "value": "-20%",
+          "source": "tools/retro/_local_findings/effectiveness_v25.json (occurrence-rate trends) — C4 occurrence rate per 1k sessions vs the pre-ship baseline",
           "verified": true
         },
-        "rate_note": "occurrence rate vs the pre-ship baseline"
+        "rate_note": "occurrence rate vs the pre-ship baseline",
+        "regressed_window": "v23"
       },
       {
         "intervention_id": "C5",
         "name": "undiagnosed-repeat hook (diagnose_repeated_tool_failure.py)",
         "direction": "improved",
-        "rate_change": null,
-        "rate_note": "no longer ranks among the tracked findings this window"
+        "rate_change": {
+          "value": "-77%",
+          "source": "tools/retro/_local_findings/effectiveness_v25.json (occurrence-rate trends) — C5 occurrence rate per 1k sessions vs the pre-ship baseline",
+          "verified": true
+        },
+        "rate_note": "occurrence rate vs the pre-ship baseline",
+        "regressed_window": null
       },
       {
         "intervention_id": "C6",
         "name": "answered-question detector fix + re-ask guard (ask_question_rescan.py)",
-        "direction": "regressed",
+        "direction": "improved",
         "rate_change": {
-          "value": "+639%",
-          "source": "tools/retro/_local_findings/effectiveness_v19.json (occurrence-rate trends) — C6 occurrence rate per 1k sessions vs the pre-ship baseline",
+          "value": "-21%",
+          "source": "tools/retro/_local_findings/effectiveness_v25.json (occurrence-rate trends) — C6 occurrence rate per 1k sessions vs the pre-ship baseline",
           "verified": true
         },
-        "rate_note": "occurrence rate vs the pre-ship baseline"
+        "rate_note": "occurrence rate vs the pre-ship baseline",
+        "regressed_window": "v23"
       },
       {
         "intervention_id": "C7",
         "name": "completion-claim Stop hook (completion_claim_check.py)",
         "direction": "baseline",
         "rate_change": null,
-        "rate_note": "new signal — this window sets the baseline"
+        "rate_note": "new signal — this window sets the baseline",
+        "regressed_window": null
       },
       {
         "intervention_id": "C9",
         "name": "cross-session redo-cost refinement (cross_session_rework.py)",
         "direction": "improved",
-        "rate_change": null,
-        "rate_note": "no longer ranks among the tracked findings this window"
+        "rate_change": {
+          "value": "-84%",
+          "source": "tools/retro/_local_findings/effectiveness_v25.json (occurrence-rate trends) — C9 occurrence rate per 1k sessions vs the pre-ship baseline",
+          "verified": true
+        },
+        "rate_note": "occurrence rate vs the pre-ship baseline",
+        "regressed_window": "v21"
       }
     ]
   },
   "recall": {
     "inventory_size": {
-      "value": 3311,
+      "value": 4654,
       "source": "tools/recall/inventory/inventory.json (asset_count)",
       "verified": true
     },
@@ -747,7 +864,7 @@
     },
     "inline_chat": {
       "threads": {
-        "value": 5,
+        "value": 17,
         "source": "InlineChats/zz_registry.json — threads[] count (content plane)",
         "verified": true
       },

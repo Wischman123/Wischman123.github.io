@@ -51,6 +51,7 @@ emitting nonsense that `check_stats.py` would then happily confirm.
 """
 from __future__ import annotations
 
+import re
 from typing import Any, Callable
 
 __all__ = [
@@ -111,15 +112,42 @@ STAT_FORMATS: dict[str, str] = {
 
 
 # ---------------------------------------------------------------- resolution
+#: A key part carrying a trailing list index — ``interventions[1]`` -> walk the
+#: dict key ``interventions`` then index list element ``1``. This is what lets a
+#: leaf nested under a LIST (``retro.interventions[1].rate_change``) be bound and
+#: gate-verified, instead of sitting in the version-churn-fragile source-string
+#: debt ledger. Parts without a ``[i]`` suffix keep the pure-dict behaviour.
+_INDEXED_PART = re.compile(r"^(?P<name>[^\[\]]+)\[(?P<idx>\d+)\]$")
+
+
 def resolve(data: dict, key: str) -> dict:
     """The `{value, source, verified}` LEAF at dotted `key` in showcase_data.json.
 
-    Raises :class:`UnknownStatKey` naming the key — a `data-stat` binding that
-    points at nothing must fail the check, never silently pass on an empty set.
+    Dotted parts walk dicts; a ``name[i]`` part walks the dict key ``name`` then
+    indexes list element ``i``. Raises :class:`UnknownStatKey` naming the key —
+    a `data-stat` binding that points at nothing must fail the check, never
+    silently pass on an empty set.
     """
     node: Any = data
     walked: list[str] = []
     for part in key.split("."):
+        m = _INDEXED_PART.match(part)
+        if m:
+            name, idx = m.group("name"), int(m.group("idx"))
+            if not isinstance(node, dict) or name not in node:
+                raise UnknownStatKey(
+                    f"data-stat={key!r}: no such key in showcase_data.json "
+                    f"(resolved {'.'.join(walked) or '<root>'}, then {name!r} is absent)"
+                )
+            branch = node[name]
+            if not isinstance(branch, list) or not (0 <= idx < len(branch)):
+                raise UnknownStatKey(
+                    f"data-stat={key!r}: {name}[{idx}] is out of range or not a list "
+                    f"(resolved {'.'.join(walked + [name])} to a {type(branch).__name__})"
+                )
+            node = branch[idx]
+            walked.append(f"{name}[{idx}]")
+            continue
         if not isinstance(node, dict) or part not in node:
             raise UnknownStatKey(
                 f"data-stat={key!r}: no such key in showcase_data.json "

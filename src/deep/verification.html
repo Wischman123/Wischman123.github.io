@@ -385,6 +385,54 @@
   @media (max-width:560px){
     .receipt{grid-template-columns:1fr;gap:8px;}
   }
+
+  /* ---------- FV coverage treemap (T2-c) ---------- */
+  .cov-heads{display:flex;flex-wrap:wrap;gap:16px;margin:0 0 24px;}
+  .cov-head{display:flex;align-items:baseline;gap:10px;background:var(--card);
+    border:1px solid var(--line);border-left:3px solid var(--core);border-radius:10px;
+    padding:12px 16px;box-shadow:var(--shadow);}
+  .cov-head .cov-val{font-family:var(--mono);font-size:clamp(20px,3vw,28px);font-weight:820;
+    letter-spacing:-.02em;line-height:1;}
+  .cov-head .cov-lab{font-size:14px;color:var(--muted);line-height:1.4;}
+  .treemap{display:grid;gap:8px;}
+  .cov-bar{display:grid;grid-template-columns:160px 1fr;align-items:center;gap:14px;}
+  .cov-bar .cov-name{font-family:var(--mono);font-size:13px;color:var(--text);
+    text-align:right;overflow:hidden;text-overflow:ellipsis;}
+  .cov-bar .cov-track{position:relative;height:22px;
+    background:color-mix(in srgb,var(--subject) 15%,transparent);border-radius:6px;overflow:hidden;}
+  .cov-bar .cov-fill{position:absolute;inset:0 auto 0 0;background:var(--core);border-radius:6px;}
+  @media (max-width:560px){
+    .cov-bar{grid-template-columns:1fr;gap:4px;}
+    .cov-bar .cov-name{text-align:left;}
+  }
+
+  /* ---------- negative control (documented gaps) (T2-c) ---------- */
+  .neg-panel{list-style:none;margin:0;padding:0;display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;}
+  .neg-row{background:var(--card);border:1px solid var(--line);
+    border-left:3px solid var(--subject);border-radius:10px;padding:14px 16px;cursor:help;}
+  .neg-row .neg-sym{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--text);
+    display:block;word-break:break-word;margin-bottom:4px;}
+  .neg-row .neg-dom{font-family:var(--mono);font-size:11px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--muted);}
+
+  /* ---------- Lean proof excerpts (SW3): the formal leg, verbatim ---------- */
+  .lean-figs{display:grid;gap:20px;}
+  .lean-fig{background:var(--card);border:1px solid var(--line);border-radius:12px;
+    overflow:hidden;box-shadow:var(--shadow);}
+  .lean-fig .lean-meta{font-family:var(--mono);font-size:11.5px;color:var(--muted);
+    padding:12px 16px;border-bottom:1px solid var(--line);
+    display:flex;gap:8px;flex-wrap:wrap;align-items:baseline;}
+  .lean-fig .lean-meta .lean-thm{color:var(--text);font-weight:700;}
+  .lean-fig .lean-meta .lean-sep{opacity:.5;}
+  .lean-fig pre[data-excerpt]{margin:0;padding:18px;overflow-x:auto;
+    background:#0f1117;color:#e6e6e6;font-size:13px;line-height:1.55;
+    font-family:var(--mono);tab-size:2;}
+  .lean-fig figcaption{padding:14px 18px 16px;font-size:14.5px;color:var(--text);
+    line-height:1.6;max-width:78ch;}
+  .lean-fig figcaption::before{content:"Why it's certified  ";font-family:var(--mono);
+    font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--core);
+    font-weight:700;display:block;margin-bottom:6px;}
   </style>
 </head>
 <body class="verification">
@@ -521,6 +569,70 @@
     </div>
   </section>
 
+  <!-- ============ the Lean proofs behind the formal leg (SW3) ============ -->
+  <section aria-labelledby="lean-h">
+    <h2 id="lean-h">The proofs behind the formal leg</h2>
+    <p class="section-dek">The "Lean-checked formal" column above is not a
+      label of convenience. Each closed form it cites is a theorem in the sibling
+      proof workspace, stated over the real numbers and discharged by Lean with no
+      <code>sorry</code> and an axiom audit &mdash; shown here verbatim, straight
+      from source. Delete or rename one of these proofs and the build fails rather
+      than ship a claim the source no longer backs.</p>
+    <div class="lean-figs">
+      <figure class="lean-fig" data-excerpt="lean_range_from_drop">
+        <div class="lean-meta"><span class="lean-path">lean_practice/projects/physics_capstone/PhysicsCapstone/Triangulation.lean</span><span class="lean-sep">&middot;</span><span class="lean-thm">range_from_drop</span></div>
+        <pre data-excerpt="lean_range_from_drop">/-- **Horizontal range from the drop height.**  A package launched horizontally
+at speed `v_x` from height `h` falls for time `t` with `h = ½·g·t²` (free fall
+from rest, vertical) and travels `x = v_x·t` horizontally.  Eliminating `t`
+gives the √-free identity `g·x² = 2·h·v_x²` — the squared form of
+`x = v_x·√(2h/g)`, which the Python predictor evaluates in f64. -/
+theorem range_from_drop
+    (vx h g t x : ℝ)
+    (hfall : h = (1 / 2) * g * t ^ 2)
+    (hrange : x = vx * t) :
+    g * x ^ 2 = 2 * h * vx ^ 2 := by
+  subst hfall; subst hrange; ring
+</pre>
+        <figcaption>The horizontal-range closed form the Python predictor evaluates is not trusted on faith. It is stated here as a real-number identity and discharged by Lean&#39;s ring tactic, which certifies it holds for every real launch speed, drop height, and gravity. Eliminating the fall time leaves a square-root-free algebraic identity a machine can check exactly, so the value the triangulation gate compares against is one a proof assistant already blessed.</figcaption>
+      </figure>
+      <figure class="lean-fig" data-excerpt="lean_impact_vy_sq">
+        <div class="lean-meta"><span class="lean-path">lean_practice/projects/physics_capstone/PhysicsCapstone/Triangulation.lean</span><span class="lean-sep">&middot;</span><span class="lean-thm">impact_vy_sq</span></div>
+        <pre data-excerpt="lean_impact_vy_sq">/-- **Impact vertical velocity (squared).**  Falling from rest for time `t`,
+the vertical velocity at impact is `v_y = −g·t`; with `h = ½·g·t²` this gives
+`v_y² = 2·g·h`.  Stated squared so it is a `ring` identity; the predictor takes
+the negative root (the package is moving downward at impact). -/
+theorem impact_vy_sq
+    (vy g t h : ℝ)
+    (hfall : h = (1 / 2) * g * t ^ 2)
+    (hvel : vy = -(g * t)) :
+    vy ^ 2 = 2 * g * h := by
+  subst hfall; subst hvel; ring
+</pre>
+        <figcaption>The impact vertical speed is certified the same way, stated in squared form so it becomes a pure algebraic identity over the reals and then closed by the ring tactic. Squaring is the crafted move: it turns a claim about a square root into one Lean can settle exactly, with no floating point anywhere in the proof. The predictor takes the physically-correct downward root afterward.</figcaption>
+      </figure>
+      <figure class="lean-fig" data-excerpt="lean_impact_speed_from_energy">
+        <div class="lean-meta"><span class="lean-path">lean_practice/projects/physics_capstone/PhysicsCapstone/Triangulation.lean</span><span class="lean-sep">&middot;</span><span class="lean-thm">impact_speed_from_energy</span></div>
+        <pre data-excerpt="lean_impact_speed_from_energy">/-- **Impact speed from energy conservation.**  With no air resistance, the
+launch energy `½m·v_x² + m·g·h` equals the impact energy `½m·v²` (impact taken
+as `y = 0`).  The mass cancels (`m ≠ 0`), leaving the m-independent closed form
+`v² = v_x² + 2·g·h` — the same relationship as the Pythagorean combination of
+`v_x` and `impact_vy_sq`, derived here the conserved-invariant way (the route
+the plan&#39;s numeric-only fallback classes also use). -/
+theorem impact_speed_from_energy
+    (m v vx g h : ℝ) (hm : m ≠ 0)
+    (hcons : (1 / 2) * m * v ^ 2 = (1 / 2) * m * vx ^ 2 + m * g * h) :
+    v ^ 2 = vx ^ 2 + 2 * g * h := by
+  -- Cancel the (nonzero) mass: prove m·v² = m·(v_x² + 2gh), then divide.
+  have hmv : m * v ^ 2 = m * (vx ^ 2 + 2 * g * h) := by
+    ring_nf at hcons ⊢
+    linarith [hcons]
+  exact mul_left_cancel₀ hm hmv
+</pre>
+        <figcaption>The impact speed is derived the conserved-invariant way, from energy rather than kinematics, and the mass cancellation is where a careless proof would hand-wave. This one does not: it proves the mass-weighted identity first, then discharges the division through Lean&#39;s cancel-a-nonzero-factor lemma guarded by an explicit nonzero-mass hypothesis, so the closed form is certified without ever dividing by something that could be zero. An independent second route to the same value, machine-checked end to end.</figcaption>
+      </figure>
+    </div>
+  </section>
+
   <!-- ============ 3. numbers with receipts (the FV census) ============ -->
   <section aria-labelledby="receipts-h">
     <h2 id="receipts-h">Numbers with receipts</h2>
@@ -532,26 +644,136 @@
       for its source and the day it was checked.</p>
     <div class="receipts">
       <div class="receipt" data-receipt="scenes_published">
-        <span class="val"><span class="stat" data-source="node sim/scripts/dump_registry.js (scenario registry) — published !== false (loader convention)" data-verified="2026-07-16" data-provenance="verified" title="source: node sim/scripts/dump_registry.js (scenario registry) — published !== false (loader convention) · verified 2026-07-16">62</span></span>
+        <span class="val"><span class="stat" data-source="node sim/scripts/dump_registry.js (scenario registry) — published !== false (loader convention)" data-verified="2026-08-02" data-provenance="verified" title="source: node sim/scripts/dump_registry.js (scenario registry) — published !== false (loader convention) · verified 2026-08-02">62</span></span>
         <span class="lab"><b>published simulator scenes</b> &mdash;
           <span class="gloss">across both scene families — first-year and AP-C — recounted at build time from the scenario registry by the Node emitter that ships them</span></span>
       </div>
       <div class="receipt" data-receipt="laws">
-        <span class="val"><span class="stat stat--pinned" data-source="hand-pinned from the live index display at wischman123.github.io on 2026-07-09; no machine-readable repo source located (probe 2026-07-09)" data-verified="2026-07-16" data-provenance="hand-pinned" title="source: hand-pinned from the live index display at wischman123.github.io on 2026-07-09; no machine-readable repo source located (probe 2026-07-09) · verified 2026-07-16 (hand-pinned)">581<span class="stat__pin" aria-hidden="true">†</span></span></span>
+        <span class="val"><span class="stat stat--pinned" data-source="hand-pinned from the live index display at wischman123.github.io on 2026-07-09; no machine-readable repo source located (probe 2026-07-09)" data-verified="2026-08-02" data-provenance="hand-pinned" title="source: hand-pinned from the live index display at wischman123.github.io on 2026-07-09; no machine-readable repo source located (probe 2026-07-09) · verified 2026-08-02 (hand-pinned)">581<span class="stat__pin" aria-hidden="true">†</span></span></span>
         <span class="lab"><b>physics relations proved</b> &mdash;
           <span class="gloss">and enforced as property-test laws over the engine&#39;s own functions</span></span>
       </div>
       <div class="receipt" data-receipt="property_checked">
-        <span class="val"><span class="stat stat--pinned" data-source="hand-pinned from the live index display at wischman123.github.io on 2026-07-09; no machine-readable repo source located (probe 2026-07-09)" data-verified="2026-07-16" data-provenance="hand-pinned" title="source: hand-pinned from the live index display at wischman123.github.io on 2026-07-09; no machine-readable repo source located (probe 2026-07-09) · verified 2026-07-16 (hand-pinned)">641<span class="stat__pin" aria-hidden="true">†</span></span></span>
+        <span class="val"><span class="stat stat--pinned" data-source="hand-pinned from the live index display at wischman123.github.io on 2026-07-09; no machine-readable repo source located (probe 2026-07-09)" data-verified="2026-08-02" data-provenance="hand-pinned" title="source: hand-pinned from the live index display at wischman123.github.io on 2026-07-09; no machine-readable repo source located (probe 2026-07-09) · verified 2026-08-02 (hand-pinned)">641<span class="stat__pin" aria-hidden="true">†</span></span></span>
         <span class="lab"><b>load-bearing functions property-checked</b> &mdash;
           <span class="gloss">under those proved laws — not spot-checked against a saved answer</span></span>
       </div>
       <div class="receipt" data-receipt="untested">
-        <span class="val"><span class="stat stat--pinned" data-source="hand-pinned from the &#39;Numbers with receipts&#39; readout on the live systems.html at wischman123.github.io, probed 2026-07-09; no machine-readable repo source located — every remaining function is documented infeasible-to-test, not ignored" data-verified="2026-07-16" data-provenance="hand-pinned" title="source: hand-pinned from the &#39;Numbers with receipts&#39; readout on the live systems.html at wischman123.github.io, probed 2026-07-09; no machine-readable repo source located — every remaining function is documented infeasible-to-test, not ignored · verified 2026-07-16 (hand-pinned)">0<span class="stat__pin" aria-hidden="true">†</span></span></span>
+        <span class="val"><span class="stat stat--pinned" data-source="hand-pinned from the &#39;Numbers with receipts&#39; readout on the live systems.html at wischman123.github.io, probed 2026-07-09; no machine-readable repo source located — every remaining function is documented infeasible-to-test, not ignored" data-verified="2026-08-02" data-provenance="hand-pinned" title="source: hand-pinned from the &#39;Numbers with receipts&#39; readout on the live systems.html at wischman123.github.io, probed 2026-07-09; no machine-readable repo source located — every remaining function is documented infeasible-to-test, not ignored · verified 2026-08-02 (hand-pinned)">0<span class="stat__pin" aria-hidden="true">†</span></span></span>
         <span class="lab"><b>silently untested</b> &mdash;
           <span class="gloss">every remaining function is documented infeasible-to-test, not ignored</span></span>
       </div>
     </div>
+  </section>
+
+  <!-- ============ 4. coverage across the engine (T2-c) ============ -->
+  <section aria-labelledby="cov-h">
+    <h2 id="cov-h">Coverage across the whole engine</h2>
+    <p class="section-dek">Verification breadth, by domain &mdash; how much of each part of the engine is pinned by a property-test law, and how much is honestly logged as out of reach. The bars are recounted from the FV inventory on every build, and cross-checked against the census above so the two can never disagree.</p>
+    <div class="cov-heads">
+      <div class="cov-head"><span class="cov-val"><span class="stat" data-source="docs/formal_verification/codebase_fv_inventory_v1.yaml (machine-recounted at build time)" data-verified="2026-08-02" data-provenance="verified" title="source: docs/formal_verification/codebase_fv_inventory_v1.yaml (machine-recounted at build time) · verified 2026-08-02">831</span></span>
+        <span class="cov-lab">functions catalogued for verification</span></div>
+      <div class="cov-head"><span class="cov-val"><span class="stat" data-source="docs/formal_verification/codebase_fv_inventory_v1.yaml (machine-recounted at build time)" data-verified="2026-08-02" data-provenance="verified" title="source: docs/formal_verification/codebase_fv_inventory_v1.yaml (machine-recounted at build time) · verified 2026-08-02">190</span></span>
+        <span class="cov-lab">documented infeasible &mdash; never silently skipped</span></div>
+    </div>
+    <div class="treemap">
+      <div class="cov-bar" data-cov-domain="agent_tooling"
+           aria-label="agent_tooling: 75 percent property-checked">
+        <span class="cov-name">agent_tooling</span>
+        <span class="cov-track"
+              title="agent_tooling &mdash; 388 property-checked, 126 documented-infeasible">
+          <span class="cov-fill" style="width:75%"></span>
+        </span>
+      </div>
+      <div class="cov-bar" data-cov-domain="grading"
+           aria-label="grading: 80 percent property-checked">
+        <span class="cov-name">grading</span>
+        <span class="cov-track"
+              title="grading &mdash; 103 property-checked, 25 documented-infeasible">
+          <span class="cov-fill" style="width:80%"></span>
+        </span>
+      </div>
+      <div class="cov-bar" data-cov-domain="build"
+           aria-label="build: 87 percent property-checked">
+        <span class="cov-name">build</span>
+        <span class="cov-track"
+              title="build &mdash; 71 property-checked, 11 documented-infeasible">
+          <span class="cov-fill" style="width:87%"></span>
+        </span>
+      </div>
+      <div class="cov-bar" data-cov-domain="domain_physics"
+           aria-label="domain_physics: 78 percent property-checked">
+        <span class="cov-name">domain_physics</span>
+        <span class="cov-track"
+              title="domain_physics &mdash; 56 property-checked, 16 documented-infeasible">
+          <span class="cov-fill" style="width:78%"></span>
+        </span>
+      </div>
+      <div class="cov-bar" data-cov-domain="generator"
+           aria-label="generator: 73 percent property-checked">
+        <span class="cov-name">generator</span>
+        <span class="cov-track"
+              title="generator &mdash; 16 property-checked, 6 documented-infeasible">
+          <span class="cov-fill" style="width:73%"></span>
+        </span>
+      </div>
+      <div class="cov-bar" data-cov-domain="infra"
+           aria-label="infra: 67 percent property-checked">
+        <span class="cov-name">infra</span>
+        <span class="cov-track"
+              title="infra &mdash; 4 property-checked, 2 documented-infeasible">
+          <span class="cov-fill" style="width:67%"></span>
+        </span>
+      </div>
+      <div class="cov-bar" data-cov-domain="research"
+           aria-label="research: 40 percent property-checked">
+        <span class="cov-name">research</span>
+        <span class="cov-track"
+              title="research &mdash; 2 property-checked, 3 documented-infeasible">
+          <span class="cov-fill" style="width:40%"></span>
+        </span>
+      </div>
+      <div class="cov-bar" data-cov-domain="math"
+           aria-label="math: 50 percent property-checked">
+        <span class="cov-name">math</span>
+        <span class="cov-track"
+              title="math &mdash; 1 property-checked, 1 documented-infeasible">
+          <span class="cov-fill" style="width:50%"></span>
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 5. the gaps we document (negative control) (T2-c) ============ -->
+  <section aria-labelledby="neg-h">
+    <h2 id="neg-h">The gaps we document</h2>
+    <p class="section-dek">A coverage figure only means something if the uncovered functions are named, not hidden. Every function with no feasible property test carries a written reason in the inventory &mdash; here is one per domain. Hover any to read why it is out of reach.</p>
+    <ul class="neg-panel">
+      <li class="neg-row" title="BODY (lines 160-163) is a linear scan of self.per_session returning the matching p.last_turn_index or -1 — a read-only accessor over instance state, not an independent computation. Its only invariant (&#34;-1 iff session_id absent&#34;) merely restates the lookup; the substantive round-trip law belongs to parse/serialize_hwm, not this getter.">
+        <code class="neg-sym">HighWaterMark.lookup</code>
+        <span class="neg-dom">agent_tooling</span>
+      </li>
+      <li class="neg-row" title="Orchestrator: loads CATALOG_PATH and TAXONOMY_PATH from disk via load_json, stamps wall-clock `iso_now()` and filesystem `file_mtime_iso` into the payload, and prints WARNINGs to stderr; the classification logic is factored out into process_unit, leaving only impure (IO + clock) assembly with no pure core here.">
+        <code class="neg-sym">build</code>
+        <span class="neg-dom">build</span>
+      </li>
+      <li class="neg-row" title="BODY mutates ws_problems_by_file&#39;s lists (via pair_solutions_to_problems) AND writes record[&#39;solution&#39;] back into the all_problems records by a path-suffix filename match (lines 551-561), returning only a paired count — stateful dual-structure glue. Its single computed value (a count) carries no algebraic property; the load-bearing effect is the two side-effecting writes.">
+        <code class="neg-sym">_apply_solutions</code>
+        <span class="neg-dom">domain_physics</span>
+      </li>
+      <li class="neg-row" title="BODY sets matplotlib.use(&#39;Agg&#39;) (module-level mutable global state) then drives ax.contour and harvests cs.allsegs polylines (lines 697-718) — the output is produced by matplotlib&#39;s contouring algorithm, not pure analytic math. The pure analytic V builders it wraps (compute_dipole_V, two_like_charges_V, asymmetric_two_charges_V, line_charge_V) are classified separately and ARE testable.">
+        <code class="neg-sym">compute_V_field_contours</code>
+        <span class="neg-dom">generator</span>
+      </li>
+      <li class="neg-row" title="BODY (lines 398-410) calls _per_variant_questions(keys_dir, key_prefix) which read_text()s per-form key JSON from disk (_keys.py:265) — the function takes a Path and immediately does that IO. The only in-memory work is a conditional collect (keep `correct` lists with &gt;=2 uppercased letters into a dict); that filter is not isolated from the IO call and carries no algebraic law (no round-trip/bounds/conservation — just a guarded insert). The accept_any letter-list filter is too thin to extract as a standalone &gt;=200-example core.">
+        <code class="neg-sym">_accept_letters_by_variant</code>
+        <span class="neg-dom">grading</span>
+      </li>
+      <li class="neg-row" title="Gated on `os.path.isfile(path)` then `open(path).readlines()`; both the line count compared against CAP and the first overflow `## ` heading are read from a file, so the domain is on-disk MEMORY.md files rather than generable in-memory data — no pure core to test on values alone.">
+        <code class="neg-sym">check_one</code>
+        <span class="neg-dom">infra</span>
+      </li>
+    </ul>
   </section>
 
   <footer class="foot">

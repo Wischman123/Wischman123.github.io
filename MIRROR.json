@@ -1,14 +1,14 @@
 {
   "schema": 1,
   "source_repo": "physics",
-  "source_commit": "30a2733d2760e8c3506f7efc1278478a32186986",
-  "sim_source_commit": "30a2733d2760e8c3506f7efc1278478a32186986",
+  "source_commit": "bb9f139dda7032ea552efc45d7dfe871d0005a70",
+  "sim_source_commit": "bb9f139dda7032ea552efc45d7dfe871d0005a70",
   "determinism_excluded_keys": [
     "generated_at"
   ],
   "files": {
     "src/architecture.html": {
-      "sha256": "65b830244a7a753ce15c6404653b757ab264785ecb48f312f2c33cf041cb42eb",
+      "sha256": "1bcc8ba7310249f1d328019d0fe6cf51f6cf8a697e9d299dc49966033823a3e7",
       "rule": "pages"
     },
     "src/assets/d1_after_regeneration.png": {
@@ -152,7 +152,7 @@
       "rule": "assets"
     },
     "src/data/showcase_data.json": {
-      "sha256": "e6d6fe9e7e09b32c6f364be2f596d9086631cf49933019caf060045e540193d3",
+      "sha256": "a593049bcc315f32817050ef55364fd2c817be9f58c25507741f96cb0c0de960",
       "rule": "data"
     },
     "src/deep/assets/engine/gate_rejection.png": {
@@ -292,35 +292,35 @@
       "rule": "pages"
     },
     "src/deep/engine.html": {
-      "sha256": "49efed85ef7a28ee03f0b886cc552d059b5ab78740d7952e318ecdac6056ff85",
+      "sha256": "f1f03e6caa4a347267a985425e79ab760f89320304449c7a1970b3ff68f0f611",
       "rule": "pages"
     },
     "src/deep/gallery.html": {
-      "sha256": "cd621824d1552a444814c17c64a77192204fae6d4b914d0f1f88f78b5ec48d28",
+      "sha256": "4c008834eabe06865ea3a64a36b5c1d12cd470e7ea1651e1d1d9461a72f1e35f",
       "rule": "pages"
     },
     "src/deep/lab.html": {
-      "sha256": "e2e6f97f9ba903546a56787a5d57f1a684b98092306d70a33b2d6c3c4df95a05",
+      "sha256": "5fb704ee15bc2fbaf33d5d3e8de16c3dd2e29ac7e7fccffc773b60016c7d8284",
       "rule": "pages"
     },
     "src/deep/meta.html": {
-      "sha256": "87be7f3d10be5b99241dd4cdfce9ed59c75b7bdd1ecc3a883683a646536b4418",
+      "sha256": "841621412f3a4c977b28a5309d5c295eeb483a5ac7964124eff2edf077a35080",
       "rule": "pages"
     },
     "src/deep/sims.html": {
-      "sha256": "43e0eda45b44cdbbb59fe79cd2cd03dde9ece4517c30194b2e79366bc00b7b5b",
+      "sha256": "ce3c20231faf362f784fdc3d51f00ac927ec3e3973f365370b9798f239580075",
       "rule": "pages"
     },
     "src/deep/systems.html": {
-      "sha256": "44493d8ac2afd906a4356ac34f840c41794220301cac9cbf77504c15899f5729",
+      "sha256": "1c69b44a3b911124eaec66353ad9cca06a282d7dc9109c0bbdcc0f6dfc8f0a68",
       "rule": "pages"
     },
     "src/deep/verification.html": {
-      "sha256": "ec9689da294855fdcca2e5b341676f6ae94cf3660a6942f098443e1e0c88845d",
+      "sha256": "d474fd94d605f9514895bf72e4bee516ea2b381c3116dd97e712db5ac4543b5f",
       "rule": "pages"
     },
     "src/index.html": {
-      "sha256": "cb6ddb22401e393639af3f673d5e1dd82e8c97a458f76f383031f78ccc1bc0ec",
+      "sha256": "dc53745b8a3ed93757b0dd9f5168ed015a4db66f2652819b7431a5ce6ed31838",
       "rule": "pages"
     },
     "src/plain-vs-engine.html": {
@@ -656,7 +656,7 @@
       "rule": "sim"
     },
     "src/vendor/showcase_data.py": {
-      "sha256": "a9aa57dcdce25292d03ef5097d80aa9e68b165eb199ac5ddc9294451e8b625b0",
+      "sha256": "5c3917133e54d2d02e313dbf5ea92579ed421322190a7cb56d8fab574809fac0",
       "rule": "schema"
     },
     "src/videos.html": {
@@ -692,7 +692,7 @@
       "rule": "verify-core"
     },
     "tools/stat_format.py": {
-      "sha256": "c82f9ed41a9dfa4a1ca866eefef9a31d35154474a9d787944084f319f7006553",
+      "sha256": "72b4b1fee211748002bf09031a2505760961b87587ae8e438c6ddca39f88f1f3",
       "rule": "verify-core"
     },
     "tools/verify_live.py": {

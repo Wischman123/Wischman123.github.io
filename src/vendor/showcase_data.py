@@ -540,6 +540,13 @@ class RetroIntervention(BaseModel):
     direction: str
     rate_change: Union[Stat, None] = None
     rate_note: str
+    #: Label of the most recent PRIOR window in which this intervention
+    #: regressed (e.g. ``"v19"``), or None. Set only when ``direction`` is not
+    #: itself ``regressed``, so the two never state the same fact twice. This
+    #: is what lets the honesty gate stay satisfiable in a genuinely clean
+    #: window: 3 of the last 12 windows carried no regression at all, and
+    #: blocking the build on that was the gate punishing good news.
+    regressed_window: Union[str, None] = None
 
     @field_validator("intervention_id", "name", "direction", "rate_note")
     @classmethod
@@ -564,6 +571,11 @@ class RetroStats(BaseModel):
     trends_total: Stat
     by_direction: dict[str, Stat]
     source_report: Stat
+    #: How many windows BEFORE the current one were scanned for prior
+    #: regressions. Provenance for the trailing view: a reader can tell a
+    #: "regressed in v19" row from a current-window miss, and can tell a
+    #: clean current window from a scan that never ran.
+    trailing_windows: Stat
     #: NET-NEW P6 field: the per-intervention occurrence-rate breakdown whose
     #: ``direction`` drives the meta wing's ≥1-visibly-regressed-row gate. The
     #: aggregate counts above stay P1's; this list is P6's, so the two phases
