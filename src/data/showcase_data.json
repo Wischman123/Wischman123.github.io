@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-08-02T00:15:01.473781+00:00",
+  "generated_at": "2026-08-03T00:15:01.219209+00:00",
   "repo": {
     "commit_count": {
-      "value": 2229,
+      "value": 2239,
       "source": "git rev-list --count HEAD (physics repo)",
       "verified": true
     },
@@ -15,12 +15,12 @@
   },
   "catalog": {
     "nodes_total": {
-      "value": 2629,
+      "value": 2648,
       "source": "data/catalog_manifest.json (regenerated this run)",
       "verified": true
     },
     "edges_total": {
-      "value": 786,
+      "value": 796,
       "source": "data/catalog_manifest.json (regenerated this run)",
       "verified": true
     },
@@ -31,7 +31,7 @@
         "verified": true
       },
       "doc": {
-        "value": 814,
+        "value": 819,
         "source": "data/catalog_manifest.json (regenerated this run) — nodes[kind==doc]",
         "verified": true
       },
@@ -41,30 +41,30 @@
         "verified": true
       },
       "script": {
-        "value": 828,
+        "value": 840,
         "source": "data/catalog_manifest.json (regenerated this run) — nodes[kind==script]",
         "verified": true
       },
       "test": {
-        "value": 603,
+        "value": 605,
         "source": "data/catalog_manifest.json (regenerated this run) — nodes[kind==test]",
         "verified": true
       }
     },
     "manifest_generated": {
-      "value": "2026-08-02T00:15:06Z",
+      "value": "2026-08-03T00:15:06Z",
       "source": "data/catalog_manifest.json 'generated' stamp",
       "verified": true
     }
   },
   "import_graph": {
     "nodes_total": {
-      "value": 911,
+      "value": 915,
       "source": "tools/showcase/out/import_graph.json (import_graph_dump.py)",
       "verified": true
     },
     "edges_total": {
-      "value": 2592,
+      "value": 2596,
       "source": "tools/showcase/out/import_graph.json (import_graph_dump.py)",
       "verified": true
     }
@@ -171,32 +171,32 @@
   },
   "loc": {
     "raw_files": {
-      "value": 10344,
+      "value": 10488,
       "source": "tools/loc_history/history.json (latest entry)",
       "verified": true
     },
     "raw_lines": {
-      "value": 2877914,
+      "value": 2923957,
       "source": "tools/loc_history/history.json (latest entry)",
       "verified": true
     },
     "first_party_files": {
-      "value": 8059,
+      "value": 8202,
       "source": "tools/loc_history/history.json (latest entry)",
       "verified": true
     },
     "first_party_lines": {
-      "value": 2248217,
+      "value": 2294196,
       "source": "tools/loc_history/history.json (latest entry)",
       "verified": true
     },
     "series_points": {
-      "value": 61,
+      "value": 63,
       "source": "tools/loc_history/history.json (entries count)",
       "verified": true
     },
     "latest_timestamp": {
-      "value": "2026-07-31T13:11:54-05:00",
+      "value": "2026-08-02T07:53:09-05:00",
       "source": "tools/loc_history/history.json (latest entry timestamp)",
       "verified": true
     },
@@ -444,6 +444,14 @@
       {
         "date": "2026-07-31",
         "value": 2248217
+      },
+      {
+        "date": "2026-08-02",
+        "value": 2294196
+      },
+      {
+        "date": "2026-08-02",
+        "value": 2294196
       }
     ],
     "committed_series": [
