@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-08-03T00:15:01.219209+00:00",
+  "generated_at": "2026-08-04T00:15:02.142817+00:00",
   "repo": {
     "commit_count": {
-      "value": 2239,
+      "value": 2278,
       "source": "git rev-list --count HEAD (physics repo)",
       "verified": true
     },
@@ -15,23 +15,23 @@
   },
   "catalog": {
     "nodes_total": {
-      "value": 2648,
+      "value": 2706,
       "source": "data/catalog_manifest.json (regenerated this run)",
       "verified": true
     },
     "edges_total": {
-      "value": 796,
+      "value": 839,
       "source": "data/catalog_manifest.json (regenerated this run)",
       "verified": true
     },
     "nodes_by_kind": {
       "data": {
-        "value": 308,
+        "value": 319,
         "source": "data/catalog_manifest.json (regenerated this run) — nodes[kind==data]",
         "verified": true
       },
       "doc": {
-        "value": 819,
+        "value": 827,
         "source": "data/catalog_manifest.json (regenerated this run) — nodes[kind==doc]",
         "verified": true
       },
@@ -41,30 +41,30 @@
         "verified": true
       },
       "script": {
-        "value": 840,
+        "value": 859,
         "source": "data/catalog_manifest.json (regenerated this run) — nodes[kind==script]",
         "verified": true
       },
       "test": {
-        "value": 605,
+        "value": 625,
         "source": "data/catalog_manifest.json (regenerated this run) — nodes[kind==test]",
         "verified": true
       }
     },
     "manifest_generated": {
-      "value": "2026-08-03T00:15:06Z",
+      "value": "2026-08-04T00:15:13Z",
       "source": "data/catalog_manifest.json 'generated' stamp",
       "verified": true
     }
   },
   "import_graph": {
     "nodes_total": {
-      "value": 915,
+      "value": 924,
       "source": "tools/showcase/out/import_graph.json (import_graph_dump.py)",
       "verified": true
     },
     "edges_total": {
-      "value": 2596,
+      "value": 2621,
       "source": "tools/showcase/out/import_graph.json (import_graph_dump.py)",
       "verified": true
     }
@@ -171,32 +171,32 @@
   },
   "loc": {
     "raw_files": {
-      "value": 10488,
+      "value": 10592,
       "source": "tools/loc_history/history.json (latest entry)",
       "verified": true
     },
     "raw_lines": {
-      "value": 2923957,
+      "value": 2959679,
       "source": "tools/loc_history/history.json (latest entry)",
       "verified": true
     },
     "first_party_files": {
-      "value": 8202,
+      "value": 8292,
       "source": "tools/loc_history/history.json (latest entry)",
       "verified": true
     },
     "first_party_lines": {
-      "value": 2294196,
+      "value": 2325417,
       "source": "tools/loc_history/history.json (latest entry)",
       "verified": true
     },
     "series_points": {
-      "value": 63,
+      "value": 67,
       "source": "tools/loc_history/history.json (entries count)",
       "verified": true
     },
     "latest_timestamp": {
-      "value": "2026-08-02T07:53:09-05:00",
+      "value": "2026-08-03T17:47:12-05:00",
       "source": "tools/loc_history/history.json (latest entry timestamp)",
       "verified": true
     },
@@ -452,6 +452,22 @@
       {
         "date": "2026-08-02",
         "value": 2294196
+      },
+      {
+        "date": "2026-08-02",
+        "value": 2303133
+      },
+      {
+        "date": "2026-08-03",
+        "value": 2323431
+      },
+      {
+        "date": "2026-08-03",
+        "value": 2325417
+      },
+      {
+        "date": "2026-08-03",
+        "value": 2325417
       }
     ],
     "committed_series": [
@@ -555,8 +571,10 @@
     "consistency": {
       "errors": [],
       "warnings": [
+        "uncensused hooks.d entry: .githooks/hooks.d/post-commit/50-apc-math-mode-hardening-v1.sh",
         "uncensused hooks.d entry: .githooks/hooks.d/post-commit/50-card-lane-efficacy-program-v1.sh",
         "uncensused hooks.d entry: .githooks/hooks.d/post-commit/50-frq-model-comparison-opus5-arm-v1.sh",
+        "uncensused hooks.d entry: .githooks/hooks.d/post-commit/50-test-suite-green-ratchet-v1.sh",
         "uncensused hooks.d entry: .githooks/hooks.d/post-commit/50-year-roadmap-2026-27-v1.sh",
         "uncensused hooks.d entry: .githooks/hooks.d/pre-commit/35-data-audit-sweep.py",
         "uncensused hooks.d entry: .githooks/hooks.d/pre-commit/45-foreign-index-backstop.py",
@@ -599,7 +617,7 @@
   },
   "hooks": {
     "total": {
-      "value": 41,
+      "value": 43,
       "source": "~/.claude/settings.json (hooks by event)",
       "verified": true
     },
@@ -610,7 +628,7 @@
         "verified": true
       },
       "PostToolUse": {
-        "value": 10,
+        "value": 11,
         "source": "~/.claude/settings.json (hooks by event) — event PostToolUse",
         "verified": true
       },
@@ -620,7 +638,7 @@
         "verified": true
       },
       "SessionStart": {
-        "value": 2,
+        "value": 3,
         "source": "~/.claude/settings.json (hooks by event) — event SessionStart",
         "verified": true
       },
