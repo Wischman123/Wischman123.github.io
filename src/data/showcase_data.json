@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-08-05T00:15:02.023712+00:00",
+  "generated_at": "2026-08-09T00:15:01.352436+00:00",
   "repo": {
     "commit_count": {
-      "value": 2306,
+      "value": 2324,
       "source": "git rev-list --count HEAD (physics repo)",
       "verified": true
     },
@@ -15,12 +15,12 @@
   },
   "catalog": {
     "nodes_total": {
-      "value": 2740,
+      "value": 2750,
       "source": "data/catalog_manifest.json (regenerated this run)",
       "verified": true
     },
     "edges_total": {
-      "value": 856,
+      "value": 863,
       "source": "data/catalog_manifest.json (regenerated this run)",
       "verified": true
     },
@@ -31,7 +31,7 @@
         "verified": true
       },
       "doc": {
-        "value": 829,
+        "value": 833,
         "source": "data/catalog_manifest.json (regenerated this run) — nodes[kind==doc]",
         "verified": true
       },
@@ -41,30 +41,30 @@
         "verified": true
       },
       "script": {
-        "value": 875,
+        "value": 872,
         "source": "data/catalog_manifest.json (regenerated this run) — nodes[kind==script]",
         "verified": true
       },
       "test": {
-        "value": 631,
+        "value": 640,
         "source": "data/catalog_manifest.json (regenerated this run) — nodes[kind==test]",
         "verified": true
       }
     },
     "manifest_generated": {
-      "value": "2026-08-05T00:15:07Z",
+      "value": "2026-08-09T00:15:06Z",
       "source": "data/catalog_manifest.json 'generated' stamp",
       "verified": true
     }
   },
   "import_graph": {
     "nodes_total": {
-      "value": 932,
+      "value": 975,
       "source": "tools/showcase/out/import_graph.json (import_graph_dump.py)",
       "verified": true
     },
     "edges_total": {
-      "value": 2644,
+      "value": 2796,
       "source": "tools/showcase/out/import_graph.json (import_graph_dump.py)",
       "verified": true
     }
@@ -171,32 +171,32 @@
   },
   "loc": {
     "raw_files": {
-      "value": 10594,
+      "value": 10649,
       "source": "tools/loc_history/history.json (latest entry)",
       "verified": true
     },
     "raw_lines": {
-      "value": 2960307,
+      "value": 2980301,
       "source": "tools/loc_history/history.json (latest entry)",
       "verified": true
     },
     "first_party_files": {
-      "value": 8294,
+      "value": 8348,
       "source": "tools/loc_history/history.json (latest entry)",
       "verified": true
     },
     "first_party_lines": {
-      "value": 2326011,
+      "value": 2345392,
       "source": "tools/loc_history/history.json (latest entry)",
       "verified": true
     },
     "series_points": {
-      "value": 68,
+      "value": 72,
       "source": "tools/loc_history/history.json (entries count)",
       "verified": true
     },
     "latest_timestamp": {
-      "value": "2026-08-03T20:00:05-05:00",
+      "value": "2026-08-08T07:57:13-05:00",
       "source": "tools/loc_history/history.json (latest entry timestamp)",
       "verified": true
     },
@@ -472,6 +472,22 @@
       {
         "date": "2026-08-03",
         "value": 2326011
+      },
+      {
+        "date": "2026-08-04",
+        "value": 2343848
+      },
+      {
+        "date": "2026-08-06",
+        "value": 2344868
+      },
+      {
+        "date": "2026-08-08",
+        "value": 2345392
+      },
+      {
+        "date": "2026-08-08",
+        "value": 2345392
       }
     ],
     "committed_series": [
@@ -778,7 +794,7 @@
   },
   "recall": {
     "inventory_size": {
-      "value": 4654,
+      "value": 4893,
       "source": "tools/recall/inventory/inventory.json (asset_count)",
       "verified": true
     },
@@ -893,7 +909,7 @@
     },
     "inline_chat": {
       "threads": {
-        "value": 17,
+        "value": 19,
         "source": "InlineChats/zz_registry.json — threads[] count (content plane)",
         "verified": true
       },
