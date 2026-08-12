@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-08-11T00:15:01.736288+00:00",
+  "generated_at": "2026-08-12T00:15:01.937294+00:00",
   "repo": {
     "commit_count": {
-      "value": 2378,
+      "value": 2395,
       "source": "git rev-list --count HEAD (physics repo)",
       "verified": true
     },
@@ -15,12 +15,12 @@
   },
   "catalog": {
     "nodes_total": {
-      "value": 2771,
+      "value": 2783,
       "source": "data/catalog_manifest.json (regenerated this run)",
       "verified": true
     },
     "edges_total": {
-      "value": 871,
+      "value": 883,
       "source": "data/catalog_manifest.json (regenerated this run)",
       "verified": true
     },
@@ -31,7 +31,7 @@
         "verified": true
       },
       "doc": {
-        "value": 845,
+        "value": 847,
         "source": "data/catalog_manifest.json (regenerated this run) — nodes[kind==doc]",
         "verified": true
       },
@@ -41,18 +41,18 @@
         "verified": true
       },
       "script": {
-        "value": 874,
+        "value": 875,
         "source": "data/catalog_manifest.json (regenerated this run) — nodes[kind==script]",
         "verified": true
       },
       "test": {
-        "value": 643,
+        "value": 652,
         "source": "data/catalog_manifest.json (regenerated this run) — nodes[kind==test]",
         "verified": true
       }
     },
     "manifest_generated": {
-      "value": "2026-08-11T00:15:11Z",
+      "value": "2026-08-12T00:15:07Z",
       "source": "data/catalog_manifest.json 'generated' stamp",
       "verified": true
     }
@@ -171,32 +171,32 @@
   },
   "loc": {
     "raw_files": {
-      "value": 10753,
+      "value": 10767,
       "source": "tools/loc_history/history.json (latest entry)",
       "verified": true
     },
     "raw_lines": {
-      "value": 3016339,
+      "value": 3022008,
       "source": "tools/loc_history/history.json (latest entry)",
       "verified": true
     },
     "first_party_files": {
-      "value": 8451,
+      "value": 8464,
       "source": "tools/loc_history/history.json (latest entry)",
       "verified": true
     },
     "first_party_lines": {
-      "value": 2381036,
+      "value": 2386569,
       "source": "tools/loc_history/history.json (latest entry)",
       "verified": true
     },
     "series_points": {
-      "value": 76,
+      "value": 78,
       "source": "tools/loc_history/history.json (entries count)",
       "verified": true
     },
     "latest_timestamp": {
-      "value": "2026-08-10T13:31:51-05:00",
+      "value": "2026-08-11T12:32:31-05:00",
       "source": "tools/loc_history/history.json (latest entry timestamp)",
       "verified": true
     },
@@ -504,6 +504,14 @@
       {
         "date": "2026-08-10",
         "value": 2381036
+      },
+      {
+        "date": "2026-08-10",
+        "value": 2382371
+      },
+      {
+        "date": "2026-08-11",
+        "value": 2386569
       }
     ],
     "committed_series": [
