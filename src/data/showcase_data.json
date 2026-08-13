@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-08-12T00:15:01.937294+00:00",
+  "generated_at": "2026-08-13T00:15:01.408912+00:00",
   "repo": {
     "commit_count": {
-      "value": 2395,
+      "value": 2401,
       "source": "git rev-list --count HEAD (physics repo)",
       "verified": true
     },
@@ -15,7 +15,7 @@
   },
   "catalog": {
     "nodes_total": {
-      "value": 2783,
+      "value": 2786,
       "source": "data/catalog_manifest.json (regenerated this run)",
       "verified": true
     },
@@ -31,7 +31,7 @@
         "verified": true
       },
       "doc": {
-        "value": 847,
+        "value": 850,
         "source": "data/catalog_manifest.json (regenerated this run) — nodes[kind==doc]",
         "verified": true
       },
@@ -52,19 +52,19 @@
       }
     },
     "manifest_generated": {
-      "value": "2026-08-12T00:15:07Z",
+      "value": "2026-08-13T00:15:10Z",
       "source": "data/catalog_manifest.json 'generated' stamp",
       "verified": true
     }
   },
   "import_graph": {
     "nodes_total": {
-      "value": 980,
+      "value": 984,
       "source": "tools/showcase/out/import_graph.json (import_graph_dump.py)",
       "verified": true
     },
     "edges_total": {
-      "value": 2831,
+      "value": 2838,
       "source": "tools/showcase/out/import_graph.json (import_graph_dump.py)",
       "verified": true
     }
@@ -171,32 +171,32 @@
   },
   "loc": {
     "raw_files": {
-      "value": 10767,
+      "value": 10778,
       "source": "tools/loc_history/history.json (latest entry)",
       "verified": true
     },
     "raw_lines": {
-      "value": 3022008,
+      "value": 3025646,
       "source": "tools/loc_history/history.json (latest entry)",
       "verified": true
     },
     "first_party_files": {
-      "value": 8464,
+      "value": 8475,
       "source": "tools/loc_history/history.json (latest entry)",
       "verified": true
     },
     "first_party_lines": {
-      "value": 2386569,
+      "value": 2390207,
       "source": "tools/loc_history/history.json (latest entry)",
       "verified": true
     },
     "series_points": {
-      "value": 78,
+      "value": 79,
       "source": "tools/loc_history/history.json (entries count)",
       "verified": true
     },
     "latest_timestamp": {
-      "value": "2026-08-11T12:32:31-05:00",
+      "value": "2026-08-11T20:00:03-05:00",
       "source": "tools/loc_history/history.json (latest entry timestamp)",
       "verified": true
     },
@@ -512,6 +512,10 @@
       {
         "date": "2026-08-11",
         "value": 2386569
+      },
+      {
+        "date": "2026-08-11",
+        "value": 2390207
       }
     ],
     "committed_series": [
@@ -591,18 +595,18 @@
   },
   "gates": {
     "total": {
-      "value": 44,
+      "value": 51,
       "source": "tools/showcase/gate_registry.yaml (HAND-CURATED census)",
       "verified": true
     },
     "by_tier": {
       "data-validation": {
-        "value": 26,
+        "value": 27,
         "source": "tools/showcase/gate_registry.yaml (HAND-CURATED census) — tier==data-validation",
         "verified": true
       },
       "git-hook": {
-        "value": 12,
+        "value": 18,
         "source": "tools/showcase/gate_registry.yaml (HAND-CURATED census) — tier==git-hook",
         "verified": true
       },
@@ -614,25 +618,12 @@
     },
     "consistency": {
       "errors": [],
-      "warnings": [
-        "uncensused hooks.d entry: .githooks/hooks.d/post-commit/40-system-rewind-v2-changelog.sh",
-        "uncensused hooks.d entry: .githooks/hooks.d/post-commit/50-apc-math-mode-hardening-v1.sh",
-        "uncensused hooks.d entry: .githooks/hooks.d/post-commit/50-card-lane-efficacy-program-v1.sh",
-        "uncensused hooks.d entry: .githooks/hooks.d/post-commit/50-frq-model-comparison-opus5-arm-v1.sh",
-        "uncensused hooks.d entry: .githooks/hooks.d/post-commit/50-year-roadmap-2026-27-v1.sh",
-        "uncensused hooks.d entry: .githooks/hooks.d/pre-commit/35-data-audit-sweep.py",
-        "uncensused hooks.d entry: .githooks/hooks.d/pre-commit/45-foreign-index-backstop.py",
-        "uncensused hooks.d entry: .githooks/hooks.d/pre-commit/60-course-profiles-verify.py",
-        "uncensused hooks.d entry: .githooks/hooks.d/pre-commit/70-misconception-sole-writer.py",
-        "uncensused hooks.d entry: .githooks/hooks.d/pre-commit/80-org-records-verify.py",
-        "uncensused hooks.d entry: .githooks/hooks.d/pre-commit/90-student-retention-gate.py",
-        "uncensused problem validator: problems/scripts/validate_org_records.py"
-      ]
+      "warnings": []
     }
   },
   "invariants": {
     "total": {
-      "value": 21,
+      "value": 23,
       "source": "tools/metacognition/cli.py list --kind invariant",
       "verified": true
     },
@@ -643,7 +634,7 @@
         "verified": true
       },
       "tier2": {
-        "value": 3,
+        "value": 5,
         "source": "tools/metacognition/cli.py list --kind invariant — response_tier==2",
         "verified": true
       },
